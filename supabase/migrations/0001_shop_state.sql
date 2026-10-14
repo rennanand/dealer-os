@@ -25,3 +25,7 @@ create trigger shop_state_touch before update on public.shop_state for each row 
 
 -- Live updates to every open surface.
 alter publication supabase_realtime add table public.shop_state;
+
+-- New tables are not exposed automatically (project setting), so grant the API roles
+-- exactly what the policies above allow and nothing more.
+grant select, update on public.shop_state to anon, authenticated;
