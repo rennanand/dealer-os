@@ -1,4 +1,4 @@
-# RyGuys
+# DealerOS (RyGuys pilot)
 
 Customer app, technician iPad, shop desktop and lobby TV for RyGuys Tire & Auto, ported from the Claude Design prototype (v5) into a React codebase.
 
@@ -24,8 +24,14 @@ Open two or more in separate windows. They share one shop state, so advancing a 
 ## What is real and what is not
 
 - Real: every screen, flow and interaction from the prototype, on its own route, at device size.
-- Real: live state between surfaces, on one machine (browser tabs and windows).
-- Not yet: accounts, a database, more than the one sample customer and work order. All data is the sample data at the top of `src/state/appLogic.js`.
+- Real: live state between surfaces across devices, through Supabase (`supabase/migrations`). Without a `.env.local` it falls back to linking tabs on one machine.
+- Not yet: sign-in, and more than the one sample customer and work order. The sample data lives at the top of `src/state/appLogic.js`; the shared state is saved as one JSON row per shop until the normalized tables land.
+
+## Backend setup
+
+1. Run `supabase/migrations/0001_shop_state.sql` in the Supabase SQL editor.
+2. Copy `.env.example` to `.env.local` and fill in the publishable key.
+3. On Vercel, add the same three variables under Project Settings → Environment Variables.
 
 ## Layout
 

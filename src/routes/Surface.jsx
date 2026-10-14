@@ -2,7 +2,10 @@ import React from 'react';
 import { LogicHost } from '../runtime/LogicHost.jsx';
 import { AppLogic } from '../state/appLogic.js';
 import { DEFAULT_OPTIONS } from '../state/options.js';
-import { connectSync } from '../state/sync.js';
+import { connectSync, broadcastTransport, supabaseTransport } from '../state/sync.js';
+import { supabase, SHOP_ID } from '../state/supabase.js';
+
+const makeTransport = () => (supabase ? supabaseTransport(supabase, SHOP_ID) : broadcastTransport('dealeros-shop'));
 import { Demo } from '../surfaces/Demo.jsx';
 import { CustomerApp } from '../surfaces/customer/CustomerApp.jsx';
 import { TechApp } from '../surfaces/tech/TechApp.jsx';
@@ -18,7 +21,7 @@ function AppHost({ options, children }) {
       Logic={AppLogic}
       options={options}
       onReady={(host) => {
-        sync.current = connectSync(() => host.logic.state, (patch) => host.applyRemote(patch));
+        sync.current = connectSync(() => host.logic.state, (patch) => host.applyRemote(patch), makeTransport());
       }}
       onState={(patch) => sync.current && sync.current.publish(patch)}
     >

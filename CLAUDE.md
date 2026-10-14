@@ -11,5 +11,5 @@
 - Routes: `/` customer, `/tech` technician iPad, `/shop` shop desktop, `/lobby` lobby TV, `/demo` the original four-up prototype view.
 - `src/surfaces/**` are the screens, ported one-to-one from the Claude Design prototype. Keep markup and inline styles as they are unless a change is asked for; the design is the spec.
 - `src/state/appLogic.js` is the single view-model. Every value a screen shows comes from `renderVals()`. The constants at the top are sample data standing in for the backend.
-- `src/state/sync.js` shares state between open surfaces. `LOCAL_KEYS` lists what stays per-device.
+- `src/state/sync.js` shares state between open surfaces: over Supabase realtime + the `shop_state` row when configured, else a BroadcastChannel. `LOCAL_KEYS` lists what stays per-device.
 - Screens bind with the helpers in `src/runtime/tpl.js`: `css('…')` for style strings, `T()` for text, `L()` for lists.
