@@ -13,6 +13,7 @@ import { CustomerApp } from '../surfaces/customer/CustomerApp.jsx';
 import { TechApp } from '../surfaces/tech/TechApp.jsx';
 import { ShopApp } from '../surfaces/shop/ShopApp.jsx';
 import { LobbyBoard } from '../surfaces/lobby/LobbyBoard.jsx';
+import { LobbyIdle } from '../surfaces/lobby/LobbyIdle.jsx';
 
 /** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
 export function Require({ roles, title, children }) {
@@ -26,6 +27,15 @@ export function Require({ roles, title, children }) {
 }
 
 /** One view-model per open surface, linked to the others through the sync channel. */
+/** Review switches in the URL: /?new shows a customer with no vehicle yet, /lobby?closed the after-hours board. */
+const reviewState = () => {
+  const q = new URLSearchParams(window.location.search);
+  const st = {};
+  if (q.has('new')) st.noVehicle = true;
+  if (q.has('closed')) st.shopClosed = true;
+  return st;
+};
+
 function AppHost({ options, children }) {
   const sync = React.useRef(null);
   React.useEffect(() => () => sync.current && sync.current.close(), []);
@@ -34,6 +44,8 @@ function AppHost({ options, children }) {
       Logic={AppLogic}
       options={options}
       onReady={(host) => {
+        const st = reviewState();
+        if (Object.keys(st).length) host.applyRemote(st);
         sync.current = connectSync(() => host.logic.state, (patch) => host.applyRemote(patch), makeTransport());
       }}
       onState={(patch) => sync.current && sync.current.publish(patch)}
@@ -145,9 +157,13 @@ export function LobbyRoute() {
       {(vm) => (
         <div className="surface surface-lobby">
           <div style={{ width: 1360 * scale, height: 765 * scale }}>
-            <LobbyBoard
-              vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;border-radius:0;box-shadow:none;' }}
-            />
+            {vm.lobbyIdle ? (
+              <LobbyIdle vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;' }} />
+            ) : (
+              <LobbyBoard
+                vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;border-radius:0;box-shadow:none;' }}
+              />
+            )}
           </div>
         </div>
       )}

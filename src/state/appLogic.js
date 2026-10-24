@@ -220,6 +220,7 @@ export class AppLogic extends DCLogic {
     dView: 'overview', dSel: 'rennan', dReply: '', addOpen: false, salesTab: 'Inventory', estOpen: false,
     partsEta: null, orderOpen: false, partsOrdered: null, sched: SCHED0(), drag: null, schedMsg: '',
     valet: null, qc: {}, est: null, estNotes: null, repRange: '31 days', odo: null, odoDraft: '', tq: null, swap: false,
+    noVehicle: false, shopClosed: false,
     fu: {}, fuTab: 'Open', fleetSel: 'manti', fleetBooked: {}, fleetStmt: {}, recall: null, recallAdded: false, oil: OIL0(), oilPaid: false, odoTac: null, payFor: null
   };
 
@@ -244,7 +245,7 @@ export class AppLogic extends DCLogic {
     else if (this.state.ringsIn) this.setState({ ringsIn: false });
   }
   typeCode(code) { clearTimeout(this._ct); this.setState({ onboard: Object.assign({}, this.state.onboard, { code: code.slice(0, 3) }) }); this._ct = setTimeout(() => this.setState({ onboard: Object.assign({}, this.state.onboard, { code }) }), 160); }
-  finishOnboard(name) { this.setState({ view: 'home', onboard: null }); if (name) this.notify(name + ' added to your garage. Welcome, Rennan.'); }
+  finishOnboard(name) { this.setState({ view: 'home', onboard: null, noVehicle: !name }); if (name) this.notify(name + ' added to your garage. Welcome, Rennan.'); }
   valetGo(step) {
     clearTimeout(this._vt);
     const v = Object.assign({}, this.state.valet || { keys: 'Hand to driver', shots: 0 }, { step });
@@ -1338,6 +1339,19 @@ export class AppLogic extends DCLogic {
       metrics: [{ l: 'Today\u2019s revenue', n: '$8,421', d: '+12% vs. avg day', c: GRN }, { l: 'Repair orders', n: '38', d: '+3', c: GRN }, { l: 'Oil changes', n: '164', d: 'this month · 31% of orders', c: 'rgba(235,235,245,.5)' }, { l: 'Average repair order', n: '$221.61', d: '−$4.10', c: 'rgba(235,235,245,.5)' }, { l: 'Approval rate', n: '84%', d: '+6 pts since in-app estimates', c: GRN }, { l: 'Average approval time', n: '11 min', d: 'was 2.4 hrs by phone', c: GRN }, { l: 'Customer satisfaction', n: '4.9', d: '212 ratings', c: 'rgba(235,235,245,.5)' }, { l: 'Loaner utilization', n: '72%', d: '+8 pts', c: GRN }],
       bars: [['Tue', 6.2], ['Wed', 7.8], ['Thu', 5.9], ['Fri', 9.1], ['Sat', 6.4], ['Sun', 0], ['Mon', 8.4]].map(bv => ({ d: bv[0], v: bv[1] ? '$' + bv[1] + 'k' : '—', style: 'width:100%;max-width:56px;border-radius:6px 6px 2px 2px;height:' + Math.max(3, Math.round(bv[1] / 9.1 * 100)) + 'px;background:' + (bv[0] === 'Mon' ? '#fff' : 'rgba(235,235,245,.22)') }))
     });
+    // ---- empty states (customer with no vehicle on file) and the after-hours lobby board
+    if (s.noVehicle) Object.assign(V, {
+      pHome: false, pHomeEmpty: view === 'home', pGarage: false, pGarageEmpty: view === 'garage', pHealth: false, pHealthEmpty: view === 'health',
+      pService: false, pServiceEmpty: view === 'service', pHistory: false, pHistoryEmpty: view === 'history', pMessages: false, pMessagesEmpty: view === 'messages',
+      hasUnread: false, initials: 'RA',
+      heroStyle: 'position:absolute;left:0;right:0;z-index:4;top:0;height:240px;opacity:0;pointer-events:none',
+      addVehicle: () => this.setState({ view: 'onboard', onboard: { step: 3, phone: '', code: '', plate: '', name: '', found: false, searching: false } }),
+      goBook: this.go('book'), goAccount: this.go('account'),
+      startMessage: () => this.setState({ noVehicle: false, view: 'messages' }),
+      tabs: (V.tabs || []).map(t => Object.assign({}, t, { badge: false }))
+    });
+    V.lobbyIdle = !!s.shopClosed;
+    V.idleTitle = 'Closed for the day.'; V.idleSub = 'Opens tomorrow at 8:00 AM.';
     return V;
   }
 }

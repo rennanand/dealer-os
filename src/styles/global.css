@@ -29,8 +29,3 @@ body.route-demo{overflow-y:scroll}
 .surface-shop{background:#0d0d0e;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif}
 .surface-shop>div:not(.fit),.surface-shop>.fit>div{height:100% !important}
 .surface-lobby{display:flex;align-items:center;justify-content:center}
-
-/* Real phones: keep content clear of the notch and home indicator when the app runs full-screen
-   (home-screen web app or the iOS wrapper). In a normal browser tab the insets are zero. */
-.surface-customer>.phone{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:#000}
-.surface-customer>.phone>div{height:100%}

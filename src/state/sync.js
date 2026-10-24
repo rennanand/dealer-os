@@ -10,11 +10,15 @@
 const LOCAL_KEYS = new Set([
   'device', 'view', 'tView', 'dView', 'wrapW', 'ringsIn', 'cardIdx', 'vIdx',
   'draft', 'askDraft', 'dReply', 'odoDraft', 'sigDraw', 'sigW', 'drag',
+  'noVehicle', 'shopClosed', // review switches, never shared
 ]);
 
-export const sharedPart = (state) => {
+// Shared live but never saved: a notification shown now should not greet a screen that opens tomorrow.
+const TRANSIENT_KEYS = new Set(['toast']);
+
+export const sharedPart = (state, { forSave = false } = {}) => {
   const out = {};
-  for (const k in state) if (!LOCAL_KEYS.has(k) && state[k] !== undefined) out[k] = state[k];
+  for (const k in state) if (!LOCAL_KEYS.has(k) && !(forSave && TRANSIENT_KEYS.has(k)) && state[k] !== undefined) out[k] = state[k];
   return out;
 };
 
@@ -106,7 +110,7 @@ export function connectSync(getState, apply, transport) {
       const shared = sharedPart(patch);
       if (!Object.keys(shared).length) return;
       transport.send({ type: 'patch', patch: shared });
-      transport.send({ type: 'save', state: sharedPart(getState()) });
+      transport.send({ type: 'save', state: sharedPart(getState(), { forSave: true }) });
     },
     close: () => transport.close(),
   };

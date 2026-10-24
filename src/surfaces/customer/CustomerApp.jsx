@@ -2,6 +2,7 @@ import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
 import '../../components/car-hero.js';
 import { Account } from './Account.jsx';
+import { HomeEmpty, GarageEmpty, ServiceEmpty, HealthEmpty, HistoryEmpty, MessagesEmpty } from './EmptyStates.jsx';
 import { Approve } from './Approve.jsx';
 import { Ask } from './Ask.jsx';
 import { Book } from './Book.jsx';
@@ -95,6 +96,12 @@ export function CustomerApp({ vm }) {
           className="hidescroll"
         >
           {vm.pHome ? <Home vm={vm} /> : null}
+          {vm.pHomeEmpty ? <HomeEmpty vm={vm} /> : null}
+          {vm.pGarageEmpty ? <GarageEmpty vm={vm} /> : null}
+          {vm.pHealthEmpty ? <HealthEmpty vm={vm} /> : null}
+          {vm.pServiceEmpty ? <ServiceEmpty vm={vm} /> : null}
+          {vm.pHistoryEmpty ? <HistoryEmpty /> : null}
+          {vm.pMessagesEmpty ? <MessagesEmpty vm={vm} /> : null}
           {vm.pGarage ? <Garage vm={vm} /> : null}
           {vm.pHealth ? <Health vm={vm} /> : null}
           {vm.pService ? <Service vm={vm} /> : null}
