@@ -5,7 +5,7 @@ export function Messages({ vm }) {
   return (
     <>
       <div style={css('animation:sIn .28s ease;height:100%;display:flex;flex-direction:column')}>
-        <div style={css('padding:52px 22px 12px;display:flex;align-items:center;border-bottom:1px solid rgba(235,235,245,.07)')}>
+        <div style={css('padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center;border-bottom:1px solid rgba(235,235,245,.07)')}>
           <div
             onClick={vm.goBack}
             style={css('width:40px;display:flex;align-items:center;color:rgba(235,235,245,.85);cursor:pointer;margin-left:-7px')}
@@ -71,7 +71,7 @@ export function Messages({ vm }) {
             </React.Fragment>
           ))}
         </div>
-        <div style={css('padding:10px 14px 30px;display:flex;gap:8px;align-items:center')}>
+        <div style={css('padding:10px 14px calc(var(--sab) + 13px);display:flex;gap:8px;align-items:center')}>
           <input
             value={val(vm.draft)}
             onChange={vm.onDraft}

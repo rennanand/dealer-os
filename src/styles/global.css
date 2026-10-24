@@ -1,6 +1,8 @@
 /* Base styles carried over from the prototype. */
 :root{--ui-font:'Geist';--data-font:'Geist Mono';--icon-w:1.6px}
 html,body,#root{height:100%}
+html{height:-webkit-fill-available}
+.surface{height:100dvh}
 body{margin:0;background:#0a0a0a;font-variant-numeric:tabular-nums}
 *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
 a{color:#6ea8ff;text-decoration:none}
@@ -20,8 +22,15 @@ body.route-demo{overflow-y:scroll}
 /* Real surfaces fill the device instead of sitting inside a drawn frame. */
 .surface{position:fixed;inset:0;background:#000;overflow:hidden}
 .surface-customer{display:flex;justify-content:center}
-.surface-customer>.phone{position:relative;width:100%;max-width:430px;height:100%}
-.surface-tech>div{height:100% !important;border-radius:0 !important}
+.surface-customer>.phone{position:relative;width:100%;max-width:430px;height:100%;--sat:max(env(safe-area-inset-top,0px),14px);--sab:max(env(safe-area-inset-bottom,0px),17px)}
+/* Inside the drawn iPhone frame on /demo the status bar and home indicator are part of the frame. */
+.route-demo .sc-host-x{--sat:47px;--sab:17px}
+.surface-tech>div:not(.fit),.surface-tech>.fit>div{height:100% !important;border-radius:0 !important}
 .surface-shop{background:#0d0d0e;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif}
-.surface-shop>div{height:100% !important}
+.surface-shop>div:not(.fit),.surface-shop>.fit>div{height:100% !important}
 .surface-lobby{display:flex;align-items:center;justify-content:center}
+
+/* Real phones: keep content clear of the notch and home indicator when the app runs full-screen
+   (home-screen web app or the iOS wrapper). In a normal browser tab the insets are zero. */
+.surface-customer>.phone{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:#000}
+.surface-customer>.phone>div{height:100%}

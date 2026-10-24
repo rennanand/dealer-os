@@ -5,7 +5,7 @@ export function LoanerGuide({ vm }) {
   return (
     <>
       <div style={css('animation:sIn .28s ease;padding:0 0 150px')}>
-        <div style={css('padding:52px 22px 12px;display:flex;align-items:center')}>
+        <div style={css('padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center')}>
           <div
             onClick={vm.goBack}
             style={css('width:30px;display:flex;align-items:center;color:rgba(235,235,245,.85);cursor:pointer;margin-left:-7px')}
@@ -36,7 +36,7 @@ export function LoanerGuide({ vm }) {
       </div>
       <div
         style={css(
-          'position:absolute;left:0;right:0;bottom:0;padding:14px 18px 30px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
+          'position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(var(--sab) + 13px);background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
         )}
       >
         <div style={css('display:flex;justify-content:center;gap:5px;margin-bottom:16px')}>

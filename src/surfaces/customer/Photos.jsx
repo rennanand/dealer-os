@@ -5,7 +5,7 @@ export function Photos({ vm }) {
   return (
     <>
       <div style={css('animation:sIn .28s ease;height:100%;display:flex;flex-direction:column')}>
-        <div style={css('padding:52px 22px 12px;display:flex;align-items:center')}>
+        <div style={css('padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center')}>
           <div
             onClick={vm.goBack}
             style={css('width:40px;display:flex;align-items:center;color:rgba(235,235,245,.85);cursor:pointer;margin-left:-7px')}

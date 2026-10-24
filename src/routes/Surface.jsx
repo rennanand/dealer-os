@@ -3,7 +3,7 @@ import { LogicHost } from '../runtime/LogicHost.jsx';
 import { AppLogic } from '../state/appLogic.js';
 import { DEFAULT_OPTIONS } from '../state/options.js';
 import { connectSync, broadcastTransport, supabaseTransport } from '../state/sync.js';
-import { supabase, SHOP_ID } from '../state/supabase.js';
+import { supabase, SHOP_ID, AUTH_ON } from '../state/supabase.js';
 import { useAuth, signOut, STAFF } from '../state/auth.js';
 import { SignIn, Blocked } from './SignIn.jsx';
 
@@ -43,6 +43,34 @@ function AppHost({ options, children }) {
   );
 }
 
+/**
+ * Keeps a surface's designed layout below the width it was designed for by scaling it to
+ * fit, instead of reflowing it. Above `minFluid` the layout is fluid and untouched.
+ */
+function useFit(designW, minFluid) {
+  const calc = () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    if (w >= minFluid) return null;
+    const scale = w / designW;
+    return { scale, width: designW, height: Math.round(h / scale) };
+  };
+  const [fit, setFit] = React.useState(calc);
+  React.useEffect(() => {
+    const on = () => setFit(calc());
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
+  return fit;
+}
+function Fitted({ fit, children }) {
+  if (!fit) return children;
+  return (
+    <div className="fit" style={{ width: fit.width, height: fit.height, transform: 'scale(' + fit.scale.toFixed(4) + ')', transformOrigin: 'top left', position: 'absolute', left: 0, top: 0 }}>
+      {children}
+    </div>
+  );
+}
+
 function useBodyClass(name) {
   React.useEffect(() => {
     document.body.classList.add(name);
@@ -73,11 +101,14 @@ export function CustomerRoute() {
 
 /** Technician app: fills the iPad. */
 export function TechRoute() {
+  const fit = useFit(1060, 1000); // iPad portrait and smaller: scaled landscape layout
   return (
     <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'pad' }}>
       {(vm) => (
         <div className="surface surface-tech">
-          <TechApp vm={vm} />
+          <Fitted fit={fit}>
+            <TechApp vm={vm} />
+          </Fitted>
         </div>
       )}
     </AppHost>
@@ -86,11 +117,14 @@ export function TechRoute() {
 
 /** Shop desktop: fills the browser window. */
 export function ShopRoute() {
+  const fit = useFit(1360, 1200); // small laptops and tablets: scaled desktop layout
   return (
     <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'desk' }}>
       {(vm) => (
         <div className="surface surface-shop">
-          <ShopApp vm={vm} />
+          <Fitted fit={fit}>
+            <ShopApp vm={vm} />
+          </Fitted>
         </div>
       )}
     </AppHost>

@@ -5,7 +5,7 @@ import '../../components/service-scene.js';
 export function Home({ vm }) {
   return (
     <>
-      <div style={css('animation:sIn .28s ease;padding:58px 0 112px')}>
+      <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
         <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
           <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>Good morning, Rennan.</div>
           <div style={css('display:flex;gap:9px')}>

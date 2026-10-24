@@ -4,7 +4,7 @@ import { T, L, css, val } from '../../runtime/tpl.js';
 export function Shop({ vm }) {
   return (
     <>
-      <div style={css('animation:sIn .28s ease;padding:58px 0 112px')}>
+      <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
         <div style={css('padding:0 22px')}>
           <div style={css('font-size:30px;font-weight:600;letter-spacing:-.9px;line-height:1.1')}>Find your next car.</div>
           <div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:8px')}>Vehicles available now.</div>

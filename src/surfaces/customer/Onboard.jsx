@@ -4,7 +4,7 @@ import { T, L, css, val } from '../../runtime/tpl.js';
 export function Onboard({ vm }) {
   return (
     <>
-      <div style={css('animation:sIn .28s ease;height:100%;display:flex;flex-direction:column;padding-bottom:34px')}>
+      <div style={css('animation:sIn .28s ease;height:100%;display:flex;flex-direction:column;padding-bottom:calc(var(--sab) + 17px)')}>
         {vm.ob0 ? (
           <>
             <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 26px 8px')}>
@@ -36,7 +36,7 @@ export function Onboard({ vm }) {
         ) : null}
         {vm.ob1 ? (
           <>
-            <div style={css('padding:60px 22px 0;flex:1')}>
+            <div style={css('padding:calc(var(--sat) + 13px) 22px 0;flex:1')}>
               <div style={css('display:flex;gap:5px')}>
                 {L(vm.obDots).map((d, _i) => (
                   <React.Fragment key={_i}>
@@ -79,7 +79,7 @@ export function Onboard({ vm }) {
         ) : null}
         {vm.ob2 ? (
           <>
-            <div style={css('padding:60px 22px 0;flex:1')}>
+            <div style={css('padding:calc(var(--sat) + 13px) 22px 0;flex:1')}>
               <div style={css('display:flex;gap:5px')}>
                 {L(vm.obDots).map((d, _i) => (
                   <React.Fragment key={_i}>
@@ -136,7 +136,7 @@ export function Onboard({ vm }) {
         ) : null}
         {vm.ob3 ? (
           <>
-            <div style={css('padding:60px 22px 0;flex:1;overflow-y:auto')} className="hidescroll">
+            <div style={css('padding:calc(var(--sat) + 13px) 22px 0;flex:1;overflow-y:auto')} className="hidescroll">
               <div style={css('display:flex;gap:5px')}>
                 {L(vm.obDots).map((d, _i) => (
                   <React.Fragment key={_i}>

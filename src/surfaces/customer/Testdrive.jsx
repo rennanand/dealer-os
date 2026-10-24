@@ -7,7 +7,7 @@ export function Testdrive({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:52px 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -26,7 +26,7 @@ export function Testdrive({ vm }) {
         </div>
         {vm.tdDone ? (
           <>
-            <div style={css('padding:70px 30px 0;text-align:center;animation:pop .5s cubic-bezier(.2,.8,.2,1)')}>
+            <div style={css('padding:calc(var(--sat) + 23px) 30px 0;text-align:center;animation:pop .5s cubic-bezier(.2,.8,.2,1)')}>
               <div
                 style={css(
                   'width:72px;height:72px;border-radius:36px;background:#fff;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#000',
@@ -120,7 +120,7 @@ export function Testdrive({ vm }) {
         <>
           <div
             style={css(
-              'position:absolute;left:0;right:0;bottom:0;padding:14px 18px 30px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
+              'position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(var(--sab) + 13px);background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
             )}
           >
             <div

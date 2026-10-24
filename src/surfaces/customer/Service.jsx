@@ -8,7 +8,7 @@ export function Service({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:52px 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -29,7 +29,7 @@ export function Service({ vm }) {
         </div>
         {vm.noService ? (
           <>
-            <div style={css('padding:60px 30px 0;text-align:center')}>
+            <div style={css('padding:calc(var(--sat) + 13px) 30px 0;text-align:center')}>
               <div
                 style={css(
                   'width:56px;height:56px;border-radius:28px;background:#1c1c1e;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#30d158',

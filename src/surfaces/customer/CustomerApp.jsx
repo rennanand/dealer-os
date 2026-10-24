@@ -53,7 +53,7 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;top:56px;left:12px;right:12px;z-index:20;background:rgba(40,40,44,.92);backdrop-filter:blur(20px);border-radius:18px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
+                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,44,.92);backdrop-filter:blur(20px);border-radius:18px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
               )}
             >
               <div
@@ -138,7 +138,7 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;left:0;right:0;bottom:0;z-index:6;padding:9px 10px 26px;background:rgba(0,0,0,.9);backdrop-filter:blur(18px);border-top:1px solid rgba(235,235,245,.07);display:flex;gap:2px',
+                'position:absolute;left:0;right:0;bottom:0;z-index:6;padding:9px 10px calc(var(--sab) + 9px);background:rgba(0,0,0,.9);backdrop-filter:blur(18px);border-top:1px solid rgba(235,235,245,.07);display:flex;gap:2px',
               )}
             >
               {L(vm.tabs).map((t, _i) => (

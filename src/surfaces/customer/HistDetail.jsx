@@ -7,7 +7,7 @@ export function HistDetail({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:52px 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div

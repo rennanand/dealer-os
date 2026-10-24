@@ -7,7 +7,7 @@ export function LoanerAgree({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:52px 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -115,7 +115,7 @@ export function LoanerAgree({ vm }) {
       </div>
       <div
         style={css(
-          'position:absolute;left:0;right:0;bottom:0;padding:14px 18px 30px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
+          'position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(var(--sab) + 13px);background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.95) 34%);z-index:6',
         )}
       >
         <div onClick={vm.signAgreement} style={css(vm.signCtaStyle)}>
