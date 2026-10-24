@@ -4,6 +4,8 @@ import { AppLogic } from '../state/appLogic.js';
 import { DEFAULT_OPTIONS } from '../state/options.js';
 import { connectSync, broadcastTransport, supabaseTransport } from '../state/sync.js';
 import { supabase, SHOP_ID } from '../state/supabase.js';
+import { useAuth, signOut, STAFF } from '../state/auth.js';
+import { SignIn, Blocked } from './SignIn.jsx';
 
 const makeTransport = () => (supabase ? supabaseTransport(supabase, SHOP_ID) : broadcastTransport('dealeros-shop'));
 import { Demo } from '../surfaces/Demo.jsx';
@@ -11,6 +13,17 @@ import { CustomerApp } from '../surfaces/customer/CustomerApp.jsx';
 import { TechApp } from '../surfaces/tech/TechApp.jsx';
 import { ShopApp } from '../surfaces/shop/ShopApp.jsx';
 import { LobbyBoard } from '../surfaces/lobby/LobbyBoard.jsx';
+
+/** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
+export function Require({ roles, title, children }) {
+  const auth = useAuth();
+  if (!supabase || import.meta.env.VITE_REQUIRE_SIGNIN !== '1') return children; // sign-in turns on with VITE_REQUIRE_SIGNIN=1 once the access migration is applied
+  if (auth.loading) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} />;
+  if (!auth.session) return <SignIn title={title} />;
+  if (!auth.member) return <Blocked message="This account is not part of RyGuys yet." onSignOut={signOut} />;
+  if (roles && !roles.includes(auth.member.role)) return <Blocked message="This screen is for RyGuys staff." onSignOut={signOut} />;
+  return children;
+}
 
 /** One view-model per open surface, linked to the others through the sync channel. */
 function AppHost({ options, children }) {
