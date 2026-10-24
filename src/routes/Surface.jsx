@@ -17,7 +17,7 @@ import { LobbyBoard } from '../surfaces/lobby/LobbyBoard.jsx';
 /** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
 export function Require({ roles, title, children }) {
   const auth = useAuth();
-  if (!supabase || import.meta.env.VITE_REQUIRE_SIGNIN !== '1') return children; // sign-in turns on with VITE_REQUIRE_SIGNIN=1 once the access migration is applied
+  if (!AUTH_ON) return children; // local demo or UI review: no accounts yet
   if (auth.loading) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} />;
   if (!auth.session) return <SignIn title={title} />;
   if (!auth.member) return <Blocked message="This account is not part of RyGuys yet." onSignOut={signOut} />;
