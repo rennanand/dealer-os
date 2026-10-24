@@ -13,6 +13,14 @@ export function Overview({ vm }) {
               Monday, October 5 · 2:41 PM · 5 bays · 3 technicians
             </div>
           </div>
+          <div style={css('display:flex;gap:8px')}>
+          <div
+            onClick={vm.goCheckin}
+            style={css('padding:11px 16px;border-radius:10px;background:#fff;color:#000;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap')}
+            className="px2"
+          >
+            Check in a walk-in
+          </div>
           <div
             onClick={vm.dgoApprovals}
             style={css(
@@ -21,6 +29,7 @@ export function Overview({ vm }) {
             className="px0"
           >
             {T(vm.approvalsBtn)}
+          </div>
           </div>
         </div>
         <div style={css('display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:24px')}>

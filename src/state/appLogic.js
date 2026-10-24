@@ -220,7 +220,7 @@ export class AppLogic extends DCLogic {
     dView: 'overview', dSel: 'rennan', dReply: '', addOpen: false, salesTab: 'Inventory', estOpen: false,
     partsEta: null, orderOpen: false, partsOrdered: null, sched: SCHED0(), drag: null, schedMsg: '',
     valet: null, qc: {}, est: null, estNotes: null, repRange: '31 days', odo: null, odoDraft: '', tq: null, swap: false,
-    noVehicle: false, shopClosed: false,
+    noVehicle: false, shopClosed: false, walkins: [], ci: null,
     fu: {}, fuTab: 'Open', fleetSel: 'manti', fleetBooked: {}, fleetStmt: {}, recall: null, recallAdded: false, oil: OIL0(), oilPaid: false, odoTac: null, payFor: null
   };
 
@@ -1136,7 +1136,7 @@ export class AppLogic extends DCLogic {
     const dStatus = tq.veh !== 'rennan' ? ['Draft', 'rgba(235,235,245,.5)'] : tq.accepted ? ['Accepted · ' + tqOptR.tier + ' · ' + tq.acceptedAt, GRN] : tq.sent ? ['Sent ' + tq.sentAt + ' · waiting', YEL] : tq.requested ? ['Requested by Rennan', YEL] : ['Draft', 'rgba(235,235,245,.5)'];
     const tqSend = () => { this.setState({ tq: Object.assign({}, tq, { veh: 'rennan', sent: true, sentAt: '9:46 AM', requested: true }) }); this.notify('Tyler sent you a tire quote for Quicksilver. Three options.'); };
     const dNavDefs = [['overview', 'Overview'], ['schedule', 'Schedule'], ['appointments', 'Appointments'], ['customers', 'Customers'], ['fleet', 'Fleet'], ['approvals', 'Approvals', approvalsCount], ['followups', 'Follow-ups', FOLLOWUPS.filter(f => (!f.live || (st >= 5 && !s.inclMonitor)) && !(s.fu || {})[f.id]).length], ['inbox', 'Inbox', inboxItems.filter(x => x.section === 'Needs response').length], ['technicians', 'Technicians'], ['parts', 'Parts'], ['oil', 'Oil', TANKS.some(t => tankPct(t) < 30 && !oil.reorder) ? 1 : 0], ['tires', 'Tires', tq.requested && !tq.sent ? 1 : 0], ['loaners', 'Loaners'], ['sales', 'Sales', s.reserved ? 1 : 0], ['analytics', 'Reports'], ['settings', 'Settings']];
-    const built = ['overview', 'schedule', 'estimate', 'tires', 'approvals', 'inbox', 'sales', 'loaners', 'analytics', 'appointments', 'customers', 'customer', 'parts', 'technicians', 'settings', 'followups', 'fleet', 'oil'];
+    const built = ['overview', 'checkin', 'schedule', 'estimate', 'tires', 'approvals', 'inbox', 'sales', 'loaners', 'analytics', 'appointments', 'customers', 'customer', 'parts', 'technicians', 'settings', 'followups', 'fleet', 'oil'];
     const bay1Label = s.needInfo && st <= 7 ? 'Technician needs more information' : s.partsDelayed && st >= 5 && st <= 6 ? 'Waiting for parts' : BAY1[st];
     const POLICY = { applied: 'Your $250 reservation deposit is applied toward the purchase price of the vehicle when you complete the purchase, as specified in the final purchase agreement.', refundable: 'Your $250 reservation deposit is fully refundable for 3 days from the time it is placed. After that it is applied toward the purchase price, as specified in the final purchase agreement.', nonrefundable: 'Your $250 reservation deposit is non-refundable and holds the vehicle for 7 days. It is applied toward the purchase price when you complete the purchase, as specified in the final purchase agreement.' };
     const policyText = POLICY[s.policy] || 'Your $250 reservation deposit will be handled according to the dealership\u2019s published reservation policy. The deposit will be [applied toward the purchase price / refundable / non-refundable] as specified by the final purchase agreement.';
@@ -1157,6 +1157,7 @@ export class AppLogic extends DCLogic {
       { time: '1:30 PM', who: 'Rennan Anderson', car: 'Toyota Tacoma · Dusty', job: 'Oil change', visit: 'Wait', status: oilStatus, color: oilColor },
       { time: '3:00 PM', who: 'James Lee', car: 'Honda CR-V', job: 'Inspection', visit: 'Drop off', status: 'Arriving', color: 'rgba(235,235,245,.5)' }
     ];
+    for (const w of (s.walkins || [])) apptToday.push({ time: w.time, who: w.who, car: w.car, job: w.job + ' · walk-in', visit: w.visit, status: 'Checked in · Bay 0' + w.bay, color: ACC });
     const apptFuture = s.booked ? [{ time: s.booked.time, who: 'Rennan Anderson', car: 'Tesla Model Y', job: (s.booked.need || 'Service') + ' · booked in app', visit: s.booked.visit || 'Drop off', status: 'Booked', color: ACC, day: s.booked.day }] : [];
     const apptDay = s.apptDay || 'Today';
     const fleetAppts = FLEETS.reduce((acc, a) => acc.concat(a.units.filter(u => (s.fleetBooked || {})[u.k]).map(u => ({ time: '8:00 AM', who: a.name + ' · Unit ' + u.unit, car: u.veh, job: u.due, visit: 'Fleet drop-off', status: 'Booked · fleet', color: ACC }))), []);
@@ -1200,7 +1201,7 @@ export class AppLogic extends DCLogic {
     Object.assign(V, {
       sideNav: dNavDefs.map(n => ({ label: n[1], d: { overview: I.grid, tires: I.tire, schedule: I.clock, appointments: I.calendar, customers: I.users, approvals: I.checkc, inbox: I.inbox, technicians: I.wrench, parts: I.box, loaners: I.key, sales: I.tag, analytics: I.chart, settings: I.sliders, followups: I_FU, fleet: I_FLEET, oil: I.drop }[n[0]] || I.grid, count: n[2] ? String(n[2]) : '', go: this.dgo(n[0]), countStyle: 'font-size:11px;font-weight:500;padding:2px 7px;border-radius:7px;background:' + (n[0] === 'inbox' && n[2] ? RED : 'rgba(235,235,245,.12)') + ';color:#fff', style: 'display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;cursor:pointer;transition:background .18s ease;' + (s.dView === n[0] ? 'background:#1c1c1e;color:#fff;font-weight:500;' : 'color:rgba(235,235,245,' + (built.indexOf(n[0]) >= 0 ? '.7' : '.4') + ');') })),
       dOverview: s.dView === 'overview', dApprovals: s.dView === 'approvals', dInbox: s.dView === 'inbox', dSales: s.dView === 'sales', dLoaners: s.dView === 'loaners', dAnalytics: s.dView === 'analytics', dEmpty: built.indexOf(s.dView) < 0,
-      dAppointments: s.dView === 'appointments', dCustomers: s.dView === 'customers', dParts: s.dView === 'parts', dTechs: s.dView === 'technicians', dSettings: s.dView === 'settings',
+      dCheckin: s.dView === 'checkin', dAppointments: s.dView === 'appointments', dCustomers: s.dView === 'customers', dParts: s.dView === 'parts', dTechs: s.dView === 'technicians', dSettings: s.dView === 'settings',
       dSchedule: s.dView === 'schedule', dCustomer: s.dView === 'customer', dEstimate: s.dView === 'estimate', dTires: s.dView === 'tires', dFollowups: s.dView === 'followups', dFleet: s.dView === 'fleet', dOil: s.dView === 'oil',
       bulkPhase: oil.step === 3 ? 'fill' : oil.step >= 4 ? 'full' : 'idle',
       tanks: TANKS.map(t => { const p = tankPct(t), c = p < 30 ? RED : p < 45 ? YEL : GRN; return { grade: t[0], use: t[1], pct: p + '%', c, gal: Math.round(p / 100 * t[3]) + ' of ' + t[3] + ' gal', note: p < 30 ? (oil.reorder && t[0] === '5W-30' ? 'Ordered · Thu' : 'Below reorder') : p < 45 ? 'Order this month' : 'OK', ruler: ruler(p, c, 10) }; }),
@@ -1339,6 +1340,40 @@ export class AppLogic extends DCLogic {
       metrics: [{ l: 'Today\u2019s revenue', n: '$8,421', d: '+12% vs. avg day', c: GRN }, { l: 'Repair orders', n: '38', d: '+3', c: GRN }, { l: 'Oil changes', n: '164', d: 'this month · 31% of orders', c: 'rgba(235,235,245,.5)' }, { l: 'Average repair order', n: '$221.61', d: '−$4.10', c: 'rgba(235,235,245,.5)' }, { l: 'Approval rate', n: '84%', d: '+6 pts since in-app estimates', c: GRN }, { l: 'Average approval time', n: '11 min', d: 'was 2.4 hrs by phone', c: GRN }, { l: 'Customer satisfaction', n: '4.9', d: '212 ratings', c: 'rgba(235,235,245,.5)' }, { l: 'Loaner utilization', n: '72%', d: '+8 pts', c: GRN }],
       bars: [['Tue', 6.2], ['Wed', 7.8], ['Thu', 5.9], ['Fri', 9.1], ['Sat', 6.4], ['Sun', 0], ['Mon', 8.4]].map(bv => ({ d: bv[0], v: bv[1] ? '$' + bv[1] + 'k' : '—', style: 'width:100%;max-width:56px;border-radius:6px 6px 2px 2px;height:' + Math.max(3, Math.round(bv[1] / 9.1 * 100)) + 'px;background:' + (bv[0] === 'Mon' ? '#fff' : 'rgba(235,235,245,.22)') }))
     });
+    // ---- walk-in check-in (shop desktop)
+    const WI0 = { name: '', phone: '', plate: '', car: '', odo: '', concern: '', service: 'Multi-point inspection', bay: 3, visit: 'Wait', found: null };
+    const wi = s.wi || WI0;
+    const setWi = patch => this.setState({ wi: Object.assign({}, wi, patch) });
+    const ciCarLabel = wi.found ? wi.found.name : wi.car.trim();
+    const ciOk = wi.name.trim().length > 1 && ciCarLabel.length > 2;
+    const SERVICES = ['Oil change', 'Brake inspection', 'Tire rotation', 'Multi-point inspection', 'Check engine light', 'Tires', 'Other'];
+    const busyBays = {}; for (const b of sched) if (b.start <= 14.7 && b.start + b.dur > 14.7) busyBays[b.bay] = b.who.split(' ')[0];
+    const chipS = on => 'padding:10px 14px;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:500;transition:all .18s ease;' + (on ? 'background:#fff;color:#000;' : 'background:#1c1c1e;color:rgba(235,235,245,.75);');
+    Object.assign(V, {
+      goCheckin: () => this.setState({ dView: 'checkin', wi: null }), ciBack: this.dgo('overview'),
+      ciSub: 'Walk-in · Monday, October 5 · 2:41 PM',
+      ciName: wi.name, onCiName: e => setWi({ name: e.target.value }), ciPhone: wi.phone, onCiPhone: e => setWi({ phone: e.target.value.replace(/[^\d() -]/g, '').slice(0, 14) }),
+      ciCustomerNote: wi.phone.replace(/\D/g, '').length >= 10 ? 'They get a text with a link to follow the visit, approve work and pay. No app download needed.' : 'Add a mobile number and they can follow the visit from their phone.',
+      ciPlate: wi.plate, onCiPlate: e => setWi({ plate: e.target.value.toUpperCase().slice(0, 17), found: null }), onCiPlateKey: e => { if (e.key === 'Enter') V.ciLookup(); },
+      ciLookup: () => { const p = wi.plate.trim(); if (!p) return; const hit = p.length > 10 ? { name: '2021 Toyota Tacoma', sub: 'TRD Off-Road · VIN ···' + p.slice(-4) + ' · serviced here 11 times', ph: PH } : { name: '2020 Honda CR-V', sub: 'EX-L · UT ' + p + ' · new to RyGuys', ph: PH }; setWi({ found: hit }); },
+      ciFound: !!wi.found, ciFoundName: wi.found && wi.found.name, ciFoundSub: wi.found && wi.found.sub, ciFoundPh: wi.found && wi.found.ph,
+      ciCar: wi.car, onCiCar: e => setWi({ car: e.target.value }), ciOdo: wi.odo, onCiOdo: e => setWi({ odo: e.target.value.replace(/\D/g, '').slice(0, 7) }),
+      ciConcern: wi.concern, onCiConcern: e => setWi({ concern: e.target.value }),
+      ciServices: SERVICES.map(x => ({ label: x, pick: () => setWi({ service: x }), style: chipS(wi.service === x) })),
+      ciBays: [1, 2, 3, 4, 5].map(b => ({ label: 'Bay 0' + b, sub: busyBays[b] ? busyBays[b] + ' · in use' : BAY_TECH[b], pick: () => setWi({ bay: b }), style: chipS(wi.bay === b) + 'flex:1;text-align:center;padding:9px 6px;' + (busyBays[b] && wi.bay !== b ? 'opacity:.45;' : '') })),
+      ciVisits: ['Wait', 'Drop off', 'Loaner'].map(x => ({ label: x, pick: () => setWi({ visit: x }), style: chipS(wi.visit === x) + 'flex:1;text-align:center;' })),
+      ciFoot: ciOk ? ciCarLabel + ' · ' + wi.service + ' · Bay 0' + wi.bay + ' · ' + BAY_TECH[wi.bay].replace(/\.$/, '') + '. Goes to the technician iPad and the lobby board now.' : 'Name and vehicle are enough to check in. Everything else can be added from the work order.',
+      ciCta: 'Check in', ciCtaStyle: 'padding:13px 24px;border-radius:12px;font-size:13px;font-weight:600;transition:all .2s ease;white-space:nowrap;' + (ciOk ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),
+      ciSubmit: () => {
+        if (!ciOk) return;
+        const id = 'wi' + Date.now();
+        const job = { id, who: wi.name.trim(), car: ciCarLabel.replace(/^\d{4} /, ''), job: wi.service, bay: wi.bay, start: 14.75, dur: wi.service === 'Oil change' ? 0.75 : wi.service === 'Tire rotation' ? 0.5 : 1.5, status: 'Checked in', c: ACC };
+        this.setState({ sched: sched.concat(job), walkins: (s.walkins || []).concat({ id, who: wi.name.trim(), car: job.car, job: wi.service, bay: wi.bay, visit: wi.visit, time: '2:41 PM', concern: wi.concern }), wi: null, dView: 'schedule' });
+        this.notify(wi.name.trim().split(' ')[0] + ' checked in · Bay 0' + wi.bay + ' · ' + BAY_TECH[wi.bay]);
+      }
+    });
+    // walk-ins on the lobby board
+    V.lobbyRows = (V.lobbyRows || []).concat((s.walkins || []).map(w => ({ bay: 'Bay 0' + w.bay, who: w.who.split(' ')[0] + ' ' + (w.who.split(' ')[1] || '').slice(0, 1) + '.', car: w.car, status: 'Checked in', c: ACC, pctLabel: '0%', ruler: ruler(0, ACC, 14), eta: '—', etaSub: 'Inspection first', etaColor: 'rgba(235,235,245,.5)', bayPill: pillL(ACC) })));
     // ---- empty states (customer with no vehicle on file) and the after-hours lobby board
     if (s.noVehicle) Object.assign(V, {
       pHome: false, pHomeEmpty: view === 'home', pGarage: false, pGarageEmpty: view === 'garage', pHealth: false, pHealthEmpty: view === 'health',

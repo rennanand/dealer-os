@@ -2,6 +2,7 @@ import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
 import { Analytics } from './Analytics.jsx';
 import { Appointments } from './Appointments.jsx';
+import { Checkin } from './Checkin.jsx';
 import { Approvals } from './Approvals.jsx';
 import { Customer } from './Customer.jsx';
 import { Customers } from './Customers.jsx';
@@ -81,6 +82,7 @@ export function ShopApp({ vm }) {
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule ? <Schedule vm={vm} /> : null}
           {vm.dAppointments ? <Appointments vm={vm} /> : null}
+          {vm.dCheckin ? <Checkin vm={vm} /> : null}
           {vm.dCustomers ? <Customers vm={vm} /> : null}
           {vm.dCustomer ? <Customer vm={vm} /> : null}
           {vm.dParts ? <Parts vm={vm} /> : null}
