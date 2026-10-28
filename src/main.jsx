@@ -13,6 +13,7 @@ import './styles/global.css';
 import './styles/hover.css';
 import { CustomerRoute, TechRoute, ShopRoute, LobbyRoute, DemoRoute, Require } from './routes/Surface.jsx';
 import { STAFF } from './state/auth.js';
+import { RentalRoute } from './routes/Rental.jsx';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
       <Route path="/tech" element={<Require roles={STAFF} title="Technician sign-in"><TechRoute /></Require>} />
       <Route path="/shop" element={<Require roles={STAFF} title="Shop sign-in"><ShopRoute /></Require>} />
       <Route path="/lobby" element={<Require roles={STAFF} title="Lobby board sign-in" note="Sign in once on the TV; it stays signed in."><LobbyRoute /></Require>} />
+      <Route path="/rental/:token" element={<RentalRoute />} />
       <Route path="/demo" element={<DemoRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

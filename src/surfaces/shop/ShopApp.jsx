@@ -11,7 +11,7 @@ import { Estimate } from './Estimate.jsx';
 import { Fleet } from './Fleet.jsx';
 import { Followups } from './Followups.jsx';
 import { Inbox } from './Inbox.jsx';
-import { Loaners } from './Loaners.jsx';
+import { LoanersHost } from './LoanersHost.jsx';
 import { Oil } from './Oil.jsx';
 import { Overview } from './Overview.jsx';
 import { Parts } from './Parts.jsx';
@@ -78,7 +78,7 @@ export function ShopApp({ vm }) {
           {vm.dInbox ? <Inbox vm={vm} /> : null}
           {vm.dSales ? <Sales vm={vm} /> : null}
           {vm.dTires ? <Tires vm={vm} /> : null}
-          {vm.dLoaners ? <Loaners vm={vm} /> : null}
+          {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule ? <Schedule vm={vm} /> : null}
           {vm.dAppointments ? <Appointments vm={vm} /> : null}
