@@ -14,11 +14,14 @@ import './styles/hover.css';
 import { CustomerRoute, TechRoute, ShopRoute, LobbyRoute, DemoRoute, Require } from './routes/Surface.jsx';
 import { STAFF } from './state/auth.js';
 import { RentalRoute } from './routes/Rental.jsx';
+import { Landing } from './routes/Landing.jsx';
+import { LAUNCH } from './state/options.js';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={<Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
+      <Route path="/" element={LAUNCH ? <Landing /> : <Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
+      <Route path="/app" element={<Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
       <Route path="/tech" element={<Require roles={STAFF} title="Technician sign-in"><TechRoute /></Require>} />
       <Route path="/shop" element={<Require roles={STAFF} title="Shop sign-in"><ShopRoute /></Require>} />
       <Route path="/lobby" element={<Require roles={STAFF} title="Lobby board sign-in" note="Sign in once on the TV; it stays signed in."><LobbyRoute /></Require>} />

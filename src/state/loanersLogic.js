@@ -19,7 +19,7 @@ const DEMO_FLEET = [
 ];
 
 export class LoanersLogic extends DCLogic {
-  state = { fleet: [], rentals: [], selId: null, loading: !!supabase, err: '', copied: false, newOpen: false, draft: null, record: null, month: today().slice(0, 7), photos: {}, busy: false };
+  state = { fleet: [], rentals: [], selId: null, loading: !!supabase, err: '', copied: false, newOpen: false, draft: null, record: null, month: today().slice(0, 7), photos: {}, busy: false, fleetOpen: false, fv: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ fleet: DEMO_FLEET, rentals: [], loading: false }); return; }
@@ -92,6 +92,20 @@ export class LoanersLogic extends DCLogic {
     await supabase.from('rental_photos').insert({ rental_id: r.id, phase, path });
   }
 
+  async saveVehicle(fv) {
+    const row = { shop_id: SHOP_ID, year: Number(fv.year), make: fv.make.trim(), model: fv.model.trim(), color: fv.color.trim(), paint: fv.paint || '#b9bdc3', plate: fv.plate.trim().toUpperCase(), vin_last4: fv.vin.trim().slice(-4), powertrain: fv.ev ? 'ev' : 'gas', odometer: Number(fv.odometer || 0), level: Number(fv.level || 100), status: 'available' };
+    if (!supabase) { this.setState({ fleet: this.state.fleet.concat({ id: 'v' + Date.now(), ...row }), fleetOpen: false, fv: null }); return; }
+    this.setState({ busy: true });
+    const { error } = await supabase.from('loaner_vehicles').insert(row);
+    this.setState({ busy: false });
+    if (error) return this.setState({ err: error.message });
+    this.setState({ fleetOpen: false, fv: null });
+    this.reload();
+  }
+  async setVehicleStatus(id, status) {
+    this.setState({ fleet: this.state.fleet.map((v) => (v.id === id ? { ...v, status } : v)) });
+    if (supabase) { const { error } = await supabase.from('loaner_vehicles').update({ status }).eq('id', id); if (error) this.setState({ err: error.message }); }
+  }
   link(r) { return window.location.origin + '/rental/' + r.token; }
 
   renderVals() {
@@ -102,13 +116,14 @@ export class LoanersLogic extends DCLogic {
       loanerFleet: s.fleet.map((f) => {
         const open = s.rentals.find((x) => x.vehicle_id === f.id && ['out', 'signed', 'sent'].includes(x.status));
         const sc = f.status === 'service' ? ['In for service', DIM] : open ? [(open.status === 'out' ? 'Out · ' : 'Reserved · ') + open.customer_name, open.status === 'out' ? ACC : YEL] : ['Available', GRN];
-        return { car: vehicleName(f), color: f.color, vin: f.vin_last4, miles: f.odometer.toLocaleString('en-US'), state: sc[0], stateColor: sc[1], dot: 'width:12px;height:12px;border-radius:6px;flex:0 0 auto;background:' + f.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)' };
+        return { car: vehicleName(f), color: f.color, vin: f.vin_last4, miles: f.odometer.toLocaleString('en-US'), state: sc[0], stateColor: sc[1], canToggle: !open, toggleLabel: f.status === 'service' ? 'Back in rotation' : 'Mark in service', toggle: () => this.setVehicleStatus(f.id, f.status === 'service' ? 'available' : 'service'), retire: () => { if (!open && window.confirm('Remove ' + vehicleName(f) + ' from the loaner fleet?')) this.setVehicleStatus(f.id, 'retired'); }, dot: 'width:12px;height:12px;border-radius:6px;flex:0 0 auto;background:' + f.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)' };
       }),
       rentalList: s.rentals.filter((x) => x.status !== 'cancelled').slice(0, 12).map((x) => {
         const st = STATUS[x.status];
         return { who: x.customer_name || 'New rental', sub: x.number + ' · ' + (this.vehicleOf(x) ? this.vehicleOf(x).model : 'no vehicle') + ' · ' + dayLabel(x.start_date).slice(5) + ' → ' + dayLabel(x.end_date).slice(5), state: st[0], color: st[1], pick: () => this.setState({ selId: x.id, record: null }), style: 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(235,235,245,.07);cursor:pointer;' + (x.id === s.selId ? '' : 'opacity:.7;') };
       }),
       hasSel: !!r, newOpen: s.newOpen, busy: s.busy,
+      fleetOpen: s.fleetOpen, openFleet: () => this.setState({ fleetOpen: true, fv: { year: '', make: '', model: '', color: '', plate: '', vin: '', ev: false, odometer: '', level: '100', paint: '#b9bdc3' } }), closeFleet: () => this.setState({ fleetOpen: false, fv: null }),
       openNew: () => this.setState({ newOpen: true, draft: { name: '', phone: '', plate: '', work: '' } }), closeNew: () => this.setState({ newOpen: false, draft: null }),
     };
     const d = s.draft || { name: '', phone: '', plate: '', work: '' };
@@ -119,6 +134,15 @@ export class LoanersLogic extends DCLogic {
       dPlate: d.plate, onDPlate: (e) => setD({ plate: e.target.value.toUpperCase().slice(0, 10) }), dWork: d.work, onDWork: (e) => setD({ work: e.target.value }),
       dCta: s.busy ? 'Creating…' : 'Create rental', dCtaStyle: 'padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;white-space:nowrap;' + (dOk && !s.busy ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),
       dSubmit: () => { if (dOk && !s.busy) this.createRental(d); },
+    });
+    const fv = s.fv || {};
+    const setF = (p) => this.setState({ fv: { ...fv, ...p } });
+    const fOk = /^(19|20)\d\d$/.test(fv.year || '') && (fv.make || '').trim() && (fv.model || '').trim();
+    Object.assign(out, {
+      fv, onF: (k) => (e) => setF({ [k]: e.target.value }), setFEv: (ev) => setF({ ev }), setFPaint: (paint) => setF({ paint }),
+      fPaints: ['#e9eaeb', '#b9bdc3', '#17181b', '#7d8a80', '#5c7f8b', '#8d908f', '#a8130c', '#1f3a8a'].map((c) => ({ c, pick: () => setF({ paint: c }), style: 'width:22px;height:22px;border-radius:11px;cursor:pointer;background:' + c + ';box-shadow:' + (fv.paint === c ? '0 0 0 2px #000,0 0 0 4px #fff' : 'inset 0 0 0 1px rgba(255,255,255,.18)') })),
+      fCta: s.busy ? 'Saving…' : 'Add to fleet', fCtaStyle: 'padding:11px 16px;border-radius:10px;font-size:13px;font-weight:600;white-space:nowrap;' + (fOk && !s.busy ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),
+      fSubmit: () => { if (fOk && !s.busy) this.saveVehicle(fv); },
     });
     if (!r) return out;
 

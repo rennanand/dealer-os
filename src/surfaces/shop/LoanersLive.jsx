@@ -27,7 +27,40 @@ export function LoanersLive({ vm }) {
         <div style={css('display:grid;grid-template-columns:290px minmax(0,1fr);gap:14px;margin-top:22px;align-items:start')}>
           <div style={css('display:flex;flex-direction:column;gap:14px')}>
             <div style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px')}>
-              <div style={css('font-size:15px;font-weight:500')}>Fleet</div>
+              <div style={css('display:flex;justify-content:space-between;align-items:center')}>
+                <div style={css('font-size:15px;font-weight:500')}>Fleet</div>
+                <div onClick={vm.openFleet} style={css('font-size:12px;font-weight:500;color:rgba(235,235,245,.7);cursor:pointer')}>+ Add vehicle</div>
+              </div>
+              {vm.fleetOpen ? (
+                <div style={css('margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(235,235,245,.1)')}>
+                  <div style={css('display:grid;grid-template-columns:70px 1fr;gap:6px')}>
+                    <input placeholder="Year" inputMode="numeric" value={val(vm.fv?.year)} onChange={vm.onF?.('year')} style={css(INPUT)} />
+                    <input placeholder="Make" value={val(vm.fv?.make)} onChange={vm.onF?.('make')} style={css(INPUT)} />
+                  </div>
+                  <input placeholder="Model" value={val(vm.fv?.model)} onChange={vm.onF?.('model')} style={css(INPUT + ';margin-top:6px')} />
+                  <input placeholder="Color" value={val(vm.fv?.color)} onChange={vm.onF?.('color')} style={css(INPUT + ';margin-top:6px')} />
+                  <div style={css('display:flex;gap:6px;margin-top:8px;flex-wrap:wrap')}>
+                    {L(vm.fPaints).map((p, _i) => <div key={_i} onClick={p?.pick} style={css(p?.style)} />)}
+                  </div>
+                  <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px')}>
+                    <input placeholder="Plate" value={val(vm.fv?.plate)} onChange={vm.onF?.('plate')} style={css(INPUT + ';font-family:var(--data-font,inherit)')} />
+                    <input placeholder="VIN last 4" value={val(vm.fv?.vin)} onChange={vm.onF?.('vin')} style={css(INPUT + ';font-family:var(--data-font,inherit)')} />
+                    <input placeholder="Odometer" inputMode="numeric" value={val(vm.fv?.odometer)} onChange={vm.onF?.('odometer')} style={css(INPUT)} />
+                    <input placeholder={vm.fv?.ev ? 'Charge %' : 'Fuel %'} inputMode="numeric" value={val(vm.fv?.level)} onChange={vm.onF?.('level')} style={css(INPUT)} />
+                  </div>
+                  <div style={css('display:flex;gap:6px;margin-top:6px')}>
+                    {[['Gas', false], ['Electric', true]].map(([l, ev]) => (
+                      <div key={l} onClick={() => vm.setFEv?.(ev)} style={css('flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;' + (!!vm.fv?.ev === ev ? 'background:#fff;color:#000;' : 'background:rgba(255,255,255,.06);color:rgba(235,235,245,.75);'))}>{l}</div>
+                    ))}
+                  </div>
+                  <div style={css('display:flex;justify-content:flex-end;gap:6px;margin-top:10px')}>
+                    <div onClick={vm.closeFleet} style={css(GHOST + ';padding:9px 12px;font-size:12px')}>Cancel</div>
+                    <div onClick={vm.fSubmit} style={css(vm.fCtaStyle)}>{T(vm.fCta)}</div>
+                  </div>
+                </div>
+              ) : null}
+              {vm.err ? <div style={css('font-size:12px;color:#e0312b;margin-top:8px;line-height:1.5')}>{T(vm.err)}</div> : null}
+              {!vm.err && !vm.loading && !L(vm.loanerFleet).length ? <div style={css('font-size:12px;color:rgba(235,235,245,.45);margin-top:8px;line-height:1.5')}>No loaner vehicles yet. Add the first one above.</div> : null}
               <div style={css('margin-top:6px')}>
                 {L(vm.loanerFleet).map((l, _i) => (
                   <React.Fragment key={_i}>
@@ -52,6 +85,13 @@ export function LoanersLive({ vm }) {
                         )}
                       >
                         {T(l?.state)}
+                        {l?.canToggle ? (
+                          <div style={css('margin-top:4px;font-size:10.5px;font-weight:400;color:rgba(235,235,245,.4)')}>
+                            <span onClick={l?.toggle} style={css('cursor:pointer')}>{T(l?.toggleLabel)}</span>
+                            {' · '}
+                            <span onClick={l?.retire} style={css('cursor:pointer')}>Remove</span>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </React.Fragment>

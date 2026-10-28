@@ -8,3 +8,7 @@ export const DEFAULT_OPTIONS = {
   iconWeight: 1.6,
   loanerRate: 65,
 };
+
+/** Launch mode: which modules run on real records. 'loaners' puts Loaners first on the shop desktop
+ *  and marks the rest as preview. Set VITE_LAUNCH=loaners. */
+export const LAUNCH = import.meta.env.VITE_LAUNCH || '';

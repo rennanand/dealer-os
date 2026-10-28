@@ -128,10 +128,13 @@ export function TechRoute() {
 }
 
 /** Shop desktop: fills the browser window. */
+const ROLE_LABEL = { owner: 'Owner', advisor: 'Service advisor', tech: 'Technician', customer: 'Customer' };
 export function ShopRoute() {
   const fit = useFit(1360, 1200); // small laptops and tablets: scaled desktop layout
+  const auth = useAuth();
+  const staff = auth.member ? { name: auth.member.name || (auth.session?.user?.email || '').split('@')[0], role: ROLE_LABEL[auth.member.role] || auth.member.role } : undefined;
   return (
-    <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'desk' }}>
+    <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'desk', staff }}>
       {(vm) => (
         <div className="surface surface-shop">
           <Fitted fit={fit}>

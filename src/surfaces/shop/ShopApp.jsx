@@ -38,7 +38,12 @@ export function ShopApp({ vm }) {
           </div>
           {L(vm.sideNav).map((n, _i) => (
             <React.Fragment key={_i}>
-              <div onClick={n?.go} style={css(n?.style)}>
+              {n?.divider ? (
+                <div style={css('font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(235,235,245,.3);padding:18px 10px 6px')}>
+                  Preview · sample data
+                </div>
+              ) : null}
+              <div onClick={n?.go} style={css(n?.style + (n?.preview ? ';opacity:.6' : ''))}>
                 <div style={css('display:flex;opacity:.8')}>
                   <svg viewBox="0 0 24 24" style={css('width:16px;height:16px;display:block;flex:0 0 auto')}>
                     <path
@@ -66,8 +71,8 @@ export function ShopApp({ vm }) {
               TL
             </div>
             <div>
-              <div style={css('font-size:12.5px;font-weight:500')}>Tyler L.</div>
-              <div style={css('font-size:11px;color:rgba(235,235,245,.4)')}>Service advisor</div>
+              <div style={css('font-size:12.5px;font-weight:500')}>{T(vm.staffName)}</div>
+              <div style={css('font-size:11px;color:rgba(235,235,245,.4)')}>{T(vm.staffRole)}</div>
             </div>
           </div>
         </div>
