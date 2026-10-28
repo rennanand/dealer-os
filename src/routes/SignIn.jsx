@@ -1,6 +1,10 @@
 import React from 'react';
 import { css } from '../runtime/tpl.js';
-import { sendCode, verifyCode } from '../state/auth.js';
+import { sendCode, verifyCode, signInPassword } from '../state/auth.js';
+
+// Staff sign in with a password for the pilot (no email provider needed). Email codes stay
+// available for customers once a mail provider is configured: VITE_SIGNIN=code.
+const MODE = import.meta.env.VITE_SIGNIN === 'code' ? 'code' : 'password';
 
 const FONT = "font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
 const INPUT = 'width:100%;background:#141416;border:0;outline:0;border-radius:12px;padding:16px 14px;font-size:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);' + FONT;
@@ -10,6 +14,7 @@ const btn = (ok) => 'text-align:center;padding:15px 0;border-radius:12px;font-si
 export function SignIn({ title = 'Sign in', note }) {
   const [email, setEmail] = React.useState('');
   const [code, setCode] = React.useState('');
+  const [password, setPassword] = React.useState('');
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState('');
@@ -18,12 +23,33 @@ export function SignIn({ title = 'Sign in', note }) {
     if (busy) return;
     setErr('');
     setBusy(true);
-    const { error } = step === 0 ? await sendCode(email) : await verifyCode(email, code);
+    const { error } = MODE === 'password' ? await signInPassword(email, password) : step === 0 ? await sendCode(email) : await verifyCode(email, code);
     setBusy(false);
-    if (error) return setErr(error.message);
-    if (step === 0) setStep(1);
+    if (error) return setErr(error.message === 'Invalid login credentials' ? 'That email and password do not match.' : error.message);
+    if (MODE !== 'password' && step === 0) setStep(1);
   };
-  const ok = step === 0 ? emailOk : code.length === 6;
+  const ok = MODE === 'password' ? emailOk && password.length >= 8 : step === 0 ? emailOk : code.length === 6;
+  if (MODE === 'password') {
+    return (
+      <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
+        <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px 34px')}>
+          <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
+            <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
+              <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
+            </div>
+            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{title}</div>
+            <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{note || 'Use the email and password the shop gave you.'}</div>
+          </div>
+          <div style={css('padding-top:18px')}>
+            <input type="email" inputMode="email" autoComplete="username" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} style={css(INPUT)} autoFocus />
+            <input type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ok && go()} style={css(INPUT + ';margin-top:8px')} />
+            {err ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:12px')}>{err}</div> : null}
+            <div onClick={() => ok && go()} style={css('margin-top:14px;' + btn(ok && !busy))}>{busy ? 'One moment…' : 'Sign in'}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
       <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px 34px')}>
