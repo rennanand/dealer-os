@@ -47,7 +47,7 @@ export function CustomerLiveRoute({ auth }) {
     );
   }
   return (
-    <LogicHost Logic={CustomerLive} options={{ ...DEFAULT_OPTIONS, profile, member: auth.member, signOut }}>
+    <LogicHost Logic={CustomerLive} options={{ ...DEFAULT_OPTIONS, profile, member: auth.member, signOut, userId: auth.session.user.id }}>
       {(vm) => (
         <div className="surface surface-customer">
           <div className="phone"><CustomerApp vm={vm} /></div>

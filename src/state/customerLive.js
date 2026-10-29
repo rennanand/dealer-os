@@ -4,6 +4,7 @@
 import { AppLogic, ICONS as I } from './appLogic.js';
 import { supabase, SUPABASE_URL } from './supabase.js';
 import { dayLabel } from './agreement.js';
+import { setupPush } from './push.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
@@ -42,6 +43,7 @@ export class CustomerLive extends AppLogic {
     super.componentDidMount();
     if (!supabase) window.__revyn = this; // review builds only: lets a script stage a visit
     this.loadLive();
+    setupPush(this.props.userId, (d) => { this.loadLive(); if (d && d.view) this.setState({ view: d.view }); });
     this._poll = setInterval(() => this.loadLive(), 15000);
   }
   componentDidUpdate(prev) {
