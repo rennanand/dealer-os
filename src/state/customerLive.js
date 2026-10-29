@@ -260,13 +260,34 @@ export class CustomerLive extends AppLogic {
       hd: hd ? { ...hd, totalLabel: hd.total ? fmtC(hd.total * 100) + ' in approved work' : 'Paid at the counter', hasPhotos: hd.photos.length > 0, hasParts: false, hasRecs: hd.recs.length > 0 } : null,
     });
 
+    // ---- health: from inspection findings on record for the selected vehicle; never from sensors
+    const myVeh = live.vehicles[vIdx];
+    const vehAppts = myVeh ? live.appointments.filter((a) => a.vehicle_id === myVeh.id) : [];
+    const allF = vehAppts.flatMap((a) => (a.findings || []).map((f) => ({ ...f, when: a.done_at || a.starts_at })));
+    const CATS = [['Tires', /tire|tread|rotat|wheel/i, I.tire], ['Brakes', /brake|pad|rotor/i, I.brake], ['Battery', /batter|alternat|electr/i, I.battery], ['Fluids', /oil|fluid|coolant|transmission|brake fluid/i, I.drop], ['Filters', /filter/i, I.filter], ['Alignment', /align|suspens|shock|strut/i, I.align]];
+    const lastDone = vehAppts.filter((a) => a.status === 'done').sort((x, y) => (y.done_at || y.starts_at).localeCompare(x.done_at || x.starts_at))[0];
+    const healthRows = CATS.map(([name, re, d]) => {
+      const fs = allF.filter((f) => re.test(f.name + ' ' + (f.plain || ''))).sort((x, y) => y.when.localeCompare(x.when));
+      const open = fs.find((f) => f.status === 'pending' || f.status === 'declined'), fixed = fs.find((f) => f.status === 'done' || f.status === 'approved');
+      const status = open ? (open.tier === 'monitor' ? 'Monitor' : 'Service recommended') : fixed ? 'Serviced ' + new Date(fixed.when).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : lastDone ? 'No concerns noted' : 'Not measured yet';
+      const c = open ? (open.tier === 'monitor' ? YEL : open.tier === 'now' ? ACC : YEL) : fixed ? GRN : lastDone ? GRN : 'rgba(235,235,245,.3)';
+      return { name, status, dot: 'width:8px;height:8px;border-radius:4px;flex:0 0 auto;background:' + c, d, go: open ? this.go(open.status === 'pending' ? 'findings' : 'history') : fixed ? this.go('history') : goBook };
+    });
+    const attention = healthRows.filter((h) => /recommended|Monitor/.test(h.status)).length;
+    const callouts = allF.filter((f) => f.meas).slice(0, 4).map((f, i) => ({ k: f.name, v: (f.meas_label ? f.meas_label + ' ' : '') + f.meas, c: f.status === 'done' || f.status === 'approved' ? GRN : f.tier === 'now' ? ACC : YEL, style: 'position:absolute;top:' + (i < 2 ? 0 : 170) + 'px;' + (i % 2 === 0 ? 'left:22px;text-align:left' : 'right:22px;text-align:right') + ';padding-bottom:7px;border-bottom:1px solid ' + (f.status === 'done' || f.status === 'approved' ? GRN : f.tier === 'now' ? ACC : YEL) + ';pointer-events:none' }));
+    Object.assign(V, {
+      pHealth: view === 'health' && !!myVeh, pHealthEmpty: view === 'health' && !myVeh, pHealthDetail: false,
+      health: healthRows, healthCallouts: callouts, healthHeadline: !lastDone ? 'No inspection on record yet.' : attention ? (attention === 1 ? 'One thing to keep an eye on.' : 'A couple of things to keep an eye on.') : 'Everything looked good last time.',
+      healthFoot: lastDone ? 'From the inspection at your ' + new Date(lastDone.done_at || lastDone.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' visit' + (myVeh.odometer ? ' · ' + myVeh.odometer.toLocaleString('en-US') + ' mi entered by you' : '') + '. The app is not connected to the car.' : 'Book a visit and the technician\u2019s inspection fills this in. The app is not connected to the car.',
+    });
+
     // ---- pages the pilot does not run yet fall back to their empty states; account stays
     if (!live.loaded) Object.assign(V, { pHome: false, pHomeEmpty: false });
     else if (!cars.length) Object.assign(V, { pHome: false, pHomeEmpty: view === 'home', initials, addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }), goBook, heroStyle: 'position:absolute;left:0;right:0;z-index:4;top:0;height:240px;opacity:0;pointer-events:none' });
     else Object.assign(V, { pHome: view === 'home', pHomeEmpty: false });
     Object.assign(V, {
       pGarage: false, pGarageEmpty: view === 'garage' && !cars.length, pGarageLive: view === 'garage' && !!cars.length,
-      pHealth: false, pHealthEmpty: view === 'health', pMessages: view === 'messages', pMessagesEmpty: false,
+      pMessages: view === 'messages', pMessagesEmpty: false,
       pAddVehicle: view === 'addVehicle', addVeh: s.addVeh, setAddVeh: (p) => this.setState({ addVeh: { ...s.addVeh, ...p } }), saveAddVeh: () => s.addVeh && (s.addVeh.make || s.addVeh.model) && this.addVehicle(s.addVeh), cancelAddVeh: () => this.setState({ addVeh: null, view: s.addVeh && s.addVeh.back === 'book' ? 'book' : 'home' }),
       addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }),
       startMessage: openUrl(shop.phone ? 'sms:' + shop.phone : ''),

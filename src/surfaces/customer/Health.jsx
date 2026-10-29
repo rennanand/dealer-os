@@ -93,7 +93,7 @@ export function Health({ vm }) {
           ))}
         </div>
         <div style={css('padding:12px 22px 0;font-size:11px;line-height:1.6;color:rgba(235,235,245,.32)')}>
-          Measured by hand at your Oct 5 visit · 52,431 mi. The app is not connected to the car.
+          {vm.healthFoot || 'Measured by hand at your Oct 5 visit · 52,431 mi. The app is not connected to the car.'}
         </div>
       </div>
     </>
