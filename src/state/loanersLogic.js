@@ -183,7 +183,7 @@ export class LoanersLogic extends DCLogic {
       rSigned: !!r.signature_svg, sigPath: r.signature_svg || '', rSigBox: '0 0 300 120',
       rLink: this.link(r), copied: s.copied,
       copyLink: () => { navigator.clipboard.writeText(this.link(r)).then(() => { this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1800); }); },
-      smsHref: 'sms:' + (r.customer_phone || '').replace(/\D/g, '') + '?&body=' + encodeURIComponent('Hi ' + (r.customer_name.split(' ')[0] || '') + ', your RyGuys loaner agreement is ready to review and sign: ' + this.link(r)),
+      smsHref: 'sms:' + (r.customer_phone || '').replace(/\D/g, '') + '?&body=' + encodeURIComponent('Hi ' + (r.customer_name.split(' ')[0] || '') + ', your loaner agreement from RyGuys Tire & Auto is ready to review and sign: ' + this.link(r)),
       rAction: r.status === 'returned' ? { t: 'Returned ' + fmtTime(r.returned_at), s: (r.in_odometer - r.out_odometer) + ' mi · ' + r.in_level + '% at return' + (r.shop_pays ? ' · no charge' : ' · ' + fmt0(total + r.extra_cents / 100) + ' due'), cta: '' }
         : r.status === 'out' ? { t: 'Out since ' + fmtTime(r.out_at), s: 'Due back ' + dayLabel(r.end_date) + ' · ' + r.out_odometer.toLocaleString('en-US') + ' mi · ' + r.out_level + '% at handoff', cta: 'Record return', go: () => this.setState({ record: { phase: 'in', odometer: '', level: '' } }) }
         : r.status === 'signed' && !v ? { t: 'Signed, but no vehicle attached', s: 'Attach a vehicle in a new rental; this one cannot be handed off.', cta: '' }
