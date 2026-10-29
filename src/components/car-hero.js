@@ -59,6 +59,7 @@
       this.car = await this.loadModel(THREE);
       if (!this.alive) return;
       scene.add(this.car);
+      this.addLampGlow(THREE, scene);
       this.setPaint(); if (this.paintTarget) this.mats.paint.color.copy(this.paintTarget);
       this.setView();
       this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(this);
@@ -67,23 +68,37 @@
       this.started = true;
       this.loop();
     }
+    addLampGlow(THREE, scene) {
+      // Head and tail lamps glow: a tight point light at each lamp mesh, in the lamp's color.
+      const groups = { headlamp: [], taillamp: [] };
+      this.car.updateMatrixWorld(true);
+      this.car.traverse(o => { if (o.isMesh && o.material && groups[o.material.name]) groups[o.material.name].push(o); });
+      Object.keys(groups).forEach(k => {
+        groups[k].slice(0, 4).forEach(m => {
+          const box = new THREE.Box3().setFromObject(m); if (box.isEmpty()) return;
+          const c = box.getCenter(new THREE.Vector3());
+          const l = new THREE.PointLight(k === 'headlamp' ? 0xffc14a : 0xff2010, k === 'headlamp' ? 1.6 : 1.4, 1.6, 2);
+          l.position.copy(c); scene.add(l);
+        });
+      });
+    }
     makeEnv(THREE, renderer) {
       const s = new THREE.Scene();
       const panel = (w, h, x, y, z, i, rx, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(i) })); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0); s.add(m); };
       s.add(new THREE.Mesh(new THREE.SphereGeometry(30, 8, 8), new THREE.MeshBasicMaterial({ color: 0x0a0b0d, side: THREE.BackSide })));
-      panel(14, 6, 0, 9, 0, 3.2, Math.PI / 2); panel(10, 4, -9, 3, 0, 1.1, 0, Math.PI / 2); panel(10, 4, 9, 3, 0, 0.6, 0, -Math.PI / 2); panel(16, 3, 0, 2, -12, 0.4);
+      panel(18, 3, 0, 9, 0, 4.2, Math.PI / 2); panel(18, 1.2, 0, 9, 4.5, 2.4, Math.PI / 2); panel(10, 4, -9, 3, 0, 1.3, 0, Math.PI / 2); panel(10, 4, 9, 3, 0, 0.8, 0, -Math.PI / 2); panel(16, 3, 0, 2, -12, 0.5); panel(16, 2, 0, 1.5, 12, 0.35, 0, Math.PI);
       const pm = new THREE.PMREMGenerator(renderer); const tex = pm.fromScene(s, 0.04).texture; pm.dispose(); return tex;
     }
     makeMaterials(THREE) {
       const M = (name, c, rough, metal, extra) => { const m = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: rough, metalness: metal }, extra || {})); m.name = name; return m; };
       return {
-        paint: M('paint', 0xb9bdc3, 0.28, 0.75, { envMapIntensity: 1.4 }),
+        paint: (() => { const m = new THREE.MeshPhysicalMaterial({ color: 0xb9bdc3, roughness: 0.18, metalness: 0.88, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 2.0 }); m.name = 'paint'; return m; })(),
         glass: M('glass', PALETTE.glass, 0.1, 0.9, { transparent: true, opacity: 0.92, envMapIntensity: 1.8 }),
         chrome: M('chrome', PALETTE.chrome, 0.12, 1), satin_black: M('satin_black', PALETTE.satin_black, 0.6, 0.3),
         rubber: M('rubber', PALETTE.rubber, 0.95, 0), underbody: M('underbody', PALETTE.underbody, 0.9, 0.1), interior: M('interior', PALETTE.interior, 0.9, 0),
-        headlamp: M('headlamp', PALETTE.headlamp, 0.2, 0.2, { emissive: 0xdfe6ff, emissiveIntensity: 0.9 }),
+        headlamp: M('headlamp', 0xfff1c4, 0.15, 0.2, { emissive: 0xffc14a, emissiveIntensity: 2.4 }),
         amber: M('amber', PALETTE.amber, 0.3, 0.2, { emissive: 0xd9842a, emissiveIntensity: 0.5 }),
-        taillamp: M('taillamp', PALETTE.taillamp, 0.3, 0.2, { emissive: 0xff2a1a, emissiveIntensity: 0.9 })
+        taillamp: M('taillamp', 0xff3b2a, 0.25, 0.2, { emissive: 0xff1608, emissiveIntensity: 3.2 })
       };
     }
     async loadModel(THREE) {

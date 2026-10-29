@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r, lf, fi, ph, te, sh, ms, tq] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -58,7 +58,8 @@ export class ShopLogic extends DCLogic {
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, messages: ms.data || [], quotes: tq.data || [], loading: false, err: '' });
+    const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), loading: false, err: '' });
   }
 
   // ---- customers ----
