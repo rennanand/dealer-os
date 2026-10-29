@@ -30,11 +30,11 @@ export function Account({ vm }) {
               'width:54px;height:54px;border-radius:27px;background:#1c1c1e;display:flex;align-items:center;justify-content:center;font-size:15px;letter-spacing:.5px',
             )}
           >
-            RA
+            {vm.initials || 'RA'}
           </div>
           <div>
-            <div style={css('font-size:21px;font-weight:500')}>Rennan Anderson</div>
-            <div style={css('font-size:12px;color:rgba(235,235,245,.42);margin-top:5px')}>Member since 2024 · Manti, UT</div>
+            <div style={css('font-size:21px;font-weight:500')}>{vm.accountName || 'Rennan Anderson'}</div>
+            <div style={css('font-size:12px;color:rgba(235,235,245,.42);margin-top:5px')}>{vm.accountSub || 'Member since 2024 · Manti, UT'}</div>
           </div>
         </div>
         <div style={css('margin:22px 22px 0;border-top:1px solid rgba(235,235,245,.09)')}>
@@ -76,9 +76,9 @@ export function Account({ vm }) {
           </div>
         </div>
         <div style={css('font-size:11px;line-height:1.6;color:rgba(235,235,245,.28);text-align:center;margin-top:14px')}>
-          v4.0 · 145 S Main St, Manti UT
+          {vm.accountFoot1 || 'v4.0 · 145 S Main St, Manti UT'}
           <br />
-          Mon–Fri 8–6 · Sat 9–2
+          {vm.accountFoot2 || 'Mon–Fri 8–6 · Sat 9–2'}
         </div>
       </div>
     </>

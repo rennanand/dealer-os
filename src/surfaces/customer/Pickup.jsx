@@ -34,21 +34,21 @@ export function Pickup({ vm }) {
               'position:absolute;top:8px;left:18px;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#30d158;pointer-events:none',
             )}
           >
-            Ready for pickup · Bay 4
+            {vm.pickupBayLabel || 'Ready for pickup · Bay 4'}
           </div>
         </div>
         <div style={css('margin:14px 22px 0;border-top:1px solid rgba(235,235,245,.09)')}>
           <div style={css('padding:13px 0;border-bottom:1px solid rgba(235,235,245,.07);display:flex;justify-content:space-between')}>
             <span style={css('font-size:13px;color:rgba(235,235,245,.6)')}>Location</span>
-            <span style={css('font-size:13px')}>Bay 4</span>
+            <span style={css('font-size:13px')}>{vm.pickupBay || 'Bay 4'}</span>
           </div>
           <div style={css('padding:13px 0;border-bottom:1px solid rgba(235,235,245,.07);display:flex;justify-content:space-between')}>
             <span style={css('font-size:13px;color:rgba(235,235,245,.6)')}>Hours today</span>
-            <span style={css('font-size:13px')}>Until 6:00 PM</span>
+            <span style={css('font-size:13px')}>{vm.pickupHours || 'Until 6:00 PM'}</span>
           </div>
           <div style={css('padding:13px 0;display:flex;justify-content:space-between')}>
             <span style={css('font-size:13px;color:rgba(235,235,245,.6)')}>Payment</span>
-            <span style={css('font-size:13px;color:#30d158')}>Paid · $545.23</span>
+            <span style={css('font-size:13px;color:#30d158')}>{vm.pickupPay || 'Paid · $545.23'}</span>
           </div>
         </div>
         {vm.pickupLoaner ? (
@@ -115,7 +115,7 @@ export function Pickup({ vm }) {
               >
                 <div style={css('width:10px;height:10px;border-radius:5px;background:#e0312b;box-shadow:0 0 0 4px rgba(224,49,43,.22)')} />
                 <div style={css('flex:1;font-size:13px;line-height:1.4')}>
-                  The team is bringing Quicksilver around. They'll release it from the bay in a moment.
+                  {vm.pickupHereSub || "The team is bringing Quicksilver around. They'll release it from the bay in a moment."}
                 </div>
               </div>
             </>

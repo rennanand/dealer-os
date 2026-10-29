@@ -59,7 +59,7 @@ export function Rate({ vm }) {
             <div style={css('padding:6px 22px 0')}>
               <div style={css('font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15')}>How did we do?</div>
               <div style={css('font-size:13px;line-height:1.5;color:rgba(235,235,245,.5);margin-top:8px')}>
-                Front brake service · Marcus T. · October 5
+                {vm.rateSub || 'Front brake service · Marcus T. · October 5'}
               </div>
             </div>
             <div style={css('padding:30px 22px 0;display:flex;justify-content:center;gap:12px')}>
@@ -95,6 +95,7 @@ export function Rate({ vm }) {
                 </React.Fragment>
               ))}
             </div>
+            {vm.tips && vm.tips.length ? (<>
             <div style={css('padding:28px 22px 0;display:flex;justify-content:space-between;align-items:baseline')}>
               <div
                 style={css(
@@ -114,11 +115,12 @@ export function Rate({ vm }) {
                 </React.Fragment>
               ))}
             </div>
+            </>) : null}
             <div style={css('padding:22px 22px 0')}>
               <textarea
                 value={val(vm.rateNote)}
                 onChange={vm.onRateNote}
-                placeholder={'Anything else? Marcus reads these.'}
+                placeholder={vm.ratePlaceholder || 'Anything else? Marcus reads these.'}
                 style={css(
                   'width:100%;min-height:88px;resize:none;background:#1c1c1e;border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
                 )}

@@ -200,7 +200,7 @@ export class ShopLogic extends DCLogic {
       const a = todays.find((x) => x.bay === bay && (x.status === 'arrived' || x.status === 'in_progress')) || todays.find((x) => x.bay === bay && x.status === 'done');
       const c = a && this.custOf(a.customer_id), v = a && this.vehOf(a.vehicle_id), st = a && STATUS[a.status];
       const pct = a ? PCT[a.status] || 0 : 0;
-      return { bay: 'Bay 0' + bay, open: !a, car: a ? vehName(v) || 'Vehicle' : 'Open', who: a ? (c ? c.name : 'Walk-in') + ' · ' + (a.job || 'Service') : 'Nothing assigned', status: a ? st[0] : '', color: a ? st[1] : 'rgba(235,235,245,.3)', pctLabel: a ? pct + '%' : '—', eta: a ? fmtTime(a.starts_at) : '',
+      return { bay: 'Bay 0' + bay, open: !a, car: a ? vehName(v) || 'Vehicle' : 'Open', who: a ? (c ? c.name : 'Walk-in') + ' · ' + (a.job || 'Service') : 'Nothing assigned', status: a ? st[0] + (a.status === 'done' && a.pickup === 'here' ? ' · here' : a.status === 'done' && a.pickup === 'on_way' ? ' · on the way' : '') : '', color: a ? st[1] : 'rgba(235,235,245,.3)', pctLabel: a ? pct + '%' : '—', eta: a ? fmtTime(a.starts_at) : '',
         dot: 'width:7px;height:7px;border-radius:4px;background:' + (a ? st[1] : 'rgba(235,235,245,.18)'), pill: pill(a ? st[1] : DIM), go: a ? () => set({ selId: a.id, day: today() }) : null,
         ruler: { base: 'height:2px;background:rgba(235,235,245,.1);border-radius:1px', fill: 'height:2px;border-radius:1px;width:' + pct + '%;background:' + (a ? st[1] : 'transparent') },
         style: 'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px;min-height:170px;' + (a ? 'cursor:pointer' : 'opacity:.6') };
@@ -266,7 +266,7 @@ export class ShopLogic extends DCLogic {
       const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), pend = s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending');
       const st = pend ? ['Waiting for approval', YEL] : STATUS[a.status], pct = pend ? 35 : LPCT[a.status] || 0, t = s.techs.find((x) => x.id === a.tech_id);
       const who = c ? c.name.split(' ')[0] + (c.name.split(' ')[1] ? ' ' + c.name.split(' ')[1][0] + '.' : '') : 'Walk-in';
-      return { bay: 'Bay 0' + bay, who, car: v ? [v.make, v.model].filter(Boolean).join(' ') : 'Vehicle', status: st[0], c: st[1], pctLabel: pct + '%', ruler: RULER(pct, st[1], 14), eta: a.status === 'done' ? 'Ready' : '—', etaSub: a.status === 'done' ? 'Pick up at the desk' : t ? t.name.split(' ')[0] + ' on it' : (a.job || 'Service'), etaColor: a.status === 'done' ? GRN : '#fff', bayPill: PILL_L(st[1]) };
+      return { bay: 'Bay 0' + bay, who, car: v ? [v.make, v.model].filter(Boolean).join(' ') : 'Vehicle', status: st[0], c: st[1], pctLabel: pct + '%', ruler: RULER(pct, st[1], 14), eta: a.status === 'done' ? (a.pickup === 'here' ? 'Here' : 'Ready') : '—', etaSub: a.status === 'done' ? (a.pickup === 'here' ? 'Guest is at the desk' : a.pickup === 'on_way' ? 'Guest on the way' : 'Pick up at the desk') : t ? t.name.split(' ')[0] + ' on it' : (a.job || 'Service'), etaColor: a.status === 'done' ? GRN : '#fff', bayPill: PILL_L(st[1]) };
     });
     const live = todays.find((x) => x.status === 'in_progress' && x.bay) || null;
     const liveC = live && this.custOf(live.customer_id);
@@ -408,7 +408,7 @@ export class ShopLogic extends DCLogic {
       apptSub: dayAppts.length ? dayAppts.length + ' booked · ' + dayAppts.filter((a) => a.status === 'done').length + ' complete' : 'Nothing booked for ' + DAY_LABEL(s.day).toLowerCase(),
       apptDays: days.map((d) => ({ label: DAY_LABEL(d), pick: () => set({ day: d }), style: chip(d === s.day) })),
       dayLabel: DAY_LABEL(s.day), day: s.day, setDay: (d) => set({ day: d }),
-      appts: dayAppts.map((a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), st = STATUS[a.status] || STATUS.booked; return { id: a.id, time: fmtTime(a.starts_at), who: c ? c.name : 'Walk-in', car: vehName(v) || 'Vehicle not listed', job: a.job || 'Service', visit: VISIT[a.visit] || '', status: st[0] + (a.bay ? ' · Bay ' + a.bay : ''), color: st[1], open: () => set({ selId: a.id }), style: row(a.id === selId) }; }),
+      appts: dayAppts.map((a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), st = STATUS[a.status] || STATUS.booked; return { id: a.id, time: fmtTime(a.starts_at), who: c ? c.name : 'Walk-in', car: vehName(v) || 'Vehicle not listed', job: a.job || 'Service', visit: VISIT[a.visit] || '', status: st[0] + (a.bay ? ' · Bay ' + a.bay : '') + (a.status === 'done' && a.pickup === 'here' ? ' · here now' : a.status === 'done' && a.pickup === 'on_way' ? ' · on the way' : ''), color: st[1], open: () => set({ selId: a.id }), style: row(a.id === selId) }; }),
       noAppts: !s.loading && !dayAppts.length,
       sel: sel ? { id: sel.id, time: fmtTime(sel.starts_at), who: selCust ? selCust.name : 'Walk-in', phone: selCust ? fmtPhone(selCust.phone) : '', car: vehName(selVeh) || 'Vehicle not listed', plate: selVeh ? selVeh.plate : '', job: sel.job || 'Service', visit: VISIT[sel.visit], status: STATUS[sel.status][0], color: STATUS[sel.status][1], notes: sel.notes || '', bay: sel.bay || '',
         next: NEXT[sel.status] ? { label: NEXT_LABEL[sel.status], go: () => this.setAppt(sel.id, { status: NEXT[sel.status] }) } : null,

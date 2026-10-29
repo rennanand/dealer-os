@@ -30,6 +30,7 @@ const sceneFor = (job, status) => {
   if (/batter|electr|start/.test(j)) return { scene: 'battery', phase: ['rest', 'load', 'pass'][i] };
   return { scene: 'brake', phase: ['worn', 'remove', 'new'][i] };
 };
+const unreadCount = (live) => (live.messages || []).filter((m) => m.sender === 'advisor' && !m.read).length;
 const DEMO_SHOP = { shop_id: 'ryguys', name: 'RyGuys Tire & Auto Sales', address: '204 N Main St, Manti, UT 84642', city: 'Manti, UT', phone: '4358354869', hours: 'Mon, Tue, Thu, Fri · 8:00 AM – 5:30 PM', lat: 39.2686964, lng: -111.636588, open_days: [1, 2, 4, 5], open_from: '08:00', open_to: '17:30' };
 const slotsFor = (shop) => { const [fh, fm] = (shop.open_from || '08:00').split(':').map(Number), [th, tm] = (shop.open_to || '17:00').split(':').map(Number); const out = []; for (let t = fh * 60 + fm; t <= th * 60 + tm - 60; t += 30) out.push(t); return out; };
 const minLabel = (m) => { const h = Math.floor(m / 60), mm = m % 60; return ((h + 11) % 12) + 1 + ':' + (mm < 10 ? '0' : '') + mm + (h >= 12 ? ' PM' : ' AM'); };
@@ -91,6 +92,18 @@ export class CustomerLive extends AppLogic {
     this.setState({ live: { ...live, messages: live.messages.concat(local) }, draft: '' });
     if (supabase) { const { error } = await supabase.rpc('send_my_message', { p_text: t }); if (error) this.setState({ toast: error.message }); else this.loadLive(); }
   }
+  async setPickup(id, state) {
+    const live = this.state.live;
+    this.setState({ live: { ...live, appointments: live.appointments.map((a) => (a.id === id ? { ...a, pickup: state } : a)) }, pickup: state === 'on_way' ? 1 : 2 });
+    if (supabase) await supabase.rpc('set_my_pickup', { p_id: id, p_state: state });
+  }
+  async rate(id, rt) {
+    const live = this.state.live;
+    this.setState({ live: { ...live, appointments: live.appointments.map((a) => (a.id === id ? { ...a, rating: rt.stars } : a)) }, rating: { ...rt, sent: true }, toast: 'Thanks' + (this.first() ? ', ' + this.first() : '') + '. Your rating went to the team.' });
+    clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: '' }), 3400);
+    if (supabase) await supabase.rpc('rate_my_visit', { p_id: id, p_stars: rt.stars, p_tags: rt.tags || [], p_note: rt.note || '' });
+  }
+  first() { const n = (this.state.live.profile && this.state.live.profile.name) || (this.props.member && this.props.member.name) || ''; return n.split(' ')[0] || ''; }
   async addVehicle(d) {
     if (!supabase) { const live = this.state.live; this.setState({ live: { ...live, vehicles: live.vehicles.concat({ id: 'v' + Date.now(), ...d }) }, noVehicle: false, addVeh: null, view: 'home' }); return; }
     const { error } = await supabase.rpc('add_my_vehicle', { p_year: parseInt(d.year, 10) || null, p_make: d.make, p_model: d.model, p_plate: d.plate || '', p_odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null });
@@ -144,7 +157,8 @@ export class CustomerLive extends AppLogic {
     else if (act.status === 'arrived') { kick((act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Checked in', ACC, act.job || 'Service', 'Checked in at ' + fmtT(act.arrived_at || act.starts_at) + '. We will let you know when work begins.', 'View Service', goService); V.homeRings = true; }
     else if (act.status === 'in_progress' && (act.findings || []).some((f) => f.status === 'pending')) { kick('Estimate ready', YEL, 'We found ' + (act.findings || []).filter((f) => f.status === 'pending').length + ' things to review.', 'Your approval is needed before any extra work starts.', 'Review estimate', this.go('findings')); V.homeRings = true; }
     else if (act.status === 'in_progress') { kick((act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'In service', ACC, act.job || 'Service', (act.tech ? act.tech + ' started at ' : 'Work started at ') + fmtT(act.started_at) + '. We text you the moment it is ready.', 'View Service', goService); V.homeRings = true; }
-    else kick('Ready for pickup', GRN, (actVeh ? actVeh.model || 'Your car' : 'Your car') + ' is ready.', (act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Pay at the counter when you arrive.', 'Directions', openUrl(maps));
+    else if (act.pickup === 'here' || act.pickup === 'picked_up') kick(act.rating ? 'Thanks for visiting' : 'Picked up', GRN, act.rating ? 'See you next time.' : 'How did we do?', act.rating ? 'Your rating went to the team.' : 'Rate your visit; it goes straight to the crew.', act.rating ? 'View record' : 'Rate your visit', act.rating ? this.go('history') : () => this.setState({ view: 'rate', rating: { stars: 0, tags: [], tip: 0, note: '', sent: false } }));
+    else kick('Ready for pickup', GRN, (actVeh ? actVeh.model || 'Your car' : 'Your car') + ' is ready.', (act.bay ? 'Bay 0' + act.bay + ' · ' : '') + (act.pickup === 'on_way' ? 'The desk knows you are on your way.' : 'Pay at the counter when you arrive.'), act.pickup === 'on_way' ? 'I\u2019m here' : 'I\u2019m on my way', () => this.setState({ view: 'pickup' }));
     const sc = act ? sceneFor(act.job, act.status) : { scene: '', phase: '' };
     if (act && (act.status === 'arrived' || act.status === 'in_progress')) { V.homeScene = sc.scene; V.homeScenePhase = sc.phase; }
 
@@ -238,6 +252,30 @@ export class CustomerLive extends AppLogic {
         setB({ step: b.step + 1, err: '' });
       },
       bookCar: veh ? vehName(veh) : '', bookDoneTitle: 'You are booked.', bookDoneSub: 'We text you the day before. Your visit is on the home screen whenever you want to check on it.',
+    });
+
+    // ---- pickup and rating for the finished visit
+    const doneAct = act && act.status === 'done' ? act : null;
+    const pk = doneAct ? (doneAct.pickup === 'here' || doneAct.pickup === 'picked_up' ? 2 : doneAct.pickup === 'on_way' ? 1 : 0) : 0;
+    const rt = s.rating || { stars: 0, tags: [], tip: 0, note: '', sent: false };
+    const setRt = (p) => this.setState({ rating: { ...rt, ...p } });
+    const STAR_LABELS = ['Tap a star', 'Not great', 'Could be better', 'Good', 'Great', 'Outstanding'];
+    Object.assign(V, {
+      pPickup: view === 'pickup' && !!doneAct, pickup0: pk === 0, pickup1: pk === 1, pickup2: pk === 2, pickupDone: false, pickupLoaner: !!openRental && openRental.status === 'out',
+      pickupTitle: doneAct ? (actVeh ? actVeh.model || 'Your car' : 'Your car') + ' is ready.' : '', pickupSub: doneAct ? (doneAct.bay ? 'Parked by Bay 0' + doneAct.bay + '. ' : '') + 'Pay at the counter. Let us know when you are on your way.' : '',
+      pickupBayLabel: doneAct ? 'Ready for pickup' + (doneAct.bay ? ' · Bay 0' + doneAct.bay : '') : '', pickupBay: doneAct && doneAct.bay ? 'Bay 0' + doneAct.bay : 'Front lot', pickupHours: shop.hours || '', pickupPay: approved.length ? fmtC(approved.reduce((t, f) => t + f.price_cents, 0)) + ' + service · at the counter' : 'At the counter',
+      pickupHereSub: 'The desk has been told you are here. Head inside and they will bring the keys.',
+      onMyWay: () => doneAct && this.setPickup(doneAct.id, 'on_way'), imHere: () => doneAct && this.setPickup(doneAct.id, 'here'), goLoanerReturn: openRental ? () => { window.location.href = '/rental/' + openRental.token; } : null,
+      goRate: () => this.setState({ view: 'rate', rating: { stars: 0, tags: [], tip: 0, note: '', sent: false } }),
+      pRate: view === 'rate' && !!doneAct, rateSent: rt.sent, rateOpen: !rt.sent,
+      rateSub: doneAct ? (doneAct.job || 'Service') + (doneAct.tech ? ' · ' + doneAct.tech : '') + ' · ' + fmtDay(doneAct.done_at || doneAct.starts_at) : '', ratePlaceholder: 'Anything else? The team reads these.',
+      stars: [1, 2, 3, 4, 5].map((i) => ({ pick: () => setRt({ stars: i }), style: 'cursor:pointer;transition:transform .15s ease;transform:scale(' + (i <= rt.stars ? 1.1 : 1) + ')', path: i <= rt.stars ? 'fill:#ffd60a;stroke:#ffd60a;stroke-width:1.2px;stroke-linejoin:round' : 'fill:none;stroke:rgba(235,235,245,.3);stroke-width:1.4px;stroke-linejoin:round' })),
+      starLabel: STAR_LABELS[rt.stars], rateTags: ['Clear photos', 'Fair price', 'Fast', 'Kept me updated', 'Clean car', 'Loaner was easy'].map((t) => { const on = rt.tags.indexOf(t) >= 0; return { label: t, pick: () => setRt({ tags: on ? rt.tags.filter((x) => x !== t) : rt.tags.concat(t) }), style: this.chip(on) }; }),
+      tips: [], rateNote: rt.note, onRateNote: (e) => setRt({ note: e.target.value }), rateCta: 'Send rating', rateCtaStyle: 'margin-top:20px;text-align:center;padding:15px 0;border-radius:12px;font-size:13px;font-weight:600;transition:all .2s ease;' + (rt.stars ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),
+      sendRating: () => { if (rt.stars && doneAct) this.rate(doneAct.id, rt); }, rateThanks: 'Your ' + rt.stars + '-star rating went to ' + (doneAct && doneAct.tech ? doneAct.tech + ' and the team.' : 'the team.'),
+      // Account
+      accountFoot1: 'Revyn · ' + shop.address, accountFoot2: shop.hours || '', accountName: name || 'Your account', accountSub: [live.profile && live.profile.phone ? '(' + live.profile.phone.slice(0, 3) + ') ' + live.profile.phone.slice(3, 6) + '-' + live.profile.phone.slice(6) : '', shop.city || ''].filter(Boolean).join(' · '),
+      accountRows: [{ t: 'Vehicles', d: I.car, v: String(cars.length), go: this.go('garage') }, { t: 'Service history', d: I.clock, v: live.appointments.filter((a) => a.status === 'done').length + ' visits', go: this.go('history') }, { t: 'Messages', d: I.message, v: unreadCount(live) ? unreadCount(live) + ' unread' : '', go: this.go('messages') }, { t: 'Mobile number', d: I.phone, v: live.profile && live.profile.phone ? '(' + live.profile.phone.slice(0, 3) + ') ' + live.profile.phone.slice(3, 6) + '-' + live.profile.phone.slice(6) : 'Add', go: () => { if (window.confirm('Change the mobile number on this account? You will be asked for the new one.')) { if (supabase) supabase.from('customer_profiles').update({ phone: '' }).eq('user_id', this.props.userId).then(() => window.location.reload()); } } }, { t: 'Shop', d: I.home, v: shop.name, go: this.go('shop') }, { t: 'Sign out', d: I.x, v: '', go: () => this.props.signOut && this.props.signOut() }],
     });
 
     // ---- messages with the shop
