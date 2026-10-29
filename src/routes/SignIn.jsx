@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from '../runtime/tpl.js';
-import { sendCode, verifyCode, signInPassword } from '../state/auth.js';
+import { sendCode, verifyCode, signInPassword, signUpPassword } from '../state/auth.js';
 
 // Staff sign in with a password for the pilot (no email provider needed). Email codes stay
 // available for customers once a mail provider is configured: VITE_SIGNIN=code.
@@ -15,6 +15,9 @@ export function SignIn({ title = 'Sign in', note }) {
   const [email, setEmail] = React.useState('');
   const [code, setCode] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [mode, setMode] = React.useState('in');
+  const [name, setName] = React.useState('');
+  const [done, setDone] = React.useState('');
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState('');
@@ -23,12 +26,19 @@ export function SignIn({ title = 'Sign in', note }) {
     if (busy) return;
     setErr('');
     setBusy(true);
+    if (MODE === 'password' && mode === 'up') {
+      const { data, error } = await signUpPassword(email, password, name.trim());
+      setBusy(false);
+      if (error) return setErr(error.message);
+      if (data.session) return; // auto-confirmed: signed in
+      return setDone('Check ' + email.trim() + ' for a confirmation email, then come back and sign in.');
+    }
     const { error } = MODE === 'password' ? await signInPassword(email, password) : step === 0 ? await sendCode(email) : await verifyCode(email, code);
     setBusy(false);
     if (error) return setErr(error.message === 'Invalid login credentials' ? 'That email and password do not match.' : error.message);
     if (MODE !== 'password' && step === 0) setStep(1);
   };
-  const ok = MODE === 'password' ? emailOk && password.length >= 8 : step === 0 ? emailOk : code.length === 6;
+  const ok = MODE === 'password' ? emailOk && password.length >= 8 && (mode === 'in' || name.trim().length > 1) : step === 0 ? emailOk : code.length === 6;
   if (MODE === 'password') {
     return (
       <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
@@ -37,15 +47,21 @@ export function SignIn({ title = 'Sign in', note }) {
             <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
               <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
             </div>
-            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{title}</div>
-            <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{note || 'Use the email and password the shop gave you.'}</div>
+            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{mode === 'up' ? 'Create your account.' : title}</div>
+            <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Use the email the shop invited. Pick a password of at least 8 characters.' : note || 'Your email and password.')}</div>
           </div>
+          {!done ? (
           <div style={css('padding-top:18px')}>
+            {mode === 'up' ? <input placeholder="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} style={css(INPUT + ';margin-bottom:8px')} /> : null}
             <input type="email" inputMode="email" autoComplete="username" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} style={css(INPUT)} autoFocus />
-            <input type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ok && go()} style={css(INPUT + ';margin-top:8px')} />
+            <input type="password" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ok && go()} style={css(INPUT + ';margin-top:8px')} />
             {err ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:12px')}>{err}</div> : null}
-            <div onClick={() => ok && go()} style={css('margin-top:14px;' + btn(ok && !busy))}>{busy ? 'One moment…' : 'Sign in'}</div>
+            <div onClick={() => ok && go()} style={css('margin-top:14px;' + btn(ok && !busy))}>{busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}</div>
+            <div onClick={() => { setMode(mode === 'up' ? 'in' : 'up'); setErr(''); }} style={css('text-align:center;font-size:12px;color:rgba(235,235,245,.4);margin-top:14px;cursor:pointer')}>
+              {mode === 'up' ? 'Already have an account? Sign in' : 'First time here? Create your account'}
+            </div>
           </div>
+          ) : null}
         </div>
       </div>
     );

@@ -26,6 +26,7 @@ export function useAuth() {
 }
 
 export const signInPassword = (email, password) => supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+export const signUpPassword = (email, password, name) => supabase.auth.signUp({ email: email.trim().toLowerCase(), password, options: { data: { name } } });
 export const sendCode = (email) => supabase.auth.signInWithOtp({ email: email.trim().toLowerCase() });
 export const verifyCode = (email, token) => supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token, type: 'email' });
 export const signOut = () => supabase.auth.signOut();

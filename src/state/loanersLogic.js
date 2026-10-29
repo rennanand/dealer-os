@@ -201,6 +201,7 @@ export class LoanersLogic extends DCLogic {
         record: { phase: rec.phase, title: rec.phase === 'out' ? 'Handoff' : 'Return', sub: rec.phase === 'out' ? 'Record what the customer leaves with. Four photos: front, back, both sides.' : 'Record what came back. Same four angles.', levelLabel: v && v.powertrain === 'ev' ? 'Charge %' : 'Fuel %' },
         recOdo: rec.odometer, onRecOdo: (e) => this.setState({ record: { ...rec, odometer: e.target.value.replace(/\D/g, '').slice(0, 7) } }),
         recLevel: rec.level, onRecLevel: (e) => this.setState({ record: { ...rec, level: e.target.value.replace(/\D/g, '').slice(0, 3) } }),
+        recLicense: s.photos[r.id + '/license'] || [], onRecLicense: (e) => { for (const f of e.target.files || []) this.addPhoto(f, 'license'); e.target.value = ''; },
         recPhotos: s.photos[key] || [], onRecPhoto: (e) => { for (const f of e.target.files || []) this.addPhoto(f, rec.phase); e.target.value = ''; },
         recExtras: extra ? extra.lines : [], recExtraTotal: extra ? extra.total : 0,
         recCtaStyle: 'padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;white-space:nowrap;' + (ok ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),

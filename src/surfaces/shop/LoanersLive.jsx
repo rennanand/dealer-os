@@ -415,6 +415,16 @@ export function LoanersLive({ vm }) {
                     </div>
                   </div>
                 </div>
+                {vm.record?.phase === 'out' ? (
+                  <div style={css('display:flex;align-items:center;gap:12px;margin-top:14px')}>
+                    <div style={css(LBL)}>Driver's license</div>
+                    {L(vm.recLicense).map((p, _i) => <img key={_i} src={p} alt="" style={css('width:64px;height:40px;object-fit:cover;border-radius:6px')} />)}
+                    <label style={css('padding:7px 12px;border-radius:8px;border:1px dashed rgba(235,235,245,.3);font-size:12px;color:rgba(235,235,245,.7);cursor:pointer')}>
+                      Photo of license<input type="file" accept="image/*" capture="environment" onChange={vm.onRecLicense} style={css('display:none')} />
+                    </label>
+                    <div style={css('font-size:11.5px;color:rgba(235,235,245,.4)')}>Optional · stays with the rental, not on the customer's link.</div>
+                  </div>
+                ) : null}
                 {L(vm.recExtras).length ? (
                   <div style={css('margin-top:14px;border:1px solid rgba(235,235,245,.1);border-radius:10px;padding:2px 12px')}>
                     {L(vm.recExtras).map((x, _i) => (

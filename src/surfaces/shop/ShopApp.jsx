@@ -13,6 +13,7 @@ import { Followups } from './Followups.jsx';
 import { Inbox } from './Inbox.jsx';
 import { LoanersHost } from './LoanersHost.jsx';
 import { ShopSettingsLive } from './ShopSettingsLive.jsx';
+import { TeamLive } from './TeamLive.jsx';
 import { LAUNCH } from '../../state/options.js';
 import { Oil } from './Oil.jsx';
 import { Overview } from './Overview.jsx';
@@ -100,6 +101,7 @@ export function ShopApp({ vm }) {
           {vm.dParts ? <Parts vm={vm} /> : null}
           {vm.dTechs ? <Techs vm={vm} /> : null}
           {vm.dSettings ? (LAUNCH ? <ShopSettingsLive /> : <Settings vm={vm} />) : null}
+          {vm.dTeam ? <TeamLive /> : null}
           {vm.dFollowups ? <Followups vm={vm} /> : null}
           {vm.dFleet ? <Fleet vm={vm} /> : null}
           {vm.dOil ? <Oil vm={vm} /> : null}

@@ -37,7 +37,7 @@ language sql stable security definer set search_path = public as $$
     'signed_at', r.signed_at, 'signed_name', r.signed_name, 'out_at', r.out_at, 'out_odometer', r.out_odometer, 'out_level', r.out_level,
     'returned_at', r.returned_at, 'in_odometer', r.in_odometer, 'in_level', r.in_level, 'extra_cents', r.extra_cents, 'work_ref', r.work_ref,
     'vehicle', case when v.id is null then null else jsonb_build_object('year', v.year, 'make', v.make, 'model', v.model, 'color', v.color, 'paint', v.paint, 'plate', v.plate, 'vin_last4', v.vin_last4, 'powertrain', v.powertrain, 'odometer', v.odometer, 'level', v.level) end,
-    'photos', coalesce((select jsonb_agg(jsonb_build_object('phase', p.phase, 'path', p.path) order by p.created_at) from public.rental_photos p where p.rental_id = r.id), '[]'::jsonb),
+    'photos', coalesce((select jsonb_agg(jsonb_build_object('phase', p.phase, 'path', p.path) order by p.created_at) from public.rental_photos p where p.rental_id = r.id and p.phase in ('out', 'in')), '[]'::jsonb),
     'shop', public.shop_public(r.shop_id)
   )
   from public.rentals r left join public.loaner_vehicles v on v.id = r.vehicle_id
