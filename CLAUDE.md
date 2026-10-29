@@ -24,4 +24,5 @@ iPhone Duo is Apple's foldable: a 5.4" outer display, a 7.6" inner display, and 
 - Keep `viewport-fit=cover` and `env(safe-area-inset-*)` padding; the inner camera and the fold are reported as safe-area / reserved regions.
 - All orientations stay enabled in `ios/App/App/Info.plist`, and `UIRequiresFullScreen` stays off so Split View works on the inner display.
 - Build with Xcode 27.1 or later so content extends beneath the status bar and camera areas.
+- The MapKit JS token (`VITE_MAPKIT_TOKEN`) lives in `.env.app.local` on the build machine and in Vercel's env — never in a committed file.
 - State lives in the sync store, never in a component that remounts on resize, so a fold/unfold never loses a half-filled form.

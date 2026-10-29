@@ -27,6 +27,7 @@ function AppleMap({ shops, sel, onPick }) {
       if (dead || !ref.current) return;
       map = new mk.Map(ref.current, { colorScheme: mk.Map.ColorSchemes.Dark, showsCompass: mk.FeatureVisibility.Hidden, showsMapTypeControl: false, showsZoomControl: false, isScrollEnabled: true, isZoomEnabled: true, showsPointsOfInterest: false });
       const anns = shops.filter((s) => s.lat).map((s) => { const a = new mk.MarkerAnnotation(new mk.Coordinate(s.lat, s.lng), { color: '#e0312b', title: s.name, glyphText: '' }); a.addEventListener('select', () => onPick(s.shop_id)); return a; });
+      map.colorScheme = mk.Map.ColorSchemes.Dark;
       map.showItems(anns, { padding: new mk.Padding(40, 40, 40, 40) });
       if (anns.length === 1) map.region = new mk.CoordinateRegion(anns[0].coordinate, new mk.CoordinateSpan(0.02, 0.02));
     }).catch(() => setFailed(true));
