@@ -15,12 +15,12 @@ import { CustomerRoute, TechRoute, ShopRoute, LobbyRoute, DemoRoute, Require } f
 import { STAFF } from './state/auth.js';
 import { RentalRoute } from './routes/Rental.jsx';
 import { Landing } from './routes/Landing.jsx';
-import { LAUNCH } from './state/options.js';
+import { LAUNCH, IS_APP } from './state/options.js';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={LAUNCH ? <Landing /> : <Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
+      <Route path="/" element={LAUNCH && !IS_APP ? <Landing /> : <Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
       <Route path="/app" element={<Require title="Your car, in your pocket."><CustomerRoute /></Require>} />
       <Route path="/tech" element={<Require roles={STAFF} title="Technician sign-in"><TechRoute /></Require>} />
       <Route path="/shop" element={<Require roles={STAFF} title="Shop sign-in"><ShopRoute /></Require>} />

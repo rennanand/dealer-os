@@ -60,6 +60,7 @@ export function RentalRoute() {
 
   const v = r.vehicle, ev = v && v.powertrain === 'ev', first = (r.customer_name || '').split(' ')[0];
   const shop = { ...SHOP, ...(r.shop || {}) };
+  const fmtPhone = (p) => { const d = (p || '').replace(/\D/g, ''); return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : p; };
   const photoUrl = (p) => (SUPABASE_URL ? SUPABASE_URL + '/storage/v1/object/public/rental-photos/' + p : p);
   const photos = (phase) => (r.photos || []).filter((p) => p.phase === phase);
   const Photos = ({ phase, title }) => photos(phase).length ? (
@@ -143,7 +144,7 @@ export function RentalRoute() {
             </div>
           </>
         ) : null}
-        <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:26px;text-align:center')}>{shop.name}{shop.phone ? ' · ' + shop.phone : ' · Questions? Call the shop.'}</div>
+        <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:26px;text-align:center')}>{shop.name}{shop.phone ? ' · ' + fmtPhone(shop.phone) : ' · Questions? Call the shop.'}</div>
       </div></div>
     );
   }

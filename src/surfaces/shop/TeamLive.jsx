@@ -16,11 +16,12 @@ export function TeamLive() {
   const [email, setEmail] = React.useState('');
   const [role, setRole] = React.useState('advisor');
   const [err, setErr] = React.useState('');
+  const [displays, setDisplays] = React.useState([]);
   const load = React.useCallback(async () => {
     if (!supabase) { setTeam([{ email: 'you@ryguys.com', role: 'owner', name: 'You' }]); return; }
-    const [t, i] = await Promise.all([supabase.from('team').select('*').eq('shop_id', SHOP_ID).order('created_at'), supabase.from('staff_invites').select('*').eq('shop_id', SHOP_ID).order('created_at')]);
+    const [t, i, d] = await Promise.all([supabase.from('team').select('*').eq('shop_id', SHOP_ID).order('created_at'), supabase.from('staff_invites').select('*').eq('shop_id', SHOP_ID).order('created_at'), supabase.from('display_tokens').select('*').eq('shop_id', SHOP_ID).order('created_at')]);
     if (t.error) return setErr(t.error.message);
-    setTeam(t.data || []); setInvites(i.data || []);
+    setTeam(t.data || []); setInvites(i.data || []); setDisplays(d.data || []);
   }, []);
   React.useEffect(() => { load(); }, [load]);
   const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
@@ -34,6 +35,8 @@ export function TeamLive() {
   };
   const revoke = async (e) => { if (supabase) await supabase.from('staff_invites').delete().eq('email', e).eq('shop_id', SHOP_ID); load(); };
   const setMemberRole = async (user_id, r) => { if (supabase) { const { error } = await supabase.from('shop_members').update({ role: r }).eq('user_id', user_id).eq('shop_id', SHOP_ID); if (error) return setErr(error.message); } load(); };
+  const addDisplay = async () => { if (!supabase) return; const name = window.prompt ? (window.prompt('Name for this screen', 'Lobby TV') || 'Lobby TV') : 'Lobby TV'; const { error } = await supabase.from('display_tokens').insert({ shop_id: SHOP_ID, name }); if (error) return setErr(error.message); load(); };
+  const removeDisplay = async (token) => { if (supabase) await supabase.from('display_tokens').delete().eq('token', token); load(); };
   return (
     <div style={css('animation:sIn .28s ease')}>
       <div style={css('font-size:32px;font-weight:600;letter-spacing:-1px')}>Team</div>
@@ -71,6 +74,20 @@ export function TeamLive() {
             </select>
           </div>
         ))}
+      </div>
+      <div style={css(CARD + ';margin-top:14px')}>
+        <div style={css('display:flex;justify-content:space-between;align-items:center')}>
+          <div style={css(LBL)}>Displays · lobby screens</div>
+          <div onClick={addDisplay} style={css('font-size:12px;font-weight:500;color:rgba(235,235,245,.7);cursor:pointer')}>+ New display</div>
+        </div>
+        {displays.map((d) => (
+          <div key={d.token} style={css('display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(235,235,245,.07);font-size:13.5px')}>
+            <div style={css('flex:1;min-width:0')}><div style={css('font-weight:500')}>{d.name}</div><div style={css('font-family:var(--data-font,inherit);font-size:12px;color:rgba(235,235,245,.5);word-break:break-all')}>{d.token}</div></div>
+            <div onClick={() => navigator.clipboard && navigator.clipboard.writeText(d.token)} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>Copy</div>
+            <div onClick={() => removeDisplay(d.token)} style={css('font-size:12px;color:rgba(235,235,245,.4);cursor:pointer')}>Remove</div>
+          </div>
+        ))}
+        <div style={css('font-size:12px;color:rgba(235,235,245,.45);margin-top:10px;line-height:1.5')}>Each screen gets its own token, pasted into the Apple TV app once. Remove it to switch that screen off.</div>
       </div>
     </div>
   );

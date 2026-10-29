@@ -12,3 +12,6 @@ export const DEFAULT_OPTIONS = {
 /** Launch mode: which modules run on real records. 'loaners' puts Loaners first on the shop desktop
  *  and marks the rest as preview. Set VITE_LAUNCH=loaners. */
 export const LAUNCH = import.meta.env.VITE_LAUNCH || '';
+
+/** Native app build (Capacitor): opens straight on the customer app. VITE_TARGET=app */
+export const IS_APP = import.meta.env.VITE_TARGET === 'app';
