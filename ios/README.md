@@ -18,3 +18,7 @@ add internal testers in App Store Connect (no review needed for internal testing
 
 Every time the web code changes, run `npm run build:ios` again and archive a new build.
 Config: `capacitor.config.json` (bundle id `com.revyn.app`), `.env.app` (backend).
+
+## iPhone Duo
+
+Every build is checked on the Duo simulator as well (folded, unfolded, and landscape): the layout is read from the window and re-read on resize, all orientations are enabled, and `UIRequiresFullScreen` stays off. Build with Xcode 27.1 or later. Run `npm run build:ios`, then in Xcode choose the iPhone Duo simulator and fold/unfold with Hardware ▸ Fold / Unfold while the app is open.

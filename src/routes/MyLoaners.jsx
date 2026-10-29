@@ -22,8 +22,13 @@ const STEP_OF = { booked: 0, arrived: 1, in_progress: 2, done: 3 };
 const whenLabel = (ts) => { const d = new Date(ts), t = new Date(), same = (a, b) => a.toDateString() === b.toDateString(); const tm = new Date(t.getTime() + 864e5); const day = same(d, t) ? 'Today' : same(d, tm) ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); return day + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); };
 const fmtPhone = (d) => (d.length <= 3 ? d : d.length <= 6 ? '(' + d.slice(0, 3) + ') ' + d.slice(3) : '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6, 10));
 
+// Wide layouts (iPhone Duo unfolded, iPad, landscape) get two columns; the width is read from the window
+// at layout time and again whenever it changes, never from a fixed device size.
+export const useWide = () => { const [w, setW] = React.useState(() => window.innerWidth >= 700); React.useEffect(() => { const on = () => setW(window.innerWidth >= 700); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []); return w; };
+
 export function MyLoaners({ auth }) {
   const nav = useNavigate();
+  const wide = useWide();
   const [profile, setProfile] = React.useState(undefined);
   const [rentals, setRentals] = React.useState([]);
   const [visits, setVisits] = React.useState([]);
@@ -66,14 +71,16 @@ export function MyLoaners({ auth }) {
   if (openVisit) return <VisitDetail v={openVisit} back={() => setOpen(null)} cancel={async () => { if (supabase) await supabase.rpc('cancel_my_appointment', { p_id: openVisit.id }); setOpen(null); load(); }} />;
   const upcoming = visits.filter((v) => v.status !== 'cancelled' && v.status !== 'no_show' && (v.status !== 'done' || Date.now() - new Date(v.starts_at) < 864e5));
   return (
-    <div style={css(PAGE)}><div style={css(WRAP)}>
+    <div style={css(PAGE)}><div style={css(WRAP + (wide ? ';max-width:900px' : ''))}>
       <div style={css('display:flex;justify-content:space-between;align-items:center')}>
         <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block')} />
         <div onClick={signOut} style={css('font-size:12px;color:rgba(235,235,245,.4);cursor:pointer')}>Sign out</div>
       </div>
       <div style={css('font-size:28px;font-weight:600;letter-spacing:-.9px;line-height:1.1;margin-top:26px')}>{first ? 'Hi ' + first + '.' : 'Your car.'}</div>
       <div style={css('font-size:14px;color:rgba(235,235,245,.55);margin-top:8px')}>{upcoming.length ? 'Your visits update as the shop works.' : 'Book a visit and follow it here, from check-in to pickup.'}</div>
-      <div onClick={() => setBook({ step: 0, job: '', vehicle: '', plate: '', visit: 'dropoff', day: '', time: '', notes: '' })} style={css('margin-top:22px;' + CTA(true))}>Book a visit</div>
+      <div onClick={() => setBook({ step: 0, job: '', vehicle: '', plate: '', visit: 'dropoff', day: '', time: '', notes: '' })} style={css('margin-top:22px;' + CTA(true) + (wide ? ';max-width:300px' : ''))}>Book a visit</div>
+      <div style={css(wide ? 'display:grid;grid-template-columns:1fr 1fr;gap:0 32px;align-items:start' : '')}>
+      <div>
       {upcoming.length ? <div style={css(LBL + ';margin-top:28px')}>Visits</div> : null}
       <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
         {upcoming.map((v) => {
@@ -90,6 +97,8 @@ export function MyLoaners({ auth }) {
           );
         })}
       </div>
+      </div>
+      <div>
       {rentals.length ? <div style={css(LBL + ';margin-top:28px')}>Loaners</div> : null}
       <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
         {rentals.map((r) => {
@@ -105,6 +114,8 @@ export function MyLoaners({ auth }) {
             </div>
           );
         })}
+      </div>
+      </div>
       </div>
       <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:auto;padding-top:30px;text-align:center')}>Number on file: {fmtPhone(profile.phone)} · <span onClick={() => setProfile({ phone: '' })} style={css('cursor:pointer;color:rgba(235,235,245,.55)')}>change</span></div>
     </div></div>

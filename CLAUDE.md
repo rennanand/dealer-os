@@ -15,3 +15,13 @@
 - `src/state/appLogic.js` is the single view-model. Every value a screen shows comes from `renderVals()`. The constants at the top are sample data standing in for the backend.
 - `src/state/sync.js` shares state between open surfaces: over Supabase realtime + the `shop_state` row when configured, else a BroadcastChannel. `LOCAL_KEYS` lists what stays per-device.
 - Screens bind with the helpers in `src/runtime/tpl.js`: `css('…')` for style strings, `T()` for text, `L()` for lists.
+
+## iOS app (Capacitor) — every build must also work on iPhone Duo
+
+iPhone Duo is Apple's foldable: a 5.4" outer display, a 7.6" inner display, and a partly folded pose, in both orientations. The app is a web view, so the rules are:
+- Never size anything from a fixed device size (`UIScreen`, hardcoded 390/430 widths as the only layout). Read the window at layout time and again on every `resize` — folding and unfolding changes the size while the app is open.
+- Customer screens are a single centered column on phone widths and two columns from 700px (`useWide()` in `src/routes/MyLoaners.jsx`); shop/tech surfaces scale to fit (`useFit` in `src/routes/Surface.jsx`). Follow those patterns for new screens.
+- Keep `viewport-fit=cover` and `env(safe-area-inset-*)` padding; the inner camera and the fold are reported as safe-area / reserved regions.
+- All orientations stay enabled in `ios/App/App/Info.plist`, and `UIRequiresFullScreen` stays off so Split View works on the inner display.
+- Build with Xcode 27.1 or later so content extends beneath the status bar and camera areas.
+- State lives in the sync store, never in a component that remounts on resize, so a fold/unfold never loses a half-filled form.
