@@ -8,6 +8,7 @@ import { useAuth, signOut, STAFF } from '../state/auth.js';
 import { SignIn, Blocked } from './SignIn.jsx';
 import { MyLoaners } from './MyLoaners.jsx';
 import { CustomerLiveRoute } from './CustomerLive.jsx';
+import { ShopLogic } from '../state/shopLogic.js';
 import { OfflineBar } from './Offline.jsx';
 import { LAUNCH } from '../state/options.js';
 
@@ -160,6 +161,23 @@ export function LobbyRoute() {
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
   }, []);
+  const scaleStyle = 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;border-radius:0;box-shadow:none;';
+  if (LAUNCH) {
+    // The board on real records: today's bays and loaners, refreshed over realtime.
+    return (
+      <LogicHost Logic={ShopLogic}>
+        {(sv) => {
+          const lb = sv.lobby;
+          const vm = { lobbyScaleStyle: scaleStyle, lobbyTime: lb.time, lobbyDate: lb.date, lobbyRows: lb.rows, lobbyLiveBay: lb.liveBay, lobbyLiveTitle: lb.liveTitle, lobbyLiveSub: lb.liveSub, lobbyScene: lb.scene, lobbyScenePhase: lb.phase, lobbyFoot: lb.foot };
+          return (
+            <div className="surface surface-lobby">
+              <div style={{ width: 1360 * scale, height: 765 * scale }}><LobbyBoard vm={vm} /></div>
+            </div>
+          );
+        }}
+      </LogicHost>
+    );
+  }
   return (
     <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'lobby' }}>
       {(vm) => (
@@ -168,9 +186,7 @@ export function LobbyRoute() {
             {vm.lobbyIdle ? (
               <LobbyIdle vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;' }} />
             ) : (
-              <LobbyBoard
-                vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;border-radius:0;box-shadow:none;' }}
-              />
+              <LobbyBoard vm={{ ...vm, lobbyScaleStyle: scaleStyle }} />
             )}
           </div>
         </div>

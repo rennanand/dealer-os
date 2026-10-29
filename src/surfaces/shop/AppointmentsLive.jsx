@@ -106,6 +106,15 @@ export function AppointmentsLive({ vm }) {
               <KV k="Service" v={a.job} />
               <KV k="Vehicle" v={a.car + (a.plate ? ' · ' + a.plate : '')} />
             </div>
+            {a.techOpts.length ? (
+              <div>
+                <div style={css(LBL + ';margin-bottom:6px')}>Technician</div>
+                <select value={a.techId} onChange={(e) => a.setTech(e.target.value)} style={css(SELECT)}>
+                  <option value="">Not assigned</option>
+                  {a.techOpts.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+              </div>
+            ) : null}
             <div>
               <div style={css(LBL + ';margin-bottom:6px')}>Bay</div>
               <div style={css('display:flex;gap:6px')}>

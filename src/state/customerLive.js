@@ -130,7 +130,7 @@ export class CustomerLive extends AppLogic {
     else if (act.status === 'booked') kick('Upcoming appointment', ACC, act.job || 'Service', when(act.starts_at) + ' · ' + (VISIT[act.visit] || 'Drop off'), 'View appointment', goService);
     else if (act.status === 'arrived') { kick((act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Checked in', ACC, act.job || 'Service', 'Checked in at ' + fmtT(act.arrived_at || act.starts_at) + '. We will let you know when work begins.', 'View Service', goService); V.homeRings = true; }
     else if (act.status === 'in_progress' && (act.findings || []).some((f) => f.status === 'pending')) { kick('Estimate ready', YEL, 'We found ' + (act.findings || []).filter((f) => f.status === 'pending').length + ' things to review.', 'Your approval is needed before any extra work starts.', 'Review estimate', this.go('findings')); V.homeRings = true; }
-    else if (act.status === 'in_progress') { kick((act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'In service', ACC, act.job || 'Service', 'Work started at ' + fmtT(act.started_at) + '. We text you the moment it is ready.', 'View Service', goService); V.homeRings = true; }
+    else if (act.status === 'in_progress') { kick((act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'In service', ACC, act.job || 'Service', (act.tech ? act.tech + ' started at ' : 'Work started at ') + fmtT(act.started_at) + '. We text you the moment it is ready.', 'View Service', goService); V.homeRings = true; }
     else kick('Ready for pickup', GRN, (actVeh ? actVeh.model || 'Your car' : 'Your car') + ' is ready.', (act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Pay at the counter when you arrive.', 'Directions', openUrl(maps));
     const sc = act ? sceneFor(act.job, act.status) : { scene: '', phase: '' };
     if (act && (act.status === 'arrived' || act.status === 'in_progress')) { V.homeScene = sc.scene; V.homeScenePhase = sc.phase; }
@@ -139,7 +139,7 @@ export class CustomerLive extends AppLogic {
     const stages = act ? [
       { name: 'Appointment booked', t: when(act.starts_at), d: (act.job || 'Service') + ' at ' + shop.name.split(' ').slice(0, 2).join(' ') + '.' , at: 0 },
       { name: 'Vehicle checked in', t: fmtT(act.arrived_at), d: 'Your vehicle has arrived at the shop.', at: 1 },
-      { name: 'Work started', t: fmtT(act.started_at), d: act.notes ? 'Technician note: ' + act.notes : 'A technician is working on your vehicle.', at: 2 },
+      { name: 'Work started', t: fmtT(act.started_at), d: (act.tech ? act.tech + ' is working on your vehicle.' : 'A technician is working on your vehicle.') + (act.notes ? ' Note: ' + act.notes : ''), at: 2 },
       { name: 'Service complete', t: fmtT(act.done_at), d: 'Your vehicle is ready. Pay at the counter when you arrive.', at: 8 },
     ] : [];
     const cur = act ? STAGE_OF[act.status] : -1;

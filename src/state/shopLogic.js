@@ -2,6 +2,7 @@
 // Without a backend it runs on a few in-memory rows so the screens can be reviewed.
 import { DCLogic } from '../runtime/logic.js';
 import { supabase, SHOP_ID, SUPABASE_URL } from './supabase.js';
+import { RULER, PILL_L } from './appLogic.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
@@ -29,30 +30,32 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, techs: [], newTech: null, editTech: null, customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
     await this.reload();
     this.chan = supabase.channel('shop:' + SHOP_ID);
-    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
+    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
     this.chan.subscribe();
   }
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r, lf, fi, ph] = await Promise.all([
+    const [c, v, a, r, lf, fi, ph, te, sh] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
       supabase.from('loaner_vehicles').select('id,year,make,model,color,status').eq('shop_id', SHOP_ID).neq('status', 'retired'),
       supabase.from('findings').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -60)).order('created_at'),
       supabase.from('visit_photos').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -60)).order('created_at'),
+      supabase.from('technicians').select('*').eq('shop_id', SHOP_ID).order('created_at'),
+      supabase.from('shops').select('*').eq('shop_id', SHOP_ID).maybeSingle(),
       supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], loading: false, err: '' });
+    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -129,6 +132,15 @@ export class ShopLogic extends DCLogic {
     if (error) return this.setState({ err: error.message });
     this.setState({ photos: this.state.photos.concat(data) });
   }
+  async saveTech(d) {
+    const row = { name: (d.name || '').trim(), role: (d.role || 'Technician').trim() || 'Technician', bays: (d.bays || []).map(Number).filter(Boolean), active: d.active !== false };
+    if (!row.name) return;
+    if (!supabase) { this.setState({ techs: d.id ? this.state.techs.map((t) => (t.id === d.id ? { ...t, ...row } : t)) : this.state.techs.concat({ id: 't' + Date.now(), created_at: new Date().toISOString(), ...row }), newTech: null, editTech: null }); return; }
+    const q = d.id ? supabase.from('technicians').update(row).eq('id', d.id).select().single() : supabase.from('technicians').insert({ ...row, shop_id: SHOP_ID }).select().single();
+    const { data, error } = await q;
+    if (error) return this.setState({ err: error.message });
+    this.setState({ techs: d.id ? this.state.techs.map((t) => (t.id === d.id ? data : t)) : this.state.techs.concat(data), newTech: null, editTech: null });
+  }
   photoUrl(p) { return p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path); }
 
   custOf(id) { return this.state.customers.find((c) => c.id === id) || null; }
@@ -195,7 +207,8 @@ export class ShopLogic extends DCLogic {
     const lanes = [1, 2, 3, 4, 5, 0]; // 0 = not yet assigned to a bay
     const dayJobs = dayAppts.filter((a) => a.status !== 'cancelled' && a.status !== 'no_show');
     const nowH = new Date().getHours() + new Date().getMinutes() / 60;
-    const schedRows = lanes.map((bay) => ({ bay: bay ? 'Bay 0' + bay : 'Unassigned', tech: bay ? '' : 'Drag into a bay', blocks: dayJobs.filter((a) => (a.bay || 0) === bay).map((a) => {
+    const techFor = (bay) => s.techs.filter((t) => t.active !== false && (t.bays || []).includes(bay)).map((t) => t.name.split(' ')[0]).join(', ');
+    const schedRows = lanes.map((bay) => ({ bay: bay ? 'Bay 0' + bay : 'Unassigned', tech: bay ? techFor(bay) : 'Drag into a bay', blocks: dayJobs.filter((a) => (a.bay || 0) === bay).map((a) => {
       const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), st = STATUS[a.status] || STATUS.booked, start = hourOf(a.starts_at), dur = Math.max(0.5, (a.minutes || 60) / 60), dragging = drag && drag.id === a.id;
       return {
         id: a.id, who: c ? c.name : 'Walk-in', job: (vehName(v) || 'Vehicle') + ' · ' + (a.job || 'Service'), time: fmtH(start) + ' – ' + fmtH(start + dur), status: st[0], c: st[1],
@@ -219,6 +232,33 @@ export class ShopLogic extends DCLogic {
         },
       };
     }) }));
+    // Technicians page
+    const techJobs = (t) => todays.filter((a) => a.tech_id === t.id);
+    const techs = s.techs.filter((t) => t.active !== false).map((t) => { const jobs = techJobs(t), mins = jobs.reduce((m, a) => m + (a.minutes || 60), 0), pct = Math.min(100, Math.round((mins / 480) * 100)); return { id: t.id, name: t.name, role: t.role + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : ''), initials: t.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), hours: (mins / 60).toFixed(1).replace(/\.0$/, '') + ' h / 8 h', bar: 'height:100%;width:' + pct + '%;background:' + (pct > 85 ? YEL : ACC) + ';border-radius:2px', jobs: jobs.map((a) => { const st = STATUS[a.status] || STATUS.booked, v = this.vehOf(a.vehicle_id); return { t: (v ? (v.model || vehName(v)) : 'Vehicle') + ' · ' + (a.job || 'Service'), s: a.status === 'booked' ? fmtTime(a.starts_at) : st[0], c: st[1] }; }), edit: () => set({ editTech: { ...t, bays: t.bays || [] } }) }; });
+    const techsSub = techs.length + (techs.length === 1 ? ' technician' : ' technicians') + ' · ' + todays.filter((a) => a.tech_id).length + ' of ' + todays.length + ' jobs today assigned';
+    const techForm = s.editTech || s.newTech;
+    const technicians = { techs, sub: techsSub, none: !s.loading && !techs.length, form: techForm, isNew: !!s.newTech && !s.editTech,
+      openNew: () => set({ newTech: { name: '', role: 'Technician', bays: [] }, editTech: null }), setForm: (p) => set(s.editTech ? { editTech: { ...s.editTech, ...p } } : { newTech: { ...s.newTech, ...p } }), cancel: () => set({ newTech: null, editTech: null }),
+      toggleBay: (b) => { const f = techForm; const bays = (f.bays || []).includes(b) ? f.bays.filter((x) => x !== b) : (f.bays || []).concat(b).sort(); set(s.editTech ? { editTech: { ...f, bays } } : { newTech: { ...f, bays } }); },
+      save: () => techForm && this.saveTech(techForm), retire: s.editTech ? () => this.saveTech({ ...s.editTech, active: false }) : null };
+
+    // Lobby board rows: today's bays, first name + initial, no prices
+    const LPCT = { arrived: 8, in_progress: 55, done: 100 };
+    const lobbyRows = [1, 2, 3, 4, 5].map((bay) => {
+      const a = todays.find((x) => x.bay === bay && (x.status === 'arrived' || x.status === 'in_progress')) || todays.find((x) => x.bay === bay && x.status === 'done');
+      if (!a) return { bay: 'Bay 0' + bay, who: 'Open', car: '', status: '', c: 'rgba(235,235,245,.3)', pctLabel: '', ruler: RULER(0, '#fff', 14), eta: '', etaSub: '', etaColor: DIM, bayPill: PILL_L('rgba(235,235,245,.3)') };
+      const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), pend = s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending');
+      const st = pend ? ['Waiting for approval', YEL] : STATUS[a.status], pct = pend ? 35 : LPCT[a.status] || 0, t = s.techs.find((x) => x.id === a.tech_id);
+      const who = c ? c.name.split(' ')[0] + (c.name.split(' ')[1] ? ' ' + c.name.split(' ')[1][0] + '.' : '') : 'Walk-in';
+      return { bay: 'Bay 0' + bay, who, car: v ? [v.make, v.model].filter(Boolean).join(' ') : 'Vehicle', status: st[0], c: st[1], pctLabel: pct + '%', ruler: RULER(pct, st[1], 14), eta: a.status === 'done' ? 'Ready' : '—', etaSub: a.status === 'done' ? 'Pick up at the desk' : t ? t.name.split(' ')[0] + ' on it' : (a.job || 'Service'), etaColor: a.status === 'done' ? GRN : '#fff', bayPill: PILL_L(st[1]) };
+    });
+    const live = todays.find((x) => x.status === 'in_progress' && x.bay) || null;
+    const liveC = live && this.custOf(live.customer_id);
+    const lobby = { rows: lobbyRows, time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), date: new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit', year: 'numeric' }).replace(/,/g, ' ·'),
+      liveBay: live ? 'Live · Bay 0' + live.bay + (liveC ? ' · ' + liveC.name.split(' ')[0] : '') : 'Shop floor', liveTitle: live ? (live.job || 'Service') + ' in progress' : 'Nothing on the lifts right now', liveSub: live ? 'Status is updated by the technician as the work moves along.' : 'Checked-in vehicles appear here as work starts.',
+      scene: live ? (/oil|maint/i.test(live.job || '') ? 'oil' : /tire|wheel/i.test(live.job || '') ? 'tire' : /batter/i.test(live.job || '') ? 'battery' : 'brake') : 'brake', phase: live ? (/oil|maint/i.test(live.job || '') ? 'filter' : /tire|wheel/i.test(live.job || '') ? 'off' : /batter/i.test(live.job || '') ? 'load' : 'remove') : 'worn',
+      foot: [{ k: 'Hours today', v: (s.shop && s.shop.hours) || 'Mon, Tue, Thu, Fri · 8:00 AM – 5:30 PM' }, { k: 'Front desk', v: 'Ask us anything' }, { k: 'Loaners out', v: String(out.length) }] };
+
     const schedule = {
       sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
       nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
@@ -228,7 +268,7 @@ export class ShopLogic extends DCLogic {
     };
 
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),
@@ -257,6 +297,7 @@ export class ShopLogic extends DCLogic {
         noShow: sel.status === 'booked' ? () => this.setAppt(sel.id, { status: 'no_show' }) : null,
         setBay: (b) => this.setAppt(sel.id, { bay: parseInt(b, 10) || null }), setNotes: (v) => this.setAppt(sel.id, { notes: v }),
         openCustomer: selCust ? () => set({ custId: selCust.id }) : null, smsHref: selCust && selCust.phone ? 'sms:' + selCust.phone : '',
+        techId: sel.tech_id || '', setTech: (id) => this.setAppt(sel.id, { tech_id: id || null }), techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, label: t.name + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : '') })),
         findings: s.findings.filter((f) => f.appointment_id === sel.id).map((f) => ({ id: f.id, name: f.name, tier: { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }[f.tier] || f.tier, price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'No charge', status: { pending: 'Waiting for approval', approved: 'Approved', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], plain: f.plain, meas: [f.meas_label, f.meas].filter(Boolean).join(' · '), remove: () => this.removeFinding(f.id), markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null, photos: s.photos.filter((p) => p.finding_id === f.id).map((p) => this.photoUrl(p)) })),
         photos: s.photos.filter((p) => p.appointment_id === sel.id).map((p) => ({ id: p.id, url: this.photoUrl(p), caption: p.caption })),
         addPhoto: (file, caption, findingId) => this.addVisitPhoto(sel.id, file, caption, findingId),

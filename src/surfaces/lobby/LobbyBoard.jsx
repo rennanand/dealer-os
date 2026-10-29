@@ -133,7 +133,7 @@ export function LobbyBoard({ vm }) {
           <div style={css('font-size:12.5px;color:rgba(235,235,245,.4);text-align:right;line-height:1.5')}>
             Guests are listed by first name.
             <br />
-            Estimates and payment are in the RyGuys app.
+            Estimates and approvals are in the Revyn app.
           </div>
         </div>
       </div>
