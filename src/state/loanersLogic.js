@@ -19,7 +19,7 @@ const DEMO_FLEET = [
 ];
 
 export class LoanersLogic extends DCLogic {
-  state = { fleet: [], rentals: [], selId: null, loading: !!supabase, err: '', copied: false, newOpen: false, draft: null, record: null, month: today().slice(0, 7), photos: {}, busy: false, fleetOpen: false, fv: null };
+  state = { fleet: [], rentals: [], selId: null, loading: !!supabase, err: '', copied: false, newOpen: false, draft: null, record: null, month: today().slice(0, 7), photos: {}, busy: false, fleetOpen: false, fv: null, shop: null, filter: 'open', search: '' };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ fleet: DEMO_FLEET, rentals: [], loading: false }); return; }
@@ -32,13 +32,14 @@ export class LoanersLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); clearTimeout(this._saveT); }
 
   async reload() {
-    const [f, r] = await Promise.all([
+    const [sh, f, r] = await Promise.all([
+      supabase.from('shops').select('*').eq('shop_id', SHOP_ID).maybeSingle().then((x) => x.data).catch(() => null),
       supabase.from('loaner_vehicles').select('*').eq('shop_id', SHOP_ID).neq('status', 'retired').order('year', { ascending: false }),
-      supabase.from('rentals').select('*').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(60),
+      supabase.from('rentals').select('*').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     if (f.error || r.error) return this.setState({ loading: false, err: (f.error || r.error).message });
     const selId = this.state.selId && r.data.some((x) => x.id === this.state.selId) ? this.state.selId : (r.data.find((x) => x.status !== 'returned' && x.status !== 'cancelled') || r.data[0] || {}).id || null;
-    this.setState({ fleet: f.data, rentals: r.data, loading: false, selId, err: '' });
+    this.setState({ fleet: f.data, rentals: r.data, loading: false, selId, err: '', shop: sh || null });
   }
 
   sel() { return this.state.rentals.find((r) => r.id === this.state.selId) || null; }
@@ -59,7 +60,7 @@ export class LoanersLogic extends DCLogic {
   }
 
   async createRental(d) {
-    const base = { number: 'LN-' + (3100 + this.state.rentals.length), customer_name: d.name.trim(), customer_phone: d.phone.trim(), customer_plate: d.plate.trim().toUpperCase(), work_ref: d.work.trim(), start_date: today(), end_date: addDays(today(), 1), status: 'draft' };
+    const base = { rate_cents: (this.state.shop && this.state.shop.default_rate_cents) || 6500, number: 'LN-' + (3100 + this.state.rentals.length), customer_name: d.name.trim(), customer_phone: d.phone.trim(), customer_plate: d.plate.trim().toUpperCase(), work_ref: d.work.trim(), start_date: today(), end_date: addDays(today(), 1), status: 'draft' };
     if (!supabase) { const r = { id: 'r' + Date.now(), token: 'demo', clauses: {}, mile_cap: '100 mi/day', charge_min: '50%', deductible: '$1,000', rate_cents: 6500, shop_pays: false, extra_cents: 0, ...base }; this.setState({ rentals: [r, ...this.state.rentals], selId: r.id, newOpen: false, draft: null }); return; }
     this.setState({ busy: true });
     const { data: num } = await supabase.rpc('next_rental_number', { p_shop: SHOP_ID });
@@ -118,7 +119,9 @@ export class LoanersLogic extends DCLogic {
         const sc = f.status === 'service' ? ['In for service', DIM] : open ? [(open.status === 'out' ? 'Out · ' : 'Reserved · ') + open.customer_name, open.status === 'out' ? ACC : YEL] : ['Available', GRN];
         return { car: vehicleName(f), color: f.color, vin: f.vin_last4, miles: f.odometer.toLocaleString('en-US'), state: sc[0], stateColor: sc[1], canToggle: !open, toggleLabel: f.status === 'service' ? 'Back in rotation' : 'Mark in service', toggle: () => this.setVehicleStatus(f.id, f.status === 'service' ? 'available' : 'service'), retire: () => { if (!open && window.confirm('Remove ' + vehicleName(f) + ' from the loaner fleet?')) this.setVehicleStatus(f.id, 'retired'); }, dot: 'width:12px;height:12px;border-radius:6px;flex:0 0 auto;background:' + f.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)' };
       }),
-      rentalList: s.rentals.filter((x) => x.status !== 'cancelled').slice(0, 12).map((x) => {
+      rFilters: [['open', 'Open'], ['all', 'All']].map(([k, l]) => ({ label: l, pick: () => this.setState({ filter: k }), style: 'padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:500;cursor:pointer;' + (s.filter === k ? 'background:rgba(235,235,245,.9);color:#000;' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7);') })),
+      rSearch: s.search, onRSearch: (e) => this.setState({ search: e.target.value }),
+      rentalList: s.rentals.filter((x) => x.status !== 'cancelled').filter((x) => s.filter === 'all' || !['returned'].includes(x.status)).filter((x) => { const q = s.search.trim().toLowerCase(); if (!q) return true; const vv = this.vehicleOf(x); return (x.customer_name + ' ' + x.number + ' ' + x.customer_phone + ' ' + (vv ? vehicleName(vv) : '')).toLowerCase().includes(q); }).slice(0, 40).map((x) => {
         const st = STATUS[x.status];
         return { who: x.customer_name || 'New rental', sub: x.number + ' · ' + (this.vehicleOf(x) ? this.vehicleOf(x).model : 'no vehicle') + ' · ' + dayLabel(x.start_date).slice(5) + ' → ' + dayLabel(x.end_date).slice(5), state: st[0], color: st[1], pick: () => this.setState({ selId: x.id, record: null }), style: 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(235,235,245,.07);cursor:pointer;' + (x.id === s.selId ? '' : 'opacity:.7;') };
       }),
@@ -176,7 +179,7 @@ export class LoanersLogic extends DCLogic {
       calNote: locked ? 'Dates are locked once signed. Extend the return from the handoff record if the job runs long.' : 'Dates show in the agreement as you change them.',
       rClauseHint: locked ? 'Signed · locked' : 'Locked once signed', rClauseWrap: 'margin-top:8px;' + (locked ? 'opacity:.55;pointer-events:none;' : ''),
       rClauses: CLAUSES.map((c) => { const on = (r.clauses || {})[c.id] !== false; return { t: c.t, hasOpts: !!CLAUSE_OPTS[c.id], rowStyle: 'padding:11px 0;border-bottom:1px solid rgba(235,235,245,.07);transition:opacity .2s ease;opacity:' + (on ? 1 : 0.5), boxStyle: 'width:18px;height:18px;border-radius:5px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .18s ease;' + (on ? 'background:#fff;color:#000;' : 'border:1px solid rgba(235,235,245,.3);color:transparent;'), toggle: () => setClause(c.id, !on), opts: (CLAUSE_OPTS[c.id] || []).map((o) => ({ label: o, pick: () => this.patch({ [CLAUSE_KEY[c.id]]: o }), style: 'padding:5px 9px;border-radius:7px;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .18s ease;' + (r[CLAUSE_KEY[c.id]] === o ? 'background:rgba(235,235,245,.9);color:#000;' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7);') })) }; }),
-      rPreviewMeta: previewMeta(rv), agreeClauses: clausesFor(rv),
+      rPreviewMeta: previewMeta({ ...rv, shop: s.shop }), agreeClauses: clausesFor(rv),
       rSigned: !!r.signature_svg, sigPath: r.signature_svg || '', rSigBox: '0 0 300 120',
       rLink: this.link(r), copied: s.copied,
       copyLink: () => { navigator.clipboard.writeText(this.link(r)).then(() => { this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1800); }); },

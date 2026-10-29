@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { css } from '../runtime/tpl.js';
-import { supabase } from '../state/supabase.js';
+import { supabase, SUPABASE_URL } from '../state/supabase.js';
 import { SHOP, fmt0, vehicleName, dayLabel, daysBetween, clausesFor, previewMeta } from '../state/agreement.js';
 
 // The customer's private link: /rental/<token>. No account. Review the agreement, sign it,
@@ -59,6 +59,15 @@ export function RentalRoute() {
   if (!r) return <div style={css(PAGE)}><div style={css(WRAP + ';padding-top:120px;text-align:center')}><div style={css('font-size:20px;font-weight:600')}>{err}</div><div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:8px')}>Ask the front desk to send it again.</div></div></div>;
 
   const v = r.vehicle, ev = v && v.powertrain === 'ev', first = (r.customer_name || '').split(' ')[0];
+  const shop = { ...SHOP, ...(r.shop || {}) };
+  const photoUrl = (p) => (SUPABASE_URL ? SUPABASE_URL + '/storage/v1/object/public/rental-photos/' + p : p);
+  const photos = (phase) => (r.photos || []).filter((p) => p.phase === phase);
+  const Photos = ({ phase, title }) => photos(phase).length ? (
+    <div style={css(CARD + ';margin-top:12px')}>
+      <div style={css(LBL)}>{title}</div>
+      <div style={css('display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px')}>{photos(phase).map((p, i) => <img key={i} src={photoUrl(p.path)} alt="" style={css('width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px')} />)}</div>
+    </div>
+  ) : null;
   const days = daysBetween(r.start_date, r.end_date), total = r.shop_pays ? 0 : (days * r.rate_cents) / 100;
   const canSign = r.status === 'sent' && !!v;
   if (r.status === 'draft' || (r.status === 'sent' && !v)) return <div style={css(PAGE)}><div style={css(WRAP + ';padding-top:120px;text-align:center')}><div style={css('font-size:20px;font-weight:600')}>Your agreement is being prepared.</div><div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:8px;line-height:1.5')}>The front desk is finishing it. This page updates on its own.</div></div></div>;
@@ -117,6 +126,8 @@ export function RentalRoute() {
             <div style={css(ROW + ';border-bottom:0')}><span style={css('color:rgba(235,235,245,.5)')}>Bring it back with</span><span>{r.charge_min === 'No minimum' ? 'any level' : r.charge_min + ' or more'}</span></div>
           </div>
         ) : null}
+        <Photos phase="out" title="Condition at handoff" />
+        <Photos phase="in" title="Condition at return" />
         {r.status === 'signed' || r.status === 'out' ? (
           <>
             <div style={css(LBL + ';margin:26px 0 10px')}>Good to know</div>
@@ -128,11 +139,11 @@ export function RentalRoute() {
             ))}
             <div style={css(CARD + ';margin-bottom:10px')}>
               <div style={css('font-size:14px;font-weight:500')}>Returning</div>
-              <div style={css('font-size:13px;line-height:1.5;color:rgba(235,235,245,.55);margin-top:4px')}>Pull into the lot at {SHOP.address.split(',')[0]} and hand the keys to the front desk. We record mileage and {ev ? 'charge' : 'fuel'} with you there.</div>
+              <div style={css('font-size:13px;line-height:1.5;color:rgba(235,235,245,.55);margin-top:4px')}>Pull into the lot{shop.address ? ' at ' + shop.address.split(',')[0] : ''} and hand the keys to the front desk. We record mileage and {ev ? 'charge' : 'fuel'} with you there.</div>
             </div>
           </>
         ) : null}
-        <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:26px;text-align:center')}>{SHOP.name} · Questions? Call the shop.</div>
+        <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:26px;text-align:center')}>{shop.name}{shop.phone ? ' · ' + shop.phone : ' · Questions? Call the shop.'}</div>
       </div></div>
     );
   }
@@ -172,7 +183,7 @@ export function RentalRoute() {
       </div>
       {sErr ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:12px')}>{sErr}</div> : null}
       <div onClick={sign} style={css('margin-top:18px;' + CTA(agree && sigOk && !busy))}>{busy ? 'Signing…' : 'Sign and hold the car'}</div>
-      <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:14px;text-align:center;line-height:1.5')}>A copy stays on this link. {SHOP.name}.</div>
+      <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:14px;text-align:center;line-height:1.5')}>A copy stays on this link. {shop.name}.</div>
     </div></div>
   );
 }

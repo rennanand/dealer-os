@@ -99,7 +99,11 @@ export function LoanersLive({ vm }) {
               </div>
             </div>
             <div style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px')}>
-              <div style={css('font-size:15px;font-weight:500')}>Rentals</div>
+              <div style={css('display:flex;justify-content:space-between;align-items:center')}>
+                <div style={css('font-size:15px;font-weight:500')}>Rentals</div>
+                <div style={css('display:flex;gap:4px')}>{L(vm.rFilters).map((f, _i) => <div key={_i} onClick={f?.pick} style={css(f?.style)}>{T(f?.label)}</div>)}</div>
+              </div>
+              <input placeholder="Search name, number, plate" value={val(vm.rSearch)} onChange={vm.onRSearch} style={css(INPUT + ';margin-top:10px;padding:9px 12px;font-size:12.5px')} />
               <div style={css('margin-top:6px')}>
                 {L(vm.rentalList).map((x, _i) => (
                   <React.Fragment key={_i}>
