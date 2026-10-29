@@ -11,7 +11,12 @@ struct Board: Decodable {
         var vehicle: String; var color: String; var paint: String; var status: String
         var id: String { vehicle + color }
     }
-    var shop: Shop?; var rentals: [Rental]; var fleet: [Vehicle]
+    struct Bay: Decodable, Identifiable {
+        var bay: Int; var status: String; var job: String; var who: String; var vehicle: String?; var tech: String?; var pending: Int
+        var started_at: String?; var done_at: String?
+        var id: Int { bay }
+    }
+    var shop: Shop?; var rentals: [Rental]; var fleet: [Vehicle]; var bays: [Bay]?
 }
 
 @MainActor
