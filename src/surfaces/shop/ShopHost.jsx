@@ -7,6 +7,8 @@ import { OverviewLive } from './OverviewLive.jsx';
 import { ScheduleLive } from './ScheduleLive.jsx';
 import { TechniciansLive } from './TechniciansLive.jsx';
 import { Inbox } from './Inbox.jsx';
+import { Approvals } from './Approvals.jsx';
+import { Followups } from './Followups.jsx';
 import { css } from '../../runtime/tpl.js';
 
 /** Customers and Appointments run on real records, separate from the demo view-model.
@@ -21,6 +23,8 @@ function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox }) {
   React.useEffect(() => { if (booking && goAppointments) goAppointments(); }, [booking]);
   if (page === 'schedule') return <ScheduleLive vm={vm} />;
   if (page === 'technicians') return <TechniciansLive vm={vm} />;
+  if (page === 'approvals') return <Approvals vm={{ queueFull: vm.approvals.queueFull, estSel: vm.approvals.estSel, sendReminder: vm.approvals.sendReminder }} />;
+  if (page === 'followups') return <Followups vm={vm.followups} />;
   if (page === 'inbox') {
     const ib = vm.inbox;
     if (ib.none) return (

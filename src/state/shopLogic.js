@@ -26,11 +26,12 @@ const DEMO = {
   customers: [{ id: 'c1', name: 'Sarah Mitchell', phone: '4355550141', email: '', city: 'Ephraim, UT', created_at: '2025-03-01' }, { id: 'c2', name: 'Dale Christensen', phone: '4355550177', email: '', city: 'Gunnison, UT', created_at: '2024-06-12' }],
   vehicles: [{ id: 'v1', customer_id: 'c1', year: 2021, make: 'Toyota', model: '4Runner', plate: 'UT 4RNR', odometer: 61220 }, { id: 'v2', customer_id: 'c2', year: 2018, make: 'Ford', model: 'F-150', plate: 'UT F150', odometer: 142300 }],
   appointments: [{ id: 'a1', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T10:30:00', job: 'Tire replacement', visit: 'wait', status: 'in_progress', bay: 2 }, { id: 'a2', customer_id: 'c2', vehicle_id: 'v2', starts_at: today() + 'T08:00:00', job: 'Plugs + coils', visit: 'dropoff', status: 'done' }, { id: 'a3', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T15:00:00', job: 'Inspection', visit: 'dropoff', status: 'booked' }],
+  findings: [{ id: 'f1', appointment_id: 'a1', tier: 'now', name: 'Front brake pads + rotors', plain: 'Pads are worn down.', price_cents: 48932, status: 'pending', created_at: new Date(Date.now() - 25 * 60000).toISOString() }, { id: 'f2', appointment_id: 'a2', tier: 'soon', name: 'Cabin air filter', plain: 'Getting dirty.', price_cents: 6500, status: 'declined', decided_at: new Date(Date.now() - 3 * 864e5).toISOString(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), fu_status: 'open' }],
   rentals: [{ id: 'r1', number: 'LN-3107', customer_id: 'c2', customer_name: 'Dale Christensen', status: 'out', start_date: today(), end_date: addDays(today(), 1), vehicle_id: 'lv1' }], loanerFleet: [{ id: 'lv1', year: 2027, make: 'Tesla', model: 'Model 3', status: 'out' }],
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, estId: null, fuTab: 'Open', fuNote: '', techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
@@ -291,6 +292,46 @@ export class ShopLogic extends DCLogic {
       startWith: (cid) => set({ threadId: cid }),
     };
 
+    // Approvals: every visit with an estimate waiting, plus visits in progress with nothing sent yet
+    const fmtC = (c) => '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const TCOL = { now: ACC, soon: YEL, monitor: GRN };
+    const openVisits = s.appointments.filter((a) => a.status === 'arrived' || a.status === 'in_progress');
+    const ageOf = (ts) => { const m = Math.round((Date.now() - new Date(ts)) / 60000); return m < 60 ? m + ' min' : Math.round(m / 60) + ' h'; };
+    const queue = openVisits.map((a) => { const fs = s.findings.filter((f) => f.appointment_id === a.id), pend = fs.filter((f) => f.status === 'pending'), c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id); const sentAt = pend.length ? pend.reduce((t, f) => (t < f.created_at ? t : f.created_at), pend[0].created_at) : null; return { id: a.id, who: c ? c.name : 'Walk-in', car: (vehName(v) || 'Vehicle') + ' · ' + (a.job || 'Service'), total: pend.length ? fmtC(pend.reduce((t, f) => t + f.price_cents, 0)) : fs.length ? fmtC(fs.filter((f) => f.status === 'approved' || f.status === 'done').reduce((t, f) => t + f.price_cents, 0)) : '—', wait: pend.length ? 'Waiting ' + ageOf(sentAt) : fs.length ? 'Decided' : a.status === 'in_progress' ? 'In service · nothing sent' : 'Checked in', waitColor: pend.length ? (Date.now() - new Date(sentAt) > 20 * 60000 ? ACC : YEL) : DIM, kicker: pend.length ? 'Waiting for approval' : fs.length ? 'Decided' : 'No estimate yet', kColor: pend.length ? YEL : fs.length ? GRN : DIM, pend, fs, a, c, v, sentAt, rank: pend.length ? 0 : 1 }; }).sort((x, y) => x.rank - y.rank || (x.sentAt || '').localeCompare(y.sentAt || ''));
+    const est = queue.find((q) => q.id === s.estId) || queue[0] || null;
+    const approvals = {
+      count: queue.filter((q) => q.pend.length).length,
+      queueFull: queue.map((q) => ({ who: q.who, car: q.car, total: q.total, wait: q.wait, waitColor: q.waitColor, kicker: q.kicker, kColor: q.kColor, open: () => set({ estId: q.id }), style: 'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px 18px;cursor:pointer;transition:all .18s ease;' + (est && est.id === q.id ? 'box-shadow:inset 0 0 0 1px rgba(235,235,245,.2);' : '') })),
+      estSel: est ? { wo: 'Visit · ' + fmtTime(est.a.starts_at), totalLabel: 'Total · tax at the counter', who: est.who, car: (vehName(est.v) || 'Vehicle') + (est.v && est.v.odometer ? ' · ' + est.v.odometer.toLocaleString('en-US') + ' mi' : ''), total: est.total, lines: est.fs.map((f) => ({ k: f.name + (f.status === 'declined' ? ' (declined)' : f.status === 'approved' || f.status === 'done' ? ' (approved)' : ''), v: f.price_cents ? fmtC(f.price_cents) : '$0.00', dot: 'width:7px;height:7px;border-radius:4px;flex:0 0 auto;background:' + (f.status === 'declined' ? DIM : TCOL[f.tier] || DIM) })), note: est.pend.length ? 'Sent ' + fmtTime(est.sentAt) + ' to the customer\u2019s phone. ' + est.pend.length + (est.pend.length === 1 ? ' item' : ' items') + ' waiting.' : est.fs.length ? 'Customer decided in the app.' : 'Add findings on the appointment to send an estimate.', cta: est.pend.length ? 'Send a gentle reminder' : '', canRemind: est.pend.length > 0 } : { wo: '', who: 'Nothing waiting', car: '', total: '', lines: [], note: 'Estimates appear here the moment a finding is sent from an appointment.', cta: '', canRemind: false },
+      sendReminder: () => { if (!est || !est.pend.length || !est.c) return; this.sendReply(est.c.id, 'Just checking in \u2014 your estimate is ready in the app whenever you are. Happy to answer anything about it.'); set({ fuNote: 'Reminder sent to ' + est.who.split(' ')[0] + ' in the app.' }); },
+      none: !s.loading && !queue.length,
+    };
+
+    // Follow-ups: declined work, with remind / snooze / close
+    const declined = s.findings.filter((f) => f.status === 'declined');
+    const fuAll = declined.map((f) => { const a = s.appointments.find((x) => x.id === f.appointment_id), c = a && this.custOf(a.customer_id), v = a && this.vehOf(a.vehicle_id); const stt = f.fu_status === 'snoozed' && f.fu_until && new Date(f.fu_until) < new Date() ? 'open' : f.fu_status || 'open'; const weeks = Math.round((Date.now() - new Date(f.decided_at || f.created_at)) / (7 * 864e5)); return { f, a, c, v, stt, weeks }; });
+    const fuRowsAll = fuAll.map(({ f, a, c, v, stt, weeks }) => {
+      const status = stt === 'reminded' ? 'Reminded · ' + relDay(f.fu_at) : stt === 'snoozed' ? 'Snoozed · ' + fmtDay(f.fu_until) : stt === 'done' ? 'Closed' : 'Open · ' + (weeks < 1 ? 'this week' : weeks + ' wk');
+      const sc = stt === 'reminded' ? YEL : stt === 'snoozed' ? DIM : stt === 'done' ? GRN : TCOL[f.tier] || DIM;
+      const setFu = (p) => this.setFinding(f.id, p);
+      return { cust: c ? c.name : 'Customer', car: v ? vehName(v) : 'Vehicle', item: f.name, wo: a ? 'Visit · ' + fmtDay(a.starts_at) : '', tier: { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }[f.tier] || f.tier, declined: relDay(f.decided_at || f.created_at) + ' · in app', reason: 'Left unchecked in the service plan', price: fmtC(f.price_cents), dot: 'width:7px;height:7px;border-radius:4px;flex:0 0 auto;background:' + (TCOL[f.tier] || DIM), status, statusPill: pill(sc), stt, value: f.price_cents,
+        canRemind: (stt === 'open' || stt === 'snoozed') && !!c, canSnooze: stt === 'open', canDone: stt !== 'done',
+        remind: () => { if (c) this.sendReply(c.id, 'Hi ' + c.name.split(' ')[0] + ', a reminder that ' + f.name.toLowerCase() + ' was recommended at your last visit' + (f.price_cents ? ' (' + fmtC(f.price_cents) + ')' : '') + '. Book whenever it suits you \u2014 it is in the app.'); setFu({ fu_status: 'reminded', fu_at: new Date().toISOString() }); set({ fuNote: 'Reminder sent to ' + (c ? c.name.split(' ')[0] : 'the customer') + ' in the app.' }); },
+        snooze: () => { const d = new Date(); d.setDate(d.getDate() + 30); setFu({ fu_status: 'snoozed', fu_until: d.toISOString() }); }, done: () => setFu({ fu_status: 'done' }),
+        style: 'display:grid;grid-template-columns:1.25fr 1.5fr .9fr .55fr 1.35fr 1fr 196px;gap:14px;padding:16px 0;border-bottom:1px solid rgba(235,235,245,.07);font-size:13px;align-items:center;transition:opacity .2s ease;opacity:' + (stt === 'done' ? 0.45 : 1) };
+    });
+    const fuTab = s.fuTab || 'Open';
+    const fuRows = fuRowsAll.filter((r) => fuTab === 'All' || (fuTab === 'Open' ? r.stt === 'open' : r.stt === 'reminded'));
+    const fuOpen = fuRowsAll.filter((r) => r.stt === 'open');
+    const chipF = (on) => 'padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;' + (on ? 'background:#fff;color:#000' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7)');
+    const followups = {
+      count: fuOpen.length,
+      fuTabs: ['Open', 'Reminded', 'All'].map((x) => ({ label: x, pick: () => set({ fuTab: x }), style: chipF(fuTab === x) })),
+      fuStats: [{ n: String(fuOpen.length), l: 'Open', c: '#fff' }, { n: fmtC(fuOpen.reduce((t, r) => t + r.value, 0)), l: 'Declined value, open', c: '#fff' }, { n: String(fuRowsAll.filter((r) => r.stt === 'reminded').length), l: 'Reminded', c: fuRowsAll.some((r) => r.stt === 'reminded') ? YEL : '#fff' }],
+      fuRows, fuEmpty: fuRows.length === 0,
+      fuNote: s.fuNote || 'Remind sends an in-app message to the customer. Snooze hides the item for 30 days. Nothing is sent automatically.',
+    };
+
     const schedule = {
       sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
       nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
@@ -300,7 +341,7 @@ export class ShopLogic extends DCLogic {
     };
 
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),

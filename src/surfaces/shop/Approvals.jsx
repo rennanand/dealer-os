@@ -52,7 +52,7 @@ export function Approvals({ vm }) {
               </React.Fragment>
             ))}
             <div style={css('display:flex;justify-content:space-between;padding:14px 0 0')}>
-              <div style={css('font-size:14px;font-weight:500')}>Total with tax</div>
+              <div style={css('font-size:14px;font-weight:500')}>{vm.estSel?.totalLabel || 'Total with tax'}</div>
               <div style={css('font-size:20px;font-weight:500;letter-spacing:-.3px')}>{T(vm.estSel?.total)}</div>
             </div>
           </div>

@@ -85,7 +85,7 @@ export function ShopApp({ vm }) {
         </div>
         <div style={css('flex:1;min-width:0;overflow-y:auto;padding:30px 34px')} className="hidescroll">
           {vm.dOverview && !LAUNCH ? <Overview vm={vm} /> : null}
-          {vm.dApprovals ? <Approvals vm={vm} /> : null}
+          {vm.dApprovals && !LAUNCH ? <Approvals vm={vm} /> : null}
           {vm.dEstimate ? <Estimate vm={vm} /> : null}
           {vm.dInbox && !LAUNCH ? <Inbox vm={vm} /> : null}
           {vm.dSales ? <Sales vm={vm} /> : null}
@@ -93,7 +93,7 @@ export function ShopApp({ vm }) {
           {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule && !LAUNCH ? <Schedule vm={vm} /> : null}
-          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs || vm.dInbox) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dInbox ? 'inbox' : vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} goInbox={(vm.sideNav.find((n) => n.label === 'Inbox') || {}).go} /> : null}
+          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs || vm.dInbox || vm.dApprovals || vm.dFollowups) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dInbox ? 'inbox' : vm.dApprovals ? 'approvals' : vm.dFollowups ? 'followups' : vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} goInbox={(vm.sideNav.find((n) => n.label === 'Inbox') || {}).go} /> : null}
           {vm.dAppointments && !LAUNCH ? <Appointments vm={vm} /> : null}
           {vm.dCheckin ? <Checkin vm={vm} /> : null}
           {vm.dCustomers && !LAUNCH ? <Customers vm={vm} /> : null}
@@ -102,7 +102,7 @@ export function ShopApp({ vm }) {
           {vm.dTechs && !LAUNCH ? <Techs vm={vm} /> : null}
           {vm.dSettings ? (LAUNCH ? <ShopSettingsLive /> : <Settings vm={vm} />) : null}
           {vm.dTeam ? <TeamLive /> : null}
-          {vm.dFollowups ? <Followups vm={vm} /> : null}
+          {vm.dFollowups && !LAUNCH ? <Followups vm={vm} /> : null}
           {vm.dFleet ? <Fleet vm={vm} /> : null}
           {vm.dOil ? <Oil vm={vm} /> : null}
           {vm.dEmpty ? <Empty vm={vm} /> : null}
