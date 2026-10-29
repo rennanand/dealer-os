@@ -4,7 +4,7 @@ import { css } from '../runtime/tpl.js';
 // Shops on Revyn, on an Apple map. MapKit JS needs a token from the developer account
 // (VITE_MAPKIT_TOKEN); without one the section still shows the shop card and opens Apple Maps on tap.
 const TOKEN = import.meta.env.VITE_MAPKIT_TOKEN || '';
-const CARD = 'background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px';
+const CARD = 'background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px 18px';
 const LBL = 'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)';
 const fmtPhone = (p) => { const d = (p || '').replace(/\D/g, ''); return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : p || ''; };
 export const mapsHref = (s) => 'https://maps.apple.com/?q=' + encodeURIComponent(s.name) + (s.lat ? '&ll=' + s.lat + ',' + s.lng : '') + '&address=' + encodeURIComponent(s.address || '');

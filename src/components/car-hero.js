@@ -45,12 +45,13 @@
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
       renderer.setClearColor(0x000000, 0);
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+      renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0;
       const scene = this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
       scene.environment = this.makeEnv(THREE, renderer);
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x1a1c22, 0.55));
-      const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(4, 7, 3); key.castShadow = true;
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x1a1c22, 0.4));
+      const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-3, 3, 6); scene.add(fill);
+      const key = new THREE.DirectionalLight(0xffffff, 1.3); key.position.set(4, 7, 3); key.castShadow = true;
       key.shadow.mapSize.set(1024, 1024); key.shadow.camera.left = key.shadow.camera.bottom = -4; key.shadow.camera.right = key.shadow.camera.top = 4; key.shadow.radius = 6; key.shadow.bias = -0.0005;
       scene.add(key);
       const rim = new THREE.DirectionalLight(0xdfe8ff, 0.9); rim.position.set(-5, 4, -4); scene.add(rim);
@@ -85,14 +86,14 @@
     makeEnv(THREE, renderer) {
       const s = new THREE.Scene();
       const panel = (w, h, x, y, z, i, rx, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(i) })); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0); s.add(m); };
-      s.add(new THREE.Mesh(new THREE.SphereGeometry(30, 8, 8), new THREE.MeshBasicMaterial({ color: 0x0a0b0d, side: THREE.BackSide })));
+      s.add(new THREE.Mesh(new THREE.SphereGeometry(30, 8, 8), new THREE.MeshBasicMaterial({ color: 0x14161b, side: THREE.BackSide })));
       panel(18, 3, 0, 9, 0, 4.2, Math.PI / 2); panel(18, 1.2, 0, 9, 4.5, 2.4, Math.PI / 2); panel(10, 4, -9, 3, 0, 1.3, 0, Math.PI / 2); panel(10, 4, 9, 3, 0, 0.8, 0, -Math.PI / 2); panel(16, 3, 0, 2, -12, 0.5); panel(16, 2, 0, 1.5, 12, 0.35, 0, Math.PI);
       const pm = new THREE.PMREMGenerator(renderer); const tex = pm.fromScene(s, 0.04).texture; pm.dispose(); return tex;
     }
     makeMaterials(THREE) {
       const M = (name, c, rough, metal, extra) => { const m = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: rough, metalness: metal }, extra || {})); m.name = name; return m; };
       return {
-        paint: (() => { const m = new THREE.MeshPhysicalMaterial({ color: 0xb9bdc3, roughness: 0.18, metalness: 0.88, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 2.0 }); m.name = 'paint'; return m; })(),
+        paint: (() => { const m = new THREE.MeshPhysicalMaterial({ color: 0xb9bdc3, roughness: 0.1, metalness: 0.8, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.6 }); m.name = 'paint'; return m; })(),
         glass: M('glass', PALETTE.glass, 0.1, 0.9, { transparent: true, opacity: 0.92, envMapIntensity: 1.8 }),
         chrome: M('chrome', PALETTE.chrome, 0.12, 1), satin_black: M('satin_black', PALETTE.satin_black, 0.6, 0.3),
         rubber: M('rubber', PALETTE.rubber, 0.95, 0), underbody: M('underbody', PALETTE.underbody, 0.9, 0.1), interior: M('interior', PALETTE.interior, 0.9, 0),

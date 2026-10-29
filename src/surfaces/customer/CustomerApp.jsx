@@ -49,7 +49,7 @@ export function CustomerApp({ vm }) {
     <>
       <div
         style={css(
-          "position:relative;height:100%;background:#000;color:#fff;overflow:hidden;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif",
+          "position:relative;height:100%;background:radial-gradient(70% 45% at 12% -5%,rgba(112,132,255,.42) 0%,rgba(112,132,255,0) 60%),radial-gradient(55% 35% at 95% 22%,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 60%),radial-gradient(60% 30% at 50% 58%,rgba(120,90,255,.14) 0%,rgba(120,90,255,0) 70%),radial-gradient(90% 40% at 50% 108%,rgba(224,49,43,.3) 0%,rgba(224,49,43,0) 62%),linear-gradient(180deg,#0c0c12 0%,#08080b 100%);color:#fff;overflow:hidden;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif",
         )}
       >
         {vm.toast ? (
@@ -76,6 +76,7 @@ export function CustomerApp({ vm }) {
             </div>{' '}
           </>
         ) : null}{' '}
+        {vm.heroStyle && !/opacity:0/.test(vm.heroStyle) ? <div style={css('position:absolute;left:-10%;right:-10%;top:40px;height:320px;z-index:3;pointer-events:none;background:radial-gradient(45% 55% at 50% 58%,' + (/^#[0-9a-f]{6}$/i.test(vm.heroPaint || '') ? vm.heroPaint + '66' : 'rgba(255,255,255,.18)') + ' 0%,rgba(0,0,0,0) 70%);filter:blur(28px)')} /> : null}
         <div style={css(vm.heroStyle)}>
           <div ref={vm.heroInnerRef} style={css('height:100%;will-change:transform')}>
             <div className="sc-host-x" style={css('height:100%')}>

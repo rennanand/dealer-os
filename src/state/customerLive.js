@@ -165,7 +165,7 @@ export class CustomerLive extends AppLogic {
     Object.assign(V, {
       greeting: first ? (hour < 12 ? 'Good morning, ' : hour < 17 ? 'Good afternoon, ' : 'Good evening, ') + first + '.' : 'Welcome.',
       initials, hasUnread: false, myCars: cars, car0, multiCar: cars.length > 1, dots: cars.map((_, i) => ({ style: 'width:6px;height:6px;border-radius:3px;transition:background .2s ease;background:' + (i === vIdx ? '#fff' : 'rgba(235,235,245,.25)') })),
-      heroPaint: view === 'home' || view === 'garage' ? car0.paint : V.heroPaint,
+      heroPaint: cars.length ? car0.paint : V.heroPaint,
       odoLabel: live.vehicles[vIdx] && live.vehicles[vIdx].odometer ? live.vehicles[vIdx].odometer.toLocaleString('en-US') + ' mi' : 'Mileage',
       goOdometer: () => { const v = live.vehicles[vIdx]; if (!v) return; const val = window.prompt('Current mileage for your ' + (v.model || 'car') + ':', v.odometer || ''); const n = parseInt(String(val || '').replace(/\D/g, ''), 10); if (n && supabase) supabase.rpc('update_my_odometer', { p_vehicle: v.id, p_odometer: n }).then(() => this.loadLive()); },
       nextDue: nextDue, showExtras: true, showPlans: false,

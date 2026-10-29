@@ -50,7 +50,7 @@ export function Onboard({ vm }) {
               </div>
               <div
                 style={css(
-                  'margin-top:28px;display:flex;align-items:center;gap:10px;padding:16px 18px;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px',
+                  'margin-top:28px;display:flex;align-items:center;gap:10px;padding:16px 18px;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);border-radius:14px',
                 )}
               >
                 <div style={css('font-size:20px;color:rgba(235,235,245,.5)')}>+1</div>
@@ -108,7 +108,7 @@ export function Onboard({ vm }) {
               <div
                 onClick={vm.obAutofill}
                 style={css(
-                  'margin-top:18px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);font-size:12.5px;color:rgba(235,235,245,.8);cursor:pointer',
+                  'margin-top:18px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);font-size:12.5px;color:rgba(235,235,245,.8);cursor:pointer',
                 )}
               >
                 <svg viewBox="0 0 24 24" style={css('width:15px;height:15px;display:block;flex:0 0 auto')}>
@@ -154,7 +154,7 @@ export function Onboard({ vm }) {
                   onChange={vm.onObPlate}
                   placeholder="RYG 8A42"
                   style={css(
-                    'flex:1;min-width:0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px;border:none;padding:16px 18px;color:#fff;font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;outline:none;font-family:inherit',
+                    'flex:1;min-width:0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);border-radius:14px;border:none;padding:16px 18px;color:#fff;font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;outline:none;font-family:inherit',
                   )}
                 />
                 <div
@@ -197,7 +197,7 @@ export function Onboard({ vm }) {
                       onChange={vm.onObName}
                       placeholder="Quicksilver"
                       style={css(
-                        'margin-top:8px;width:100%;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px;border:none;padding:14px 16px;color:#fff;font-size:15px;outline:none;font-family:inherit',
+                        'margin-top:8px;width:100%;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);border-radius:14px;border:none;padding:14px 16px;color:#fff;font-size:15px;outline:none;font-family:inherit',
                       )}
                     />{' '}
                     <div style={css('margin-top:14px;display:flex;gap:8px;align-items:center;font-size:12.5px;color:rgba(235,235,245,.6)')}>
