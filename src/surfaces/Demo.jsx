@@ -20,10 +20,8 @@ export function Demo({ vm }) {
           )}
         >
           <div style={css('display:flex;align-items:center;gap:12px')}>
-            <div style={css('background:#fff;border-radius:6px;padding:5px 8px')}>
-              <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:16px;width:auto;display:block')} />
-            </div>
-            <div style={css('font-size:12px;color:rgba(235,235,245,.45)')}>Dealership OS · prototype v5</div>
+            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:12px;width:auto;display:block')} />
+            <div style={css('font-size:12px;color:rgba(235,235,245,.45)')}>Revyn · prototype</div>
           </div>
           <div style={css('display:flex;background:#1c1c1e;border-radius:10px;padding:3px;gap:2px')}>
             {L(vm.devices).map((d, _i) => (

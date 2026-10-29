@@ -1,4 +1,6 @@
-# RyGuys Dealership App — project notes
+# Revyn — project notes
+
+- Product name: Revyn (logo in public/uploads/revyn.png, titanium variant revyn-titanium.png, vector in brand/revyn.svg). RyGuys Tire & Auto Sales is the pilot shop; its name appears only where the shop is meant (agreements, shop settings).
 
 - The app has NO connection to the vehicle. It cannot read mileage, charge, fluid levels, tire pressure, or any sensor.
 - All vehicle data is either (a) measured by a technician at a visit, (b) entered by the customer (odometer, concern), or (c) estimated from timelines/intervals since the last visit.

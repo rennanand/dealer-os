@@ -21,9 +21,7 @@ export function LobbyIdle({ vm }) {
     <div style={css('width:1360px;height:765px;background:#000;color:#fff;padding:44px 56px 40px;display:flex;flex-direction:column;' + (vm.lobbyScaleStyle || '') + ";font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif")}>
       <div style={css('display:flex;justify-content:space-between;align-items:flex-start')}>
         <div style={css('display:flex;align-items:center;gap:18px')}>
-          <div style={css('background:#fff;border-radius:7px;padding:7px 10px')}>
-            <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:18px;width:auto;display:block')} />
-          </div>
+          <img src="/uploads/revyn.png" alt="Revyn" style={css('height:14px;width:auto;display:block')} />
           <div style={css(MONO + ';font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:rgba(235,235,245,.45)')}>Service status · Manti</div>
         </div>
         <div style={css('text-align:right')}>

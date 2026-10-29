@@ -1,7 +1,7 @@
 {
-  "appId": "com.dealeros.ryguys",
-  "appName": "RyGuys",
+  "appId": "com.revyn.app",
+  "appName": "Revyn",
   "webDir": "dist-ios",
-  "ios": { "contentInset": "never", "backgroundColor": "#000000", "scheme": "RyGuys" },
+  "ios": { "contentInset": "never", "backgroundColor": "#000000", "scheme": "Revyn" },
   "plugins": { "SplashScreen": { "launchShowDuration": 0 }, "StatusBar": { "style": "DARK" } }
 }

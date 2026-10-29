@@ -1,4 +1,4 @@
-# Lobby TV (Apple TV)
+# Revyn Lobby TV (Apple TV)
 
 A small SwiftUI app that shows the loaner board on an Apple TV. It reads the same database
 as the website through a display token, so nothing on the TV needs a login.

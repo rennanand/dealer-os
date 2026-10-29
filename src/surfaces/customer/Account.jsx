@@ -72,7 +72,7 @@ export function Account({ vm }) {
         </div>
         <div style={css('margin-top:26px;display:flex;justify-content:center')}>
           <div style={css('background:#fff;border-radius:10px;padding:14px 18px')}>
-            <img src="/uploads/ryguys-logo-trim.png" alt={'RyGuys Tire & Auto Sales'} style={css('height:58px;width:auto;display:block')} />
+            <img src="/uploads/revyn.png" alt={'RyGuys Tire & Auto Sales'} style={css('height:58px;width:auto;display:block')} />
           </div>
         </div>
         <div style={css('font-size:11px;line-height:1.6;color:rgba(235,235,245,.28);text-align:center;margin-top:14px')}>

@@ -8,9 +8,7 @@ export function Onboard({ vm }) {
         {vm.ob0 ? (
           <>
             <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 26px 8px')}>
-              <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
-                <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
-              </div>
+              <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
               <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px;text-wrap:pretty')}>
                 Your car, in your pocket.
               </div>

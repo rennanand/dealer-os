@@ -62,7 +62,7 @@ export function CustomerApp({ vm }) {
                   'width:30px;height:30px;border-radius:7px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto',
                 )}
               >
-                <img src="/uploads/ryguys-logo-trim.png" alt="" style={css('height:12px;width:auto')} />
+                <img src="/uploads/revyn.png" alt="" style={css('height:12px;width:auto')} />
               </div>
               <div style={css('flex:1;min-width:0')}>
                 <div style={css('display:flex;justify-content:space-between;font-size:11px;color:rgba(235,235,245,.5)')}>

@@ -1,4 +1,4 @@
-# RyGuys iOS app
+# Revyn iOS app
 
 The customer app as a native iOS app, built with Capacitor around the same code and database
 as the website. Signed-in customers and staff use the same accounts.
@@ -17,4 +17,4 @@ your iPhone. For TestFlight: Product → Archive → Distribute → App Store Co
 add internal testers in App Store Connect (no review needed for internal testing).
 
 Every time the web code changes, run `npm run build:ios` again and archive a new build.
-Config: `capacitor.config.json` (bundle id `com.dealeros.ryguys`), `.env.app` (backend).
+Config: `capacitor.config.json` (bundle id `com.revyn.app`), `.env.app` (backend).

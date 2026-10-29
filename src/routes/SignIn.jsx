@@ -45,9 +45,7 @@ export function SignIn({ title = 'Sign in', note }) {
       <Backdrop>
         <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 34px)')}>
           <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
-            <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
-              <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
-            </div>
+            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
             <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>{mode === 'up' ? 'Create your account.' : title}</div>
             <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Use the email the shop invited. Pick a password of at least 8 characters.' : note || 'Your email and password.')}</div>
           </div>
@@ -71,9 +69,7 @@ export function SignIn({ title = 'Sign in', note }) {
     <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
       <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px 34px')}>
         <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
-          <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
-            <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
-          </div>
+          <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
           <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{step === 0 ? title : 'Enter your code.'}</div>
           <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>
             {step === 0 ? note || 'We will email you a six-digit code. No password to remember.' : 'Sent to ' + email.trim() + '. It expires in an hour.'}

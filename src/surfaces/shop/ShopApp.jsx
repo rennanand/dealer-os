@@ -34,9 +34,7 @@ export function ShopApp({ vm }) {
           )}
         >
           <div style={css('display:flex;align-items:center;gap:10px;padding:0 10px 18px')}>
-            <div style={css('background:#fff;border-radius:6px;padding:5px 7px')}>
-              <img src="/uploads/ryguys-logo-trim.png" alt="" style={css('height:13px;width:auto;display:block')} />
-            </div>
+            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:10px;width:auto;display:block')} />
             <div style={css('font-size:12px;color:rgba(235,235,245,.5)')}>Manti, UT</div>
           </div>
           {L(vm.sideNav).map((n, _i) => (

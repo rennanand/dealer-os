@@ -113,7 +113,7 @@ struct BoardView: View {
                 }
             }
             Spacer()
-            Text("Agreements, handoff and return are in the RyGuys app.").font(.system(size: 22)).foregroundColor(dim).multilineTextAlignment(.trailing)
+            Text("Agreements, handoff and return are in Revyn.").font(.system(size: 22)).foregroundColor(dim).multilineTextAlignment(.trailing)
         }
     }
     func label(_ t: String) -> some View { Text(t.uppercased()).font(.system(size: 18, weight: .medium, design: .monospaced)).kerning(3).foregroundColor(.white.opacity(0.4)) }

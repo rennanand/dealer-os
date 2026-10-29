@@ -42,7 +42,7 @@ export function MyLoaners({ auth }) {
     return (
       <div style={css(PAGE)}><div style={css(WRAP)}>
         <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
-          <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}><img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} /></div>
+          <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
           <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>Your mobile number.</div>
           <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>The one the shop has for you. Your loaner agreements show up here.</div>
         </div>
@@ -56,7 +56,7 @@ export function MyLoaners({ auth }) {
   return (
     <div style={css(PAGE)}><div style={css(WRAP)}>
       <div style={css('display:flex;justify-content:space-between;align-items:center')}>
-        <div style={css('background:#fff;border-radius:7px;padding:6px 9px')}><img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:14px;width:auto;display:block')} /></div>
+        <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block')} />
         <div onClick={signOut} style={css('font-size:12px;color:rgba(235,235,245,.4);cursor:pointer')}>Sign out</div>
       </div>
       <div style={css('font-size:28px;font-weight:600;letter-spacing:-.9px;line-height:1.1;margin-top:26px')}>{first ? 'Hi ' + first + '.' : 'Your loaners.'}</div>

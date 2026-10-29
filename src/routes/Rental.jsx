@@ -84,7 +84,7 @@ export function RentalRoute() {
   };
   const Header = () => (
     <div style={css('display:flex;align-items:center;justify-content:space-between')}>
-      <div style={css('background:#fff;border-radius:7px;padding:6px 9px')}><img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:14px;width:auto;display:block')} /></div>
+      <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block')} />
       <div style={css(LBL)}>{r.number}</div>
     </div>
   );

@@ -1,4 +1,4 @@
-# DealerOS (RyGuys pilot)
+# Revyn (RyGuys pilot)
 
 Customer app, technician iPad, shop desktop and lobby TV for RyGuys Tire & Auto, ported from the Claude Design prototype (v5) into a React codebase.
 

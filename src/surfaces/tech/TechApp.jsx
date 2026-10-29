@@ -26,7 +26,7 @@ export function TechApp({ vm }) {
               'width:40px;height:40px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px',
             )}
           >
-            <img src="/uploads/ryguys-logo-trim.png" alt="" style={css('height:14px;width:auto')} />
+            <img src="/uploads/revyn.png" alt="" style={css('height:14px;width:auto')} />
           </div>
           {L(vm.padNav).map((n, _i) => (
             <React.Fragment key={_i}>

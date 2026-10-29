@@ -13,9 +13,7 @@ export function LobbyBoard({ vm }) {
       >
         <div style={css('display:flex;justify-content:space-between;align-items:flex-start')}>
           <div style={css('display:flex;align-items:center;gap:18px')}>
-            <div style={css('background:#fff;border-radius:7px;padding:7px 10px')}>
-              <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:18px;width:auto;display:block')} />
-            </div>
+            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:14px;width:auto;display:block')} />
             <div>
               <div
                 style={css(

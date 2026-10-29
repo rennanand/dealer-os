@@ -62,7 +62,7 @@ export function Vehicle({ vm }) {
                       'width:34px;height:34px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center',
                     )}
                   >
-                    <img src="/uploads/ryguys-logo-trim.png" alt="" style={css('height:12px;width:auto')} />
+                    <img src="/uploads/revyn.png" alt="" style={css('height:12px;width:auto')} />
                   </div>
                   <div style={css('flex:1')}>
                     <div style={css('font-size:14px;font-weight:500')}>Serviced here</div>
