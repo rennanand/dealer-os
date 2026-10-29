@@ -36,7 +36,7 @@ const minLabel = (m) => { const h = Math.floor(m / 60), mm = m % 60; return ((h 
 export class CustomerLive extends AppLogic {
   constructor(props) {
     super(props);
-    this.state = { ...this.state, stage: 0, loaner: 'none', readStage: 99, live: { profile: props.profile || null, vehicles: [], appointments: [], rentals: [], shops: [DEMO_SHOP], loaded: !supabase }, addVeh: null };
+    this.state = { ...this.state, stage: 0, loaner: 'none', readStage: 99, live: { profile: props.profile || null, vehicles: [], appointments: [], rentals: [], shops: [DEMO_SHOP], messages: [], loaded: !supabase }, addVeh: null };
   }
   componentDidMount() {
     super.componentDidMount();
@@ -44,12 +44,17 @@ export class CustomerLive extends AppLogic {
     this.loadLive();
     this._poll = setInterval(() => this.loadLive(), 15000);
   }
+  componentDidUpdate(prev) {
+    super.componentDidUpdate(prev);
+    if (this.state.view === 'messages' && this._lastMsgView !== 'messages' && supabase && this.state.live.messages.some((m) => m.sender === 'advisor' && !m.read)) supabase.rpc('mark_my_messages_read').then(() => this.loadLive());
+    this._lastMsgView = this.state.view;
+  }
   componentWillUnmount() { super.componentWillUnmount(); clearInterval(this._poll); }
 
   async loadLive() {
     if (!supabase) return;
-    const [v, a, r, sh] = await Promise.all([supabase.rpc('my_vehicles'), supabase.rpc('my_appointments'), supabase.rpc('my_rentals'), supabase.rpc('shops_public')]);
-    const live = { ...this.state.live, vehicles: v.data || [], appointments: a.data || [], rentals: r.data || [], shops: Array.isArray(sh.data) && sh.data.length ? sh.data : [DEMO_SHOP], loaded: true };
+    const [v, a, r, sh, m] = await Promise.all([supabase.rpc('my_vehicles'), supabase.rpc('my_appointments'), supabase.rpc('my_rentals'), supabase.rpc('shops_public'), supabase.rpc('my_messages')]);
+    const live = { ...this.state.live, vehicles: v.data || [], appointments: a.data || [], rentals: r.data || [], shops: Array.isArray(sh.data) && sh.data.length ? sh.data : [DEMO_SHOP], messages: m.data || [], loaded: true };
     const act = this.active(live.appointments);
     this.setState({ live, stage: act ? STAGE_OF[act.status] || 0 : 0, noVehicle: !live.vehicles.length });
   }
@@ -77,6 +82,12 @@ export class CustomerLive extends AppLogic {
     if (supabase) { const { error } = await supabase.rpc('decide_findings', { p_approve: approve, p_decline: decline }); if (error) this.setState({ toast: error.message }); }
     setTimeout(() => this.setState({ approveAnim: false, approvedJust: true }), 450);
     this.loadLive();
+  }
+  async sendLiveMsg(text) {
+    const t = (text || '').trim(); if (!t) return;
+    const live = this.state.live, local = { id: 'm' + Date.now(), sender: 'customer', text: t, created_at: new Date().toISOString(), read: true };
+    this.setState({ live: { ...live, messages: live.messages.concat(local) }, draft: '' });
+    if (supabase) { const { error } = await supabase.rpc('send_my_message', { p_text: t }); if (error) this.setState({ toast: error.message }); else this.loadLive(); }
   }
   async addVehicle(d) {
     if (!supabase) { const live = this.state.live; this.setState({ live: { ...live, vehicles: live.vehicles.concat({ id: 'v' + Date.now(), ...d }) }, noVehicle: false, addVeh: null, view: 'home' }); return; }
@@ -227,13 +238,35 @@ export class CustomerLive extends AppLogic {
       bookCar: veh ? vehName(veh) : '', bookDoneTitle: 'You are booked.', bookDoneSub: 'We text you the day before. Your visit is on the home screen whenever you want to check on it.',
     });
 
+    // ---- messages with the shop
+    const msgs = live.messages || [], unread = msgs.filter((m) => m.sender === 'advisor' && !m.read).length;
+    const fmtMsgTime = (ts) => { const d = new Date(ts); return (d.toDateString() === new Date().toDateString() ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ') + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); };
+    Object.assign(V, {
+      hasUnread: unread > 0, goUpdates: this.go('messages'),
+      msgs: msgs.map((m, i) => { const me = m.sender === 'customer'; return { text: m.text, time: fmtMsgTime(m.created_at), who: !me && (i === 0 || msgs[i - 1].sender === 'customer') ? shop.name.split(' ')[0] + ' · Service desk' : '', wrap: 'display:flex;flex-direction:column;align-items:' + (me ? 'flex-end' : 'flex-start') + ';max-width:84%;align-self:' + (me ? 'flex-end' : 'flex-start'), bubble: 'padding:10px 14px;border-radius:18px;font-size:13.5px;line-height:1.45;' + (me ? 'background:#fff;color:#000;border-bottom-right-radius:5px' : 'background:#1c1c1e;color:#fff;border-bottom-left-radius:5px'), timeStyle: 'font-size:10px;color:rgba(235,235,245,.3);margin:4px 10px 0' }; }),
+      quickReplies: msgs.length ? [] : [{ text: 'When will my car be ready?', send: () => this.sendLiveMsg('When will my car be ready?') }, { text: 'Can I get a loaner?', send: () => this.sendLiveMsg('Can I get a loaner for this visit?') }],
+      draft: s.draft || '', onDraft: (e) => this.setState({ draft: e.target.value }), onDraftKey: (e) => { if (e.key === 'Enter') this.sendLiveMsg(s.draft); }, sendDraft: () => this.sendLiveMsg(s.draft),
+      msgsSub: (actVeh ? (actVeh.model || 'Your car') + ' · ' : '') + shop.name.split(' ')[0] + ' service desk', goMessages: this.go('messages'), msgPlaceholder: 'Message ' + shop.name.split(' ')[0],
+    });
+
+    // ---- history: finished visits, with what was approved and the photos
+    const histSrc = live.appointments.filter((a) => a.status === 'done').sort((x, y) => (y.done_at || y.starts_at).localeCompare(x.done_at || x.starts_at));
+    const histOf = (a) => { const v = live.vehicles.find((x) => x.id === a.vehicle_id), fs = a.findings || [], appr = fs.filter((f) => f.status === 'approved' || f.status === 'done'), total = appr.reduce((t, f) => t + f.price_cents, 0); return { id: a.id, date: new Date(a.done_at || a.starts_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), title: a.job || 'Service', total: total / 100, miles: v && v.odometer ? v.odometer.toLocaleString('en-US') : '—', tech: a.tech ? a.tech : '—', pay: 'Paid at the counter', lines: [{ k: a.job || 'Service', v: 'At the counter' }].concat(appr.map((f) => ({ k: f.name, v: f.price_cents ? fmtC(f.price_cents) : 'No charge' }))), parts: [], photos: (a.photos || []).map((p) => ({ t: p.caption || p.meas || 'Technician photo', ph: phStyle(p) })), recs: fs.filter((f) => f.status === 'declined' || f.status === 'pending').map((f) => ({ t: f.name + (f.urgency ? ' — ' + f.urgency : '') })), notes: a.notes || fs.map((f) => f.tech).filter(Boolean).join(' ') || 'No notes from the technician on this visit.' }; };
+    const hdSrc = histSrc.find((a) => a.id === s.histId) || histSrc[0];
+    const hd = hdSrc ? histOf(hdSrc) : null;
+    Object.assign(V, {
+      pHistory: view === 'history' && histSrc.length > 0, pHistoryEmpty: view === 'history' && !histSrc.length, pHistDetail: view === 'histDetail' && !!hd,
+      histItems: histSrc.map((a) => { const h = histOf(a); return { date: h.date, title: h.title, total: h.total ? fmtC(h.total * 100) + ' extra' : 'At the counter', miles: h.miles, tech: h.tech, open: () => this.setState({ histId: a.id, view: 'histDetail' }) }; }),
+      hd: hd ? { ...hd, totalLabel: hd.total ? fmtC(hd.total * 100) + ' in approved work' : 'Paid at the counter', hasPhotos: hd.photos.length > 0, hasParts: false, hasRecs: hd.recs.length > 0 } : null,
+    });
+
     // ---- pages the pilot does not run yet fall back to their empty states; account stays
     if (!live.loaded) Object.assign(V, { pHome: false, pHomeEmpty: false });
     else if (!cars.length) Object.assign(V, { pHome: false, pHomeEmpty: view === 'home', initials, addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }), goBook, heroStyle: 'position:absolute;left:0;right:0;z-index:4;top:0;height:240px;opacity:0;pointer-events:none' });
     else Object.assign(V, { pHome: view === 'home', pHomeEmpty: false });
     Object.assign(V, {
       pGarage: false, pGarageEmpty: view === 'garage' && !cars.length, pGarageLive: view === 'garage' && !!cars.length,
-      pHealth: false, pHealthEmpty: view === 'health', pHistory: false, pHistoryEmpty: view === 'history', pMessages: false, pMessagesEmpty: view === 'messages',
+      pHealth: false, pHealthEmpty: view === 'health', pMessages: view === 'messages', pMessagesEmpty: false,
       pAddVehicle: view === 'addVehicle', addVeh: s.addVeh, setAddVeh: (p) => this.setState({ addVeh: { ...s.addVeh, ...p } }), saveAddVeh: () => s.addVeh && (s.addVeh.make || s.addVeh.model) && this.addVehicle(s.addVeh), cancelAddVeh: () => this.setState({ addVeh: null, view: s.addVeh && s.addVeh.back === 'book' ? 'book' : 'home' }),
       addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }),
       startMessage: openUrl(shop.phone ? 'sms:' + shop.phone : ''),

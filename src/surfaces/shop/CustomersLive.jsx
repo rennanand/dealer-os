@@ -121,7 +121,7 @@ export function CustomersLive({ vm }) {
             </div>
             <div style={css('flex:1')} />
             <div style={css('display:flex;gap:8px')}>
-              {c.smsHref ? <a href={c.smsHref} style={css(BTN + ';flex:1;text-align:center;text-decoration:none')}>Text</a> : null}
+              <div onClick={c.message} style={css(BTN + ';flex:1;text-align:center')}>Message</div>
               <div onClick={c.book} style={css(GHOST + ';flex:1;text-align:center')}>Book visit</div>
             </div>
           </>

@@ -87,13 +87,13 @@ export function ShopApp({ vm }) {
           {vm.dOverview && !LAUNCH ? <Overview vm={vm} /> : null}
           {vm.dApprovals ? <Approvals vm={vm} /> : null}
           {vm.dEstimate ? <Estimate vm={vm} /> : null}
-          {vm.dInbox ? <Inbox vm={vm} /> : null}
+          {vm.dInbox && !LAUNCH ? <Inbox vm={vm} /> : null}
           {vm.dSales ? <Sales vm={vm} /> : null}
           {vm.dTires ? <Tires vm={vm} /> : null}
           {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule && !LAUNCH ? <Schedule vm={vm} /> : null}
-          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} /> : null}
+          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs || vm.dInbox) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dInbox ? 'inbox' : vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} goInbox={(vm.sideNav.find((n) => n.label === 'Inbox') || {}).go} /> : null}
           {vm.dAppointments && !LAUNCH ? <Appointments vm={vm} /> : null}
           {vm.dCheckin ? <Checkin vm={vm} /> : null}
           {vm.dCustomers && !LAUNCH ? <Customers vm={vm} /> : null}

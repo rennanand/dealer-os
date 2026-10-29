@@ -24,7 +24,7 @@ export function Messages({ vm }) {
                 'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4);margin-top:2px',
               )}
             >
-              Quicksilver · Tyler L.
+              {vm.msgsSub || 'Quicksilver · Tyler L.'}
             </div>
           </div>
           <div style={css('width:40px')} />
@@ -76,7 +76,7 @@ export function Messages({ vm }) {
             value={val(vm.draft)}
             onChange={vm.onDraft}
             onKeyDown={vm.onDraftKey}
-            placeholder="Message Tyler"
+            placeholder={vm.msgPlaceholder || "Message Tyler"}
             style={css(
               'flex:1;background:#1c1c1e;border:none;border-radius:20px;padding:12px 16px;color:#fff;font-size:13px;outline:none;font-family:inherit',
             )}

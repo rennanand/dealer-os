@@ -30,19 +30,19 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, techs: [], newTech: null, editTech: null, customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
     await this.reload();
     this.chan = supabase.channel('shop:' + SHOP_ID);
-    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
+    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians', 'messages']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
     this.chan.subscribe();
   }
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r, lf, fi, ph, te, sh] = await Promise.all([
+    const [c, v, a, r, lf, fi, ph, te, sh, ms] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -51,11 +51,12 @@ export class ShopLogic extends DCLogic {
       supabase.from('visit_photos').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -60)).order('created_at'),
       supabase.from('technicians').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('shops').select('*').eq('shop_id', SHOP_ID).maybeSingle(),
+      supabase.from('messages').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at'),
       supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, loading: false, err: '' });
+    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, messages: ms.data || [], loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -140,6 +141,20 @@ export class ShopLogic extends DCLogic {
     const { data, error } = await q;
     if (error) return this.setState({ err: error.message });
     this.setState({ techs: d.id ? this.state.techs.map((t) => (t.id === d.id ? data : t)) : this.state.techs.concat(data), newTech: null, editTech: null });
+  }
+  async sendReply(customerId, text) {
+    const t = (text || '').trim(); if (!t || !customerId) return;
+    const appt = this.state.appointments.find((a) => a.customer_id === customerId && ['booked', 'arrived', 'in_progress'].includes(a.status));
+    const local = { id: 'm' + Date.now(), shop_id: SHOP_ID, customer_id: customerId, appointment_id: appt ? appt.id : null, sender: 'advisor', text: t, read_by_shop: true, read_by_cust: false, created_at: new Date().toISOString() };
+    this.setState({ messages: this.state.messages.concat(local), reply: '' });
+    if (!supabase) return;
+    const { error } = await supabase.from('messages').insert({ shop_id: SHOP_ID, customer_id: customerId, appointment_id: local.appointment_id, sender: 'advisor', text: t, read_by_shop: true });
+    if (error) this.setState({ err: error.message });
+  }
+  async markThreadRead(customerId) {
+    if (!this.state.messages.some((m) => m.customer_id === customerId && m.sender === 'customer' && !m.read_by_shop)) return;
+    this.setState({ messages: this.state.messages.map((m) => (m.customer_id === customerId && m.sender === 'customer' ? { ...m, read_by_shop: true } : m)) });
+    if (supabase) await supabase.from('messages').update({ read_by_shop: true }).eq('customer_id', customerId).eq('sender', 'customer').eq('read_by_shop', false);
   }
   photoUrl(p) { return p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path); }
 
@@ -259,6 +274,23 @@ export class ShopLogic extends DCLogic {
       scene: live ? (/oil|maint/i.test(live.job || '') ? 'oil' : /tire|wheel/i.test(live.job || '') ? 'tire' : /batter/i.test(live.job || '') ? 'battery' : 'brake') : 'brake', phase: live ? (/oil|maint/i.test(live.job || '') ? 'filter' : /tire|wheel/i.test(live.job || '') ? 'off' : /batter/i.test(live.job || '') ? 'load' : 'remove') : 'worn',
       foot: [{ k: 'Hours today', v: (s.shop && s.shop.hours) || 'Mon, Tue, Thu, Fri · 8:00 AM – 5:30 PM' }, { k: 'Front desk', v: 'Ask us anything' }, { k: 'Loaners out', v: String(out.length) }] };
 
+    // Inbox: one thread per customer
+    const byCust = {};
+    for (const m of s.messages) (byCust[m.customer_id] = byCust[m.customer_id] || []).push(m);
+    const threads = Object.keys(byCust).map((cid) => { const ms = byCust[cid], c = this.custOf(cid), last = ms[ms.length - 1], unread = ms.some((m) => m.sender === 'customer' && !m.read_by_shop); const appt = s.appointments.find((a) => a.customer_id === cid && ['booked', 'arrived', 'in_progress'].includes(a.status)); const pend = appt && s.findings.some((f) => f.appointment_id === appt.id && f.status === 'pending'); const v = appt && this.vehOf(appt.vehicle_id); return { id: cid, who: c ? c.name : 'Customer', initials: c ? c.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?', context: appt ? (vehName(v) || 'Vehicle') + ' · ' + (appt.job || 'Service') : c && c.phone ? fmtPhone(c.phone) : '', time: relDay(last.created_at) === 'Today' ? fmtTime(last.created_at) : relDay(last.created_at), section: unread ? 'Needs response' : pend ? 'Waiting for approval' : appt ? 'General' : 'Completed', color: unread ? ACC : pend ? YEL : GRN, preview: last.text, msgs: ms, state: appt ? (pend ? 'Waiting for approval' : STATUS[appt.status][0]) : 'No open visit', stateColor: appt ? (pend ? YEL : STATUS[appt.status][1]) : DIM, placeholder: 'Reply to ' + (c ? c.name.split(' ')[0] : 'customer'), lastAt: last.created_at }; }).sort((x, y) => y.lastAt.localeCompare(x.lastAt));
+    let thread = threads.find((t) => t.id === s.threadId) || null;
+    if (!thread && s.threadId && this.custOf(s.threadId)) { const c = this.custOf(s.threadId); thread = { id: c.id, who: c.name, initials: c.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), context: c.phone ? fmtPhone(c.phone) : '', state: 'New conversation', stateColor: DIM, msgs: [], placeholder: 'Message ' + c.name.split(' ')[0], section: 'General', color: GRN, time: '', preview: '', lastAt: '' }; }
+    if (!thread) thread = threads[0] || null;
+    const bubble = (m) => { const adv = m.sender === 'advisor'; return { text: m.text, time: fmtTime(m.created_at), wrap: 'display:flex;flex-direction:column;align-items:' + (adv ? 'flex-end' : 'flex-start') + ';max-width:70%;align-self:' + (adv ? 'flex-end' : 'flex-start'), bubble: 'padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;' + (adv ? 'background:#fff;color:#000;border-bottom-right-radius:5px' : 'background:rgba(255,255,255,.08);color:#fff;border-bottom-left-radius:5px'), timeStyle: 'font-size:10px;color:rgba(235,235,245,.3);margin:4px 10px 0' }; };
+    const dotOf = (c) => 'width:7px;height:7px;border-radius:4px;flex:0 0 auto;background:' + c;
+    const inbox = {
+      sections: ['Needs response', 'Waiting for approval', 'General', 'Completed'].map((title) => ({ title, items: threads.filter((t) => t.section === title).map((t) => ({ who: t.who, time: t.time, preview: t.preview, open: () => { set({ threadId: t.id }); this.markThreadRead(t.id); }, dot: dotOf(t.color), style: 'display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .18s ease;' + (thread && thread.id === t.id ? 'background:#1c1c1e;' : 'background:transparent;') })) })).filter((sec) => sec.items.length),
+      thread: thread ? { ...thread, msgs: thread.msgs.map(bubble) } : null, none: !s.loading && !threads.length && !(s.threadId && this.custOf(s.threadId)), goInboxFlag: !!s.goInbox, clearGoInbox: () => set({ goInbox: false }),
+      reply: s.reply, onReply: (e) => set({ reply: e.target.value }), onReplyKey: (e) => { if (e.key === 'Enter' && thread) this.sendReply(thread.id, s.reply); }, send: () => thread && this.sendReply(thread.id, s.reply),
+      unread: threads.filter((t) => t.section === 'Needs response').length,
+      startWith: (cid) => set({ threadId: cid }),
+    };
+
     const schedule = {
       sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
       nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
@@ -268,7 +300,7 @@ export class ShopLogic extends DCLogic {
     };
 
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),
@@ -280,7 +312,7 @@ export class ShopLogic extends DCLogic {
         loaners: custRentals.slice(0, 4).map((r) => ({ t: r.number + ' · ' + ({ draft: 'Draft', sent: 'Sent', signed: 'Signed', out: 'Out', returned: 'Returned', cancelled: 'Cancelled' }[r.status] || r.status), d: relDay(r.created_at) })),
         smsHref: cust.phone ? 'sms:' + cust.phone : '', telHref: cust.phone ? 'tel:' + cust.phone : '',
         book: () => set({ newAppt: { customer_id: cust.id, vehicle_id: (custCars[0] || {}).id || '', day: s.day, time: '09:00', visit: 'dropoff', job: '' } }),
-        setNotes: (v) => this.updateCustomer(cust.id, { notes: v }),
+        setNotes: (v) => this.updateCustomer(cust.id, { notes: v }), message: () => set({ threadId: cust.id, goInbox: true }),
       } : null,
       editVeh: s.editVeh, setEditVeh: (v) => set({ editVeh: v }), saveVeh: () => cust && s.editVeh && this.addVehicle(cust.id, s.editVeh),
       newCust: nc, openNewCust: () => set({ newCust: { name: '', phone: '', email: '', city: '', year: '', make: '', model: '', plate: '' } }), setNewCust: (p) => set({ newCust: { ...nc, ...p } }), cancelNewCust: () => set({ newCust: null }),
