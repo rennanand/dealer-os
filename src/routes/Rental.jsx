@@ -60,7 +60,8 @@ export function RentalRoute() {
 
   const v = r.vehicle, ev = v && v.powertrain === 'ev', first = (r.customer_name || '').split(' ')[0];
   const days = daysBetween(r.start_date, r.end_date), total = r.shop_pays ? 0 : (days * r.rate_cents) / 100;
-  const canSign = ['draft', 'sent'].includes(r.status);
+  const canSign = r.status === 'sent' && !!v;
+  if (r.status === 'draft' || (r.status === 'sent' && !v)) return <div style={css(PAGE)}><div style={css(WRAP + ';padding-top:120px;text-align:center')}><div style={css('font-size:20px;font-weight:600')}>Your agreement is being prepared.</div><div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:8px;line-height:1.5')}>The front desk is finishing it. This page updates on its own.</div></div></div>;
   const sigOk = strokes.reduce((n, k) => n + k.length, 0) >= 12;
   const sign = async () => {
     if (!(agree && sigOk) || busy) return;
