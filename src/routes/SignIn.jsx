@@ -47,7 +47,7 @@ export function SignIn({ title = 'Sign in', note }) {
         <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 34px)')}>
           <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
             <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>{mode === 'up' ? 'Create your account.' : title}</div>
-            <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Use the email the shop invited. Pick a password of at least 8 characters.' : note || 'Sign in with your RyGuys staff email.')}</div>
+            <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Your email and a password of at least 8 characters. Your mobile number links your visits.' : note || (window.location.pathname.startsWith('/shop') || window.location.pathname.startsWith('/tech') || window.location.pathname.startsWith('/lobby') ? 'Sign in to run the day.' : 'Every visit, estimate and record, on your phone.'))}</div>
           </div>
           {!done ? (
           <div style={css('padding-top:18px')}>

@@ -40,7 +40,7 @@ export function CustomerLiveRoute({ auth }) {
         <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
           <img src="/uploads/revyn.png" alt="Revyn" style={css('height:12px;width:auto;display:block')} />
           <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>Your mobile number.</div>
-          <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>The one the shop has for you. Your vehicles, visits and loaner agreements show up here.</div>
+          <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>The number the shop has on file. Your car, your visits and your records follow it.</div>
         </div>
         <div style={css('padding-top:18px')}>
           <input inputMode="tel" autoComplete="tel" placeholder="(435) 555-0100" value={fmtPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} style={css(INPUT)} autoFocus />

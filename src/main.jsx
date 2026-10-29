@@ -21,8 +21,8 @@ import { LAUNCH, IS_APP } from './state/options.js';
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={LAUNCH && !IS_APP ? <Landing /> : <Require title="Your loaner, in your pocket." customerHome><CustomerRoute /></Require>} />
-      <Route path="/app" element={<Require title="Your loaner, in your pocket." customerHome><CustomerRoute /></Require>} />
+      <Route path="/" element={LAUNCH && !IS_APP ? <Landing /> : <Require title="Your car. Taken care of." customerHome><CustomerRoute /></Require>} />
+      <Route path="/app" element={<Require title="Your car. Taken care of." customerHome><CustomerRoute /></Require>} />
       <Route path="/app/demo" element={<CustomerRoute />} />
       <Route path="/tech" element={<Require roles={STAFF} title="Welcome back."><TechRoute /></Require>} />
       <Route path="/shop" element={<Require roles={STAFF} title="Welcome back."><ShopRoute /></Require>} />
