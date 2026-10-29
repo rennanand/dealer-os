@@ -31,19 +31,19 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, estId: null, fuTab: 'Open', fuNote: '', repRange: '31 days', techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, estId: null, fuTab: 'Open', fuNote: '', repRange: '31 days', quotes: [], tqVisit: null, tqDraft: null, techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
     await this.reload();
     this.chan = supabase.channel('shop:' + SHOP_ID);
-    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians', 'messages']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
+    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians', 'messages', 'tire_quotes']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
     this.chan.subscribe();
   }
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r, lf, fi, ph, te, sh, ms] = await Promise.all([
+    const [c, v, a, r, lf, fi, ph, te, sh, ms, tq] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -53,11 +53,12 @@ export class ShopLogic extends DCLogic {
       supabase.from('technicians').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('shops').select('*').eq('shop_id', SHOP_ID).maybeSingle(),
       supabase.from('messages').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at'),
+      supabase.from('tire_quotes').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at', { ascending: false }),
       supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, messages: ms.data || [], loading: false, err: '' });
+    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], techs: te.data || [], shop: sh.data || null, messages: ms.data || [], quotes: tq.data || [], loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -156,6 +157,17 @@ export class ShopLogic extends DCLogic {
     if (!this.state.messages.some((m) => m.customer_id === customerId && m.sender === 'customer' && !m.read_by_shop)) return;
     this.setState({ messages: this.state.messages.map((m) => (m.customer_id === customerId && m.sender === 'customer' ? { ...m, read_by_shop: true } : m)) });
     if (supabase) await supabase.from('messages').update({ read_by_shop: true }).eq('customer_id', customerId).eq('sender', 'customer').eq('read_by_shop', false);
+  }
+  async sendQuote(apptId, d) {
+    const opts = d.opts.filter((o) => o.name.trim()).map((o) => ({ tier: o.tier, name: o.name.trim(), each_cents: Math.round(parseFloat(String(o.each).replace(/[^\d.]/g, '')) * 100) || 0, warranty: (o.warranty || '').trim(), stock: (o.stock || '').trim(), note: '' }));
+    if (!opts.length) return;
+    const row = { appointment_id: apptId, size: (d.size || '').trim(), tread: (d.tread || '').trim(), options: opts, recommended: opts.some((o) => o.tier === d.recommended) ? d.recommended : opts[0].tier, hazard_offered: !!d.hazard, fee_cents: Math.round(parseFloat(String(d.fee || '37')) * 100) || 3700 };
+    if (!supabase) { this.setState({ quotes: [{ id: 'q' + Date.now(), status: 'sent', created_at: new Date().toISOString(), ...row }].concat(this.state.quotes), tqDraft: null }); return; }
+    this.setState({ busy: true });
+    const { data, error } = await supabase.from('tire_quotes').insert({ ...row, shop_id: SHOP_ID }).select().single();
+    this.setState({ busy: false });
+    if (error) return this.setState({ err: error.message });
+    this.setState({ quotes: [data].concat(this.state.quotes), tqDraft: null });
   }
   photoUrl(p) { return p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path); }
 
@@ -380,6 +392,34 @@ export class ShopLogic extends DCLogic {
       ],
     };
 
+    // Tires: a quote per open visit; the customer picks on their phone
+    const TIER_NAMES = [['good', 'Good'], ['better', 'Better'], ['best', 'Best']];
+    const quoteVisits = s.appointments.filter((a) => a.status === 'arrived' || a.status === 'in_progress' || (a.status === 'booked' && iso(new Date(a.starts_at)) === today()));
+    const tqVisit = quoteVisits.find((a) => a.id === s.tqVisit) || quoteVisits[0] || null;
+    const existing = tqVisit ? s.quotes.find((x) => x.appointment_id === tqVisit.id) : null;
+    const blankDraft = () => ({ size: '', tread: '', fee: '37', hazard: true, recommended: 'better', opts: TIER_NAMES.map(([tier]) => ({ tier, name: '', each: '', warranty: '', stock: '' })) });
+    const draftSrc = existing ? { size: existing.size, tread: existing.tread, fee: (existing.fee_cents / 100).toFixed(0), hazard: existing.hazard_offered, recommended: existing.recommended, opts: TIER_NAMES.map(([tier]) => { const o = (existing.options || []).find((x) => x.tier === tier) || {}; return { tier, name: o.name || '', each: o.each_cents ? (o.each_cents / 100).toFixed(0) : '', warranty: o.warranty || '', stock: o.stock || '' }; }) } : (s.tqDraft && s.tqDraft.for === (tqVisit && tqVisit.id) ? s.tqDraft : { for: tqVisit && tqVisit.id, ...blankDraft() });
+    const setDraft = (p) => set({ tqDraft: { ...draftSrc, for: tqVisit && tqVisit.id, ...p } });
+    const calc = (o) => { const each = parseFloat(String(o.each).replace(/[^\d.]/g, '')) || 0, fee = parseFloat(String(draftSrc.fee)) || 0; const tires = each * 4, fees = fee * 4, haz = draftSrc.hazard ? Math.round(tires * 0.12) : 0; return tires + fees + haz; };
+    const fmtD = (n) => '$' + Math.round(n).toLocaleString('en-US');
+    const cQ = tqVisit && this.custOf(tqVisit.customer_id), vQ = tqVisit && this.vehOf(tqVisit.vehicle_id);
+    const chipQ = (on) => 'padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;' + (on ? 'background:#fff;color:#000' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7)');
+    const recOpt = draftSrc.opts.find((o) => o.tier === draftSrc.recommended) || draftSrc.opts[0];
+    const canSend = !existing && draftSrc.opts.some((o) => o.name.trim() && parseFloat(o.each) > 0);
+    const tires = {
+      head: s.quotes.filter((q) => q.status === 'sent').length + ' open · ' + s.quotes.filter((q) => q.status === 'accepted').length + ' accepted',
+      visits: quoteVisits.map((a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id); return { id: a.id, label: (c ? c.name.split(' ')[0] : 'Walk-in') + ' · ' + (v ? v.model || vehName(v) : 'Vehicle') + ' · ' + (a.job || 'Service'), pick: () => set({ tqVisit: a.id }), style: chipQ(tqVisit && tqVisit.id === a.id) }; }),
+      draft: tqVisit ? { who: cQ ? cQ.name : 'Walk-in', car: (vehName(vQ) || 'Vehicle') + (vQ && vQ.odometer ? ' · ' + vQ.odometer.toLocaleString('en-US') + ' mi' : '') + ' · ' + (tqVisit.job || 'Service'), size: draftSrc.size, tread: draftSrc.tread, fee: draftSrc.fee, locked: !!existing,
+        pill: pill(existing ? (existing.status === 'accepted' ? GRN : existing.status === 'declined' ? DIM : YEL) : DIM), status: existing ? (existing.status === 'accepted' ? 'Accepted · ' + (existing.accepted_tier || '') : existing.status === 'declined' ? 'Declined' : 'Sent · waiting') : 'Draft',
+        opts: draftSrc.opts.map((o, i) => ({ ...o, tier: o.tier, tierLabel: TIER_NAMES[i][1], on: draftSrc.recommended === o.tier, total: fmtD(calc(o)), pick: () => !existing && setDraft({ recommended: o.tier }) })),
+        haz: [['Include', true], ['Offer as option', false]].map(([label, val]) => ({ label, pick: () => !existing && setDraft({ hazard: val }), style: chipQ(draftSrc.hazard === val) })),
+        action: existing ? (existing.status === 'accepted' ? { t: 'Accepted · ' + ((existing.options || []).find((o) => o.tier === existing.accepted_tier) || {}).name, s: fmtD((existing.total_cents || 0) / 100) + ' installed · now an approved item on the visit.', cta: '' } : existing.status === 'declined' ? { t: 'Declined', s: 'The customer passed on this quote.', cta: '' } : { t: 'Sent to ' + (cQ ? cQ.name.split(' ')[0] : 'the customer') + ' at ' + fmtTime(existing.created_at), s: 'They see all three options with ' + existing.recommended + ' recommended.', cta: '' })
+          : { t: 'Draft', s: recOpt && recOpt.name ? 'Recommend ' + recOpt.tier + ' · ' + recOpt.name + ' · ' + fmtD(calc(recOpt)) + ' installed' : 'Fill in at least one option with a price.', cta: 'Send quote to ' + (cQ ? cQ.name.split(' ')[0] : 'customer'), ok: canSend, go: () => this.sendQuote(tqVisit.id, draftSrc) },
+      } : null,
+      setDraft, setOpt: (i, p) => setDraft({ opts: draftSrc.opts.map((o, j) => (j === i ? { ...o, ...p } : o)) }),
+      recent: s.quotes.slice(0, 8).map((q) => { const a = s.appointments.find((x) => x.id === q.appointment_id), c = a && this.custOf(a.customer_id); return { id: q.id, who: c ? c.name : 'Customer', state: q.status === 'accepted' ? 'Accepted' : q.status === 'declined' ? 'Declined' : 'Waiting', color: q.status === 'accepted' ? GRN : q.status === 'declined' ? DIM : YEL, meta: (q.size || 'Tires') + ' · ' + (q.options || []).length + ' options · ' + relDay(q.created_at), open: () => a && set({ tqVisit: a.id }) }; }),
+    };
+
     const schedule = {
       sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
       nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
@@ -389,7 +429,7 @@ export class ShopLogic extends DCLogic {
     };
 
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),

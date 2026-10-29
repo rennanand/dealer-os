@@ -40,7 +40,7 @@ export function Tires({ vm }) {
           >
             Options
           </div>
-          <div style={css('font-family:var(--data-font,inherit);font-size:11px;color:rgba(235,235,245,.4)')}>255/45R19</div>
+          <div style={css('font-family:var(--data-font,inherit);font-size:11px;color:rgba(235,235,245,.4)')}>{vm.tqSize || '255/45R19'}</div>
         </div>
         <div style={css('margin:8px 22px 0;border-top:1px solid rgba(235,235,245,.09)')}>
           {L(vm.tqOpts).map((o, _i) => (
@@ -76,7 +76,7 @@ export function Tires({ vm }) {
           )}
         >
           <div style={css('flex:1')}>
-            <div style={css('font-size:14px;font-weight:500')}>Road hazard protection</div>
+            <div style={css('font-size:14px;font-weight:500')}>{vm.tqHazLabel || 'Road hazard protection'}</div>
             <div style={css('font-size:12px;color:rgba(235,235,245,.45);margin-top:3px;line-height:1.45')}>
               {'Free repair or prorated replacement for 3 years. '}
               {T(vm.tqHazardPrice)}

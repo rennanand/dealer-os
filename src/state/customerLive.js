@@ -117,6 +117,16 @@ export class CustomerLive extends AppLogic {
     if (supabase) await supabase.rpc('rate_my_visit', { p_id: id, p_stars: rt.stars, p_tags: rt.tags || [], p_note: rt.note || '' });
   }
   first() { const n = (this.state.live.profile && this.state.live.profile.name) || (this.props.member && this.props.member.name) || ''; return n.split(' ')[0] || ''; }
+  async acceptQuote(q, tier, hazard) {
+    if (!supabase) { const live = this.state.live; this.setState({ live: { ...live, appointments: live.appointments.map((a) => (a.tire_quote && a.tire_quote.id === q.id ? { ...a, tire_quote: { ...q, status: 'accepted', accepted_tier: tier, accepted_hazard: hazard } } : a)) }, view: 'service', toast: 'Tires accepted. They go on during this visit.' }); return; }
+    this.setState({ busy: true });
+    const { error } = await supabase.rpc('accept_tire_quote', { p_id: q.id, p_tier: tier, p_hazard: hazard });
+    this.setState({ busy: false });
+    if (error) return this.setState({ toast: error.message });
+    this.setState({ view: 'service', toast: 'Tires accepted. The shop has been told which set.' });
+    clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: '' }), 3400);
+    this.loadLive();
+  }
   async addVehicle(d) {
     if (!supabase) { const live = this.state.live; this.setState({ live: { ...live, vehicles: live.vehicles.concat({ id: 'v' + Date.now(), ...d }) }, noVehicle: false, addVeh: null, view: 'home' }); return; }
     const { error } = await supabase.rpc('add_my_vehicle', { p_year: parseInt(d.year, 10) || null, p_make: d.make, p_model: d.model, p_plate: d.plate || '', p_odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null });
@@ -191,6 +201,7 @@ export class CustomerLive extends AppLogic {
     const mkRing = (d, mini) => { const circ = 2 * Math.PI * d.r, shown = mini || s.ringsIn ? d.pct : 0; return { r: d.r, name: d.name, sub: d.sub, color: d.color, pctLabel: Math.round(d.pct * 100) + '%', dot: 'width:' + (mini ? 7 : 8) + 'px;height:' + (mini ? 7 : 8) + 'px;border-radius:4px;flex:0 0 auto;background:' + d.color, track: 'fill:none;stroke:rgba(235,235,245,.08);stroke-width:8', bar: 'fill:none;stroke:' + d.color + ';stroke-width:8;stroke-linecap:round;stroke-dasharray:' + circ + ';stroke-dashoffset:' + (circ * (1 - shown)) + ';transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)' }; };
     const icon = (fg, bg) => 'width:52px;height:52px;border-radius:26px;background:' + bg + ';color:' + fg + ';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500';
     const started = !!act && cur >= 1;
+    const tq = act && act.tire_quote;
     const findings = (act && act.findings) || [], photos = (act && act.photos) || [];
     const pending = findings.filter((f) => f.status === 'pending'), approved = findings.filter((f) => f.status === 'approved' || f.status === 'done');
     const photoUrl = (p) => p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path);
@@ -212,6 +223,7 @@ export class CustomerLive extends AppLogic {
       photos.length ? { d: I.camera, iconStyle: icon('#fff', 'rgba(235,235,245,.12)'), k: 'Photos', kColor: DIM, t: photos.length + (photos.length === 1 ? ' photo' : ' photos') + ' from your technician', sub: photos[photos.length - 1].caption || 'Taken at the visit.', cta: 'See photos', go: this.go('photos') }
         : { d: I.camera, iconStyle: icon(DIM, 'rgba(235,235,245,.1)'), k: 'Photos', kColor: DIM, t: 'Photos from your technician', sub: started ? 'Added by the shop during the visit when there is something to show you.' : 'Taken during the visit when there is something to show you.', cta: '', go: null },
       { d: I.dollar, iconStyle: icon(cur >= 8 ? GRN : '#fff', cur >= 8 ? 'rgba(48,209,88,.14)' : 'rgba(235,235,245,.12)'), k: cur >= 8 ? 'Payment due' : 'Payment', kColor: cur >= 8 ? GRN : DIM, t: cur >= 8 ? 'Pay at the counter' : approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' approved' : 'Nothing charged yet', sub: cur >= 8 ? (approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' in approved work, plus the booked service. ' : '') + 'Card or cash at pickup.' : approved.length ? 'Plus the booked service. Pay at the counter at pickup.' : 'You approve any work beyond the booked service before it starts. Pay at the counter at pickup.', cta: '', go: null },
+      tq ? { d: I.tire, iconStyle: icon(tq.status === 'accepted' ? GRN : YEL, tq.status === 'accepted' ? 'rgba(48,209,88,.14)' : 'rgba(255,214,10,.14)'), k: 'Tires', kColor: tq.status === 'accepted' ? GRN : YEL, t: tq.status === 'accepted' ? '4\u00d7 ' + ((tq.options || []).find((o) => o.tier === tq.accepted_tier) || {}).name : 'Tire quote ready', sub: tq.status === 'accepted' ? 'Added to this visit · ' + fmtC(tq.total_cents || 0) + ' installed, settled at the counter.' : (tq.options || []).length + ' options' + (tq.size ? ' · ' + tq.size : '') + '. Pick the set you want.', cta: tq.status === 'accepted' ? 'View' : 'See quote', go: this.go('tires') } : null,
       loanerCard,
       { txt: shop.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), iconStyle: icon('#fff', 'rgba(235,235,245,.12)').replace('font-size:20px', 'font-size:14px;letter-spacing:.4px'), k: 'Shop', kColor: DIM, t: shop.name, sub: shop.address + (shop.hours ? ' · ' + shop.hours : ''), cta: 'Text the shop', go: openUrl(shop.phone ? 'sms:' + shop.phone : '') },
     ].filter(Boolean).map((c) => Object.assign(c, { noScene: !c.scene })) : [];
@@ -266,6 +278,33 @@ export class CustomerLive extends AppLogic {
       },
       bookCar: veh ? vehName(veh) : '', bookDoneTitle: 'You are booked.', bookDoneSub: 'We text you the day before. Your visit is on the home screen whenever you want to check on it.',
     });
+
+    // ---- tire quote on the active visit
+    const tqSel = s.tqSel || {};
+    const tqTier = tq ? (tq.status === 'accepted' ? tq.accepted_tier : tqSel.tier || tq.recommended) : '';
+    const tqHaz = tq ? (tq.status === 'accepted' ? !!tq.accepted_hazard : tqSel.hazard === undefined ? !!tq.hazard_offered : tqSel.hazard) : false;
+    const tqOpt = tq ? (tq.options || []).find((o) => o.tier === tqTier) || (tq.options || [])[0] : null;
+    const tqCalc = (o) => { const tires = (o.each_cents || 0) * 4, fees = (tq.fee_cents || 0) * 4, haz = tqHaz ? Math.round(tires * 0.12) : 0; return { tires, fees, haz, total: tires + fees + haz }; };
+    const tqC = tqOpt ? tqCalc(tqOpt) : { tires: 0, fees: 0, haz: 0, total: 0 };
+    const tqLocked = !tq || tq.status !== 'sent';
+    const TIERL = { good: 'Good', better: 'Better', best: 'Best' };
+    const radioS = (on) => 'width:18px;height:18px;border-radius:9px;transition:all .2s ease;' + (on ? 'background:#fff;box-shadow:inset 0 0 0 5px #000,0 0 0 1px #fff' : 'box-shadow:inset 0 0 0 1px rgba(235,235,245,.3)');
+    Object.assign(V, {
+      pTires: view === 'tires' && !!tq, goTires: this.go('tires'), tqSize: tq ? tq.size || '' : '',
+      tqPill: pill(tq && tq.status === 'accepted' ? GRN : YEL), tqStatus: tq ? (tq.status === 'accepted' ? 'Accepted' : 'Quote from ' + shop.name.split(' ')[0]) : '',
+      tqTitle: tq ? (tq.status === 'accepted' ? 'New tires are on the way.' : (tq.options || []).length + ' options for ' + (actVeh ? actVeh.model || 'your car' : 'your car') + '.') : '',
+      tqSub: tq ? (tq.status === 'accepted' ? '4\u00d7 ' + (tqOpt ? tqOpt.name : '') + ', installed during this visit. Nothing is charged until they are on the car.' : (tq.tread ? tq.tread + '. ' : '') + (tq.size ? 'Size ' + tq.size + '. ' : '') + 'Pick a set; mounting, balancing, TPMS and disposal are included. Tax at the counter.') : '',
+      tqOpts: tq ? (tq.options || []).map((o) => { const on = o.tier === tqTier, c = tqCalc(o); return { name: o.name, tier: TIERL[o.tier] || o.tier, warranty: o.warranty || '', stock: o.stock || '', note: o.note || '', total: '$' + Math.round(c.total / 100).toLocaleString('en-US'), stockColor: /in stock/i.test(o.stock || '') ? GRN : YEL, radio: radioS(on) + ';flex:0 0 auto;margin-top:1px', pick: () => { if (!tqLocked) this.setState({ tqSel: { ...tqSel, tier: o.tier } }); } }; }) : [],
+      tqHazardPrice: tqOpt ? '$' + Math.round(((tqOpt.each_cents || 0) * 4 * 0.12) / 100).toLocaleString('en-US') + ' for the set.' : '',
+      tqToggleHazard: () => { if (!tqLocked) this.setState({ tqSel: { ...tqSel, hazard: !tqHaz } }); },
+      tqHazTrack: 'width:44px;height:26px;border-radius:13px;padding:2px;flex:0 0 auto;transition:background .2s ease;background:' + (tqHaz ? GRN : 'rgba(235,235,245,.18)'), tqHazKnob: 'width:22px;height:22px;border-radius:11px;background:#fff;transition:transform .2s ease;transform:translateX(' + (tqHaz ? 18 : 0) + 'px)',
+      tqRows: tqOpt ? [{ k: '4 tires · $' + Math.round((tqOpt.each_cents || 0) / 100) + ' each', v: '$' + Math.round(tqC.tires / 100).toLocaleString('en-US') }, { k: 'Mount, balance, TPMS, disposal', v: '$' + Math.round(tqC.fees / 100).toLocaleString('en-US') }].concat(tqHaz ? [{ k: 'Road hazard', v: '$' + Math.round(tqC.haz / 100).toLocaleString('en-US') }] : []).concat([{ k: 'Tax', v: 'At the counter' }]) : [],
+      tqScene: tq && tq.status === 'accepted' ? (cur >= 8 ? 'new' : 'off') : 'on',
+      tqTotal: fmtC(tqC.total), tqCta: !tq ? '' : tq.status === 'accepted' ? 'Accepted · ' + fmtC(tqC.total) : s.busy ? 'Sending\u2026' : 'Accept · ' + fmtC(tqC.total),
+      tqCtaStyle: 'text-align:center;padding:15px 0;border-radius:12px;font-size:13px;font-weight:600;transition:all .2s ease;' + (tqLocked ? 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;' : 'background:#fff;color:#000;cursor:pointer;'),
+      tqAccept: () => { if (!tqLocked && tqOpt) this.acceptQuote(tq, tqOpt.tier, tqHaz); },
+    });
+    if (tq && tq.status === 'sent' && act.status !== 'done') kick('Tire quote ready', YEL, (tq.options || []).length + ' options for ' + (actVeh ? actVeh.model || 'your car' : 'your car') + '.', 'From ' + shop.name.split(' ')[0] + (tq.size ? ' · ' + tq.size : '') + ' · ' + (TIERL[tq.recommended] || '') + ' recommended', 'See quote', this.go('tires'));
 
     // ---- pickup and rating for the finished visit
     const doneAct = act && act.status === 'done' ? act : null;
