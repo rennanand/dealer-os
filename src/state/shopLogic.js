@@ -29,7 +29,7 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
@@ -156,8 +156,49 @@ export class ShopLogic extends DCLogic {
       noUpNext: !s.loading && !upNext.length, noLoaners: !s.loading && !loanerRows.length,
     };
 
+    // Schedule: the day's appointments on a bay timeline, draggable between times and bays.
+    const H0 = 7, H1 = 19, SPAN = H1 - H0, HOURS = []; for (let h = H0; h <= H1; h++) HOURS.push(h);
+    const hl = (hr) => (((hr - H0) / SPAN) * 100).toFixed(2) + '%';
+    const fmtH = (hr) => { const h12 = ((Math.floor(hr) + 11) % 12) + 1, m = Math.round((hr % 1) * 60); return h12 + (m ? ':' + (m < 10 ? '0' : '') + m : '') + (hr >= 12 ? ' PM' : ' AM'); };
+    const hourOf = (ts) => { const d = new Date(ts); return d.getHours() + d.getMinutes() / 60; };
+    const drag = s.drag;
+    const lanes = [1, 2, 3, 4, 5, 0]; // 0 = not yet assigned to a bay
+    const dayJobs = dayAppts.filter((a) => a.status !== 'cancelled' && a.status !== 'no_show');
+    const nowH = new Date().getHours() + new Date().getMinutes() / 60;
+    const schedRows = lanes.map((bay) => ({ bay: bay ? 'Bay 0' + bay : 'Unassigned', tech: bay ? '' : 'Drag into a bay', blocks: dayJobs.filter((a) => (a.bay || 0) === bay).map((a) => {
+      const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), st = STATUS[a.status] || STATUS.booked, start = hourOf(a.starts_at), dur = Math.max(0.5, (a.minutes || 60) / 60), dragging = drag && drag.id === a.id;
+      return {
+        id: a.id, who: c ? c.name : 'Walk-in', job: (vehName(v) || 'Vehicle') + ' · ' + (a.job || 'Service'), time: fmtH(start) + ' – ' + fmtH(start + dur), status: st[0], c: st[1],
+        style: 'position:absolute;top:8px;bottom:8px;left:' + hl(start) + ';width:calc(' + ((dur / SPAN) * 100).toFixed(2) + '% - 4px);min-width:92px;padding:10px 12px;border-radius:10px;background:#141416;user-select:none;touch-action:none;overflow:hidden;' + (dragging ? 'transform:translate(' + drag.dx + 'px,' + drag.dy + 'px);z-index:5;cursor:grabbing;box-shadow:0 16px 44px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.28),inset 3px 0 0 ' + st[1] + ';' : 'cursor:grab;transition:left .25s ease,width .25s ease;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),inset 3px 0 0 ' + st[1] + ';'),
+        down: (e) => { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {} const lane = e.currentTarget.parentElement.getBoundingClientRect(); set({ drag: { id: a.id, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, pxh: lane.width / SPAN, rowH: lane.height, scale: lane.height / 84, moved: false }, schedMsg: '' }); },
+        move: (e) => { const d = this.state.drag; if (!d || d.id !== a.id) return; set({ drag: { ...d, dx: (e.clientX - d.x0) / d.scale, dy: (e.clientY - d.y0) / d.scale, moved: d.moved || Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) > 4 } }); },
+        up: (e) => {
+          const d = this.state.drag; if (!d || d.id !== a.id) return;
+          if (!d.moved) { set({ drag: null, selId: a.id }); return; }
+          let nstart = Math.max(H0, Math.min(H1 - dur, Math.round((start + (e.clientX - d.x0) / d.pxh) * 4) / 4));
+          const li = lanes.indexOf(bay), nb = lanes[Math.max(0, Math.min(lanes.length - 1, li + Math.round((e.clientY - d.y0) / d.rowH)))];
+          const others = dayJobs.filter((x) => (x.bay || 0) === nb && x.id !== a.id).map((x) => ({ start: hourOf(x.starts_at), dur: Math.max(0.5, (x.minutes || 60) / 60) }));
+          const clash = (t) => others.some((o) => t < o.start + o.dur && t + dur > o.start);
+          let tries = 0; while (nb && tries++ < 48 && clash(nstart)) nstart = Math.min(H1 - dur, nstart + 0.25);
+          if (nb && clash(nstart)) { set({ drag: null, schedMsg: 'No room in Bay 0' + nb + ' at that time.' }); return; }
+          const changed = nstart !== start || nb !== bay;
+          set({ drag: null, schedMsg: changed ? (c ? c.name.split(' ')[0] : 'Walk-in') + (nb !== bay ? (nb ? ' moved to Bay 0' + nb : ' taken off the bays') : '') + (nstart !== start ? (nb !== bay ? ', ' : ' moved to ') + fmtH(nstart) : '') + '.' : '' });
+          if (!changed) return;
+          const d0 = new Date(a.starts_at); d0.setHours(Math.floor(nstart), Math.round((nstart % 1) * 60), 0, 0);
+          this.setAppt(a.id, { starts_at: d0.toISOString(), bay: nb || null });
+        },
+      };
+    }) }));
+    const schedule = {
+      sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
+      nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
+      hours: HOURS.map((hr) => ({ left: hl(hr), label: hr === 12 ? '12 PM' : hr > 12 ? (hr - 12) + ' PM' : hr + ' AM' })), nowLeft: 'calc(76px + (100% - 76px) * ' + ((nowH - H0) / SPAN).toFixed(4) + ')',
+      rows: schedRows, msg: s.schedMsg || (dayJobs.length ? 'Drag a job to another time or bay. The customer\u2019s phone and Today update as soon as you let go.' : 'Nothing booked for this day yet.'),
+      setMinutes: (id, m) => this.setAppt(id, { minutes: m }),
+    };
+
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),
