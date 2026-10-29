@@ -13,12 +13,15 @@ import { OfflineBar } from './Offline.jsx';
 import { LAUNCH } from '../state/options.js';
 
 const makeTransport = () => (supabase ? supabaseTransport(supabase, SHOP_ID) : broadcastTransport('dealeros-shop'));
-import { Demo } from '../surfaces/Demo.jsx';
 import { CustomerApp } from '../surfaces/customer/CustomerApp.jsx';
-import { TechApp } from '../surfaces/tech/TechApp.jsx';
-import { ShopApp } from '../surfaces/shop/ShopApp.jsx';
-import { LobbyBoard } from '../surfaces/lobby/LobbyBoard.jsx';
-import { LobbyIdle } from '../surfaces/lobby/LobbyIdle.jsx';
+// Staff surfaces load on demand so the customer app's first paint does not wait for them.
+const lazyOf = (load, name) => React.lazy(() => load().then((m) => ({ default: m[name] })));
+const Demo = lazyOf(() => import('../surfaces/Demo.jsx'), 'Demo');
+const TechApp = lazyOf(() => import('../surfaces/tech/TechApp.jsx'), 'TechApp');
+const ShopApp = lazyOf(() => import('../surfaces/shop/ShopApp.jsx'), 'ShopApp');
+const LobbyBoard = lazyOf(() => import('../surfaces/lobby/LobbyBoard.jsx'), 'LobbyBoard');
+const LobbyIdle = lazyOf(() => import('../surfaces/lobby/LobbyIdle.jsx'), 'LobbyIdle');
+const Lazy = ({ children }) => <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#000' }} />}>{children}</React.Suspense>;
 
 /** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
 export function Require({ roles, title, children, customerHome }) {
@@ -99,7 +102,7 @@ function useBodyClass(name) {
 /** The original four-up prototype view, with the device switcher and stage controls. */
 export function DemoRoute() {
   useBodyClass('route-demo');
-  return <AppHost options={DEFAULT_OPTIONS}>{(vm) => <Demo vm={vm} />}</AppHost>;
+  return <AppHost options={DEFAULT_OPTIONS}>{(vm) => <Lazy><Demo vm={vm} /></Lazy>}</AppHost>;
 }
 
 /** Customer app: fills the phone; on a wider screen it stays a phone-width column. */
@@ -125,7 +128,7 @@ export function TechRoute() {
       {(vm) => (
         <div className="surface surface-tech">
           <Fitted fit={fit}>
-            <TechApp vm={vm} />
+            <Lazy><TechApp vm={vm} /></Lazy>
           </Fitted>
         </div>
       )}
@@ -144,7 +147,7 @@ export function ShopRoute() {
       {(vm) => (
         <div className="surface surface-shop">
           <Fitted fit={fit}>
-            <ShopApp vm={vm} />
+            <Lazy><ShopApp vm={vm} /></Lazy>
           </Fitted>
         </div>
       )}
@@ -171,7 +174,7 @@ export function LobbyRoute() {
           const vm = { lobbyScaleStyle: scaleStyle, lobbyTime: lb.time, lobbyDate: lb.date, lobbyRows: lb.rows, lobbyLiveBay: lb.liveBay, lobbyLiveTitle: lb.liveTitle, lobbyLiveSub: lb.liveSub, lobbyScene: lb.scene, lobbyScenePhase: lb.phase, lobbyFoot: lb.foot };
           return (
             <div className="surface surface-lobby">
-              <div style={{ width: 1360 * scale, height: 765 * scale }}><LobbyBoard vm={vm} /></div>
+              <div style={{ width: 1360 * scale, height: 765 * scale }}><Lazy><LobbyBoard vm={vm} /></Lazy></div>
             </div>
           );
         }}
@@ -184,9 +187,9 @@ export function LobbyRoute() {
         <div className="surface surface-lobby">
           <div style={{ width: 1360 * scale, height: 765 * scale }}>
             {vm.lobbyIdle ? (
-              <LobbyIdle vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;' }} />
+              <Lazy><LobbyIdle vm={{ ...vm, lobbyScaleStyle: 'transform:scale(' + scale.toFixed(4) + ');transform-origin:top left;' }} /></Lazy>
             ) : (
-              <LobbyBoard vm={{ ...vm, lobbyScaleStyle: scaleStyle }} />
+              <Lazy><LobbyBoard vm={{ ...vm, lobbyScaleStyle: scaleStyle }} /></Lazy>
             )}
           </div>
         </div>

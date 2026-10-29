@@ -10,9 +10,13 @@ export function useAuth() {
   React.useEffect(() => {
     if (!supabase) return;
     let alive = true;
+    const cacheKey = (s) => 'revyn.member.' + s.user.id;
     const load = async (session) => {
       if (!session) return alive && set({ loading: false, session: null, member: null });
+      let cached = null; try { cached = JSON.parse(localStorage.getItem(cacheKey(session)) || 'null'); } catch (e) {}
+      if (cached && alive) set({ loading: false, session, member: cached }); // paint now, confirm below
       const { data } = await supabase.from('shop_members').select('shop_id, role, name').eq('shop_id', SHOP_ID).maybeSingle();
+      try { if (data) localStorage.setItem(cacheKey(session), JSON.stringify(data)); } catch (e) {}
       if (alive) set({ loading: false, session, member: data || null });
     };
     supabase.auth.getSession().then(({ data }) => load(data.session));

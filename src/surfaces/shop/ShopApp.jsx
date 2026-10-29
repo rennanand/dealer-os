@@ -26,6 +26,7 @@ import { Techs } from './Techs.jsx';
 import { Tires } from './Tires.jsx';
 
 export function ShopApp({ vm }) {
+  React.useEffect(() => { import('../../components/car-hero.js'); import('../../components/service-scene.js'); }, []);
   return (
     <>
       <div style={css('display:flex;height:800px')}>

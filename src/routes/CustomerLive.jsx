@@ -21,13 +21,16 @@ export function CustomerLiveRoute({ auth }) {
   const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {
     if (!supabase) return setProfile({ phone: '4355550142', name: auth.member?.name || 'Rennan' });
-    supabase.from('customer_profiles').select('*').eq('user_id', auth.session.user.id).maybeSingle().then(({ data }) => setProfile(data || null));
+    const key = 'revyn.profile.' + auth.session.user.id;
+    try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && c.phone) setProfile(c); } catch (e) {}
+    supabase.from('customer_profiles').select('*').eq('user_id', auth.session.user.id).maybeSingle().then(({ data }) => { try { if (data) localStorage.setItem(key, JSON.stringify(data)); } catch (e) {} setProfile(data || null); });
   }, [auth.session]);
   const save = async () => {
     if (phone.length !== 10 || busy) return;
     setBusy(true);
     const row = { user_id: auth.session.user.id, phone, name: auth.member?.name || '' };
     if (supabase) await supabase.from('customer_profiles').upsert(row);
+    try { localStorage.setItem('revyn.profile.' + auth.session.user.id, JSON.stringify(row)); } catch (e) {}
     setBusy(false); setProfile(row);
   };
   if (profile === undefined) return <div style={css(PAGE)} />;

@@ -39,7 +39,10 @@ const minLabel = (m) => { const h = Math.floor(m / 60), mm = m % 60; return ((h 
 export class CustomerLive extends AppLogic {
   constructor(props) {
     super(props);
-    this.state = { ...this.state, stage: 0, loaner: 'none', readStage: 99, live: { profile: props.profile || null, vehicles: [], appointments: [], rentals: [], shops: [DEMO_SHOP], messages: [], loaded: !supabase }, addVeh: null };
+    let cached = null; try { cached = JSON.parse(localStorage.getItem('revyn.live.' + (props.userId || 'demo')) || 'null'); } catch (e) {}
+    const live = cached ? { ...cached, profile: props.profile || cached.profile || null, loaded: true } : { profile: props.profile || null, vehicles: [], appointments: [], rentals: [], shops: [DEMO_SHOP], messages: [], loaded: !supabase };
+    const act = cached ? this.active(live.appointments) : null;
+    this.state = { ...this.state, stage: act ? STAGE_OF[act.status] || 0 : 0, loaner: 'none', readStage: 99, live, addVeh: null, noVehicle: cached ? !live.vehicles.length : false };
   }
   componentDidMount() {
     super.componentDidMount();
@@ -68,6 +71,7 @@ export class CustomerLive extends AppLogic {
     const [v, a, r, sh, m] = await Promise.all([supabase.rpc('my_vehicles'), supabase.rpc('my_appointments'), supabase.rpc('my_rentals'), supabase.rpc('shops_public'), supabase.rpc('my_messages')]);
     const live = { ...this.state.live, vehicles: v.data || [], appointments: a.data || [], rentals: r.data || [], shops: Array.isArray(sh.data) && sh.data.length ? sh.data : [DEMO_SHOP], messages: m.data || [], loaded: true };
     const act = this.active(live.appointments);
+    try { localStorage.setItem('revyn.live.' + (this.props.userId || 'demo'), JSON.stringify({ vehicles: live.vehicles, appointments: live.appointments, rentals: live.rentals, shops: live.shops, messages: live.messages })); } catch (e) {}
     this.setState({ live, stage: act ? STAGE_OF[act.status] || 0 : 0, noVehicle: !live.vehicles.length });
   }
   // The visit the home card and Service page are about: the one in progress, else the next booked, else today's finished one.

@@ -9,6 +9,7 @@ import { Report } from './Report.jsx';
 import { Today } from './Today.jsx';
 
 export function TechApp({ vm }) {
+  React.useEffect(() => { import('../../components/car-hero.js'); import('../../components/service-scene.js'); }, []);
   return (
     <>
       <div

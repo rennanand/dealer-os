@@ -1,6 +1,5 @@
 import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
-import '../../components/car-hero.js';
 
 export function Job({ vm }) {
   return (

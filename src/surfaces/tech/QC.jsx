@@ -1,6 +1,5 @@
 import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
-import '../../components/service-scene.js';
 
 export function QC({ vm }) {
   return (

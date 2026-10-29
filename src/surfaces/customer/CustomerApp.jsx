@@ -1,6 +1,5 @@
 import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
-import '../../components/car-hero.js';
 import { Account } from './Account.jsx';
 import { HomeEmpty, GarageEmpty, ServiceEmpty, HealthEmpty, HistoryEmpty, MessagesEmpty } from './EmptyStates.jsx';
 import { Approve } from './Approve.jsx';
@@ -44,6 +43,8 @@ import { Vehicle } from './Vehicle.jsx';
 import { AddVehicle, GarageLive, ShopLive } from './LivePages.jsx';
 
 export function CustomerApp({ vm }) {
+  // The 3D car and the line-art scenes (three.js, ~700 KB) load after the first paint so the app opens at once.
+  React.useEffect(() => { import('../../components/car-hero.js'); import('../../components/service-scene.js'); }, []);
   return (
     <>
       <div

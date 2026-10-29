@@ -1,8 +1,8 @@
 import React from 'react';
 import { T, L, css, val } from '../../runtime/tpl.js';
-import '../../components/service-scene.js';
 
 export function LobbyBoard({ vm }) {
+  React.useEffect(() => { import('../../components/car-hero.js'); import('../../components/service-scene.js'); }, []);
   return (
     <>
       <div
