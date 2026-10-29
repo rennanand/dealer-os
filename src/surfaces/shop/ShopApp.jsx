@@ -84,7 +84,7 @@ export function ShopApp({ vm }) {
           </div>
         </div>
         <div style={css('flex:1;min-width:0;overflow-y:auto;padding:30px 34px')} className="hidescroll">
-          {vm.dOverview ? <Overview vm={vm} /> : null}
+          {vm.dOverview && !LAUNCH ? <Overview vm={vm} /> : null}
           {vm.dApprovals ? <Approvals vm={vm} /> : null}
           {vm.dEstimate ? <Estimate vm={vm} /> : null}
           {vm.dInbox ? <Inbox vm={vm} /> : null}
@@ -93,7 +93,7 @@ export function ShopApp({ vm }) {
           {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule ? <Schedule vm={vm} /> : null}
-          {LAUNCH && (vm.dAppointments || vm.dCustomers) ? <ShopHost page={vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} /> : null}
+          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} /> : null}
           {vm.dAppointments && !LAUNCH ? <Appointments vm={vm} /> : null}
           {vm.dCheckin ? <Checkin vm={vm} /> : null}
           {vm.dCustomers && !LAUNCH ? <Customers vm={vm} /> : null}

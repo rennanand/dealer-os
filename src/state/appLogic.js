@@ -4,6 +4,7 @@
 import React from 'react';
 import { DCLogic } from '../runtime/logic.js';
 import { LAUNCH } from './options.js';
+import { checkInWalkIn, lookupPlate } from './shopLogic.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', RED = '#e0312b';
 const pill = c => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;text-align:center;color:' + c;
@@ -218,7 +219,7 @@ export class AppLogic extends DCLogic {
     trade: { cond: 'Good', miles: '52,431', photos: 0, result: false },
     readStage: -1,
     tView: 'today', cat: null, pos: 0, form: null, saved: {}, inspDone: {}, marks: [], tool: 'circle', photoMode: 'photo', photoAdded: false,
-    dView: LAUNCH === 'loaners' ? 'loaners' : 'overview', dSel: 'rennan', dReply: '', addOpen: false, salesTab: 'Inventory', estOpen: false,
+    dView: 'overview', dSel: 'rennan', dReply: '', addOpen: false, salesTab: 'Inventory', estOpen: false,
     partsEta: null, orderOpen: false, partsOrdered: null, sched: SCHED0(), drag: null, schedMsg: '',
     valet: null, qc: {}, est: null, estNotes: null, repRange: '31 days', odo: null, odoDraft: '', tq: null, swap: false,
     noVehicle: false, shopClosed: false, walkins: [], ci: null,
@@ -1136,7 +1137,7 @@ export class AppLogic extends DCLogic {
     const dSet = TIRES[tq.veh] || TIRES.rennan, dTier = tq.veh === 'rennan' ? tq.tier : (tq.tierS || 'better');
     const dStatus = tq.veh !== 'rennan' ? ['Draft', 'rgba(235,235,245,.5)'] : tq.accepted ? ['Accepted · ' + tqOptR.tier + ' · ' + tq.acceptedAt, GRN] : tq.sent ? ['Sent ' + tq.sentAt + ' · waiting', YEL] : tq.requested ? ['Requested by Rennan', YEL] : ['Draft', 'rgba(235,235,245,.5)'];
     const tqSend = () => { this.setState({ tq: Object.assign({}, tq, { veh: 'rennan', sent: true, sentAt: '9:46 AM', requested: true }) }); this.notify('Tyler sent you a tire quote for Quicksilver. Three options.'); };
-    const LIVE_NAV = ['loaners', 'appointments', 'customers', 'team', 'settings'];
+    const LIVE_NAV = ['overview', 'loaners', 'appointments', 'customers', 'team', 'settings'];
     const dNavDefs = (LAUNCH === 'loaners' ? [['team', 'Team']] : []).concat([['overview', 'Overview'], ['schedule', 'Schedule'], ['appointments', 'Appointments'], ['customers', 'Customers'], ['fleet', 'Fleet'], ['approvals', 'Approvals', approvalsCount], ['followups', 'Follow-ups', FOLLOWUPS.filter(f => (!f.live || (st >= 5 && !s.inclMonitor)) && !(s.fu || {})[f.id]).length], ['inbox', 'Inbox', inboxItems.filter(x => x.section === 'Needs response').length], ['technicians', 'Technicians'], ['parts', 'Parts'], ['oil', 'Oil', TANKS.some(t => tankPct(t) < 30 && !oil.reorder) ? 1 : 0], ['tires', 'Tires', tq.requested && !tq.sent ? 1 : 0], ['loaners', 'Loaners'], ['sales', 'Sales', s.reserved ? 1 : 0], ['analytics', 'Reports'], ['settings', 'Settings']])
     const built = ['team', 'overview', 'checkin', 'schedule', 'estimate', 'tires', 'approvals', 'inbox', 'sales', 'loaners', 'analytics', 'appointments', 'customers', 'customer', 'parts', 'technicians', 'settings', 'followups', 'fleet', 'oil'];
     const bay1Label = s.needInfo && st <= 7 ? 'Technician needs more information' : s.partsDelayed && st >= 5 && st <= 6 ? 'Waiting for parts' : BAY1[st];
@@ -1201,7 +1202,7 @@ export class AppLogic extends DCLogic {
     const renEta = st >= 10 ? ['Picked up', '3:20 PM', 'rgba(235,235,245,.5)'] : st >= 8 ? ['Ready now', 'Bay 0' + rBay + (st >= 9 ? ' · paid' : ' · pay in the app'), GRN] : st >= 5 ? [s.partsDelayed ? PETA.estShort.replace(/^\w/, ch => ch.toUpperCase()) : '3:00 PM', s.partsDelayed ? 'Parts arrive ' + PETA.arrive : 'Estimated', '#fff'] : st >= 3 ? ['—', 'After approval · about 5 h', '#fff'] : st >= 1 ? ['~3:00 PM', 'Estimated after inspection', '#fff'] : ['9:30 AM', 'Arriving', '#fff'];
     const PROG = { 'Bay 01': [st * 10, renEta[0]], 'Bay 02': [40, 'After approval'], 'Bay 03': [0, '5:30 PM'], 'Bay 04': oilLive ? [oil.step * 25, oilDone ? 'Ready now' : '1:55 PM'] : [100, 'Ready now'], 'Bay 05': [55, 'Thursday'] };
     Object.assign(V, {
-      sideNav: (LAUNCH === 'loaners' ? LIVE_NAV.map(k => dNavDefs.find(n => n[0] === k)).concat(dNavDefs.filter(n => !LIVE_NAV.includes(n[0]))) : dNavDefs).map(n => ({ label: n[1], preview: LAUNCH === 'loaners' && !LIVE_NAV.includes(n[0]), divider: LAUNCH === 'loaners' && n[0] === 'overview', d: { team: I.users, overview: I.grid, tires: I.tire, schedule: I.clock, appointments: I.calendar, customers: I.users, approvals: I.checkc, inbox: I.inbox, technicians: I.wrench, parts: I.box, loaners: I.key, sales: I.tag, analytics: I.chart, settings: I.sliders, followups: I_FU, fleet: I_FLEET, oil: I.drop }[n[0]] || I.grid, count: n[2] ? String(n[2]) : '', go: this.dgo(n[0]), countStyle: 'font-size:11px;font-weight:500;padding:2px 7px;border-radius:7px;background:' + (n[0] === 'inbox' && n[2] ? RED : 'rgba(235,235,245,.12)') + ';color:#fff', style: 'display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;cursor:pointer;transition:background .18s ease;' + (s.dView === n[0] ? 'background:#1c1c1e;color:#fff;font-weight:500;' : 'color:rgba(235,235,245,' + (built.indexOf(n[0]) >= 0 ? '.7' : '.4') + ');') })),
+      sideNav: (LAUNCH === 'loaners' ? LIVE_NAV.map(k => dNavDefs.find(n => n[0] === k)).concat(dNavDefs.filter(n => !LIVE_NAV.includes(n[0]))) : dNavDefs).map(n => ({ label: n[1], preview: LAUNCH === 'loaners' && !LIVE_NAV.includes(n[0]), divider: LAUNCH === 'loaners' && n[0] === 'schedule', d: { team: I.users, overview: I.grid, tires: I.tire, schedule: I.clock, appointments: I.calendar, customers: I.users, approvals: I.checkc, inbox: I.inbox, technicians: I.wrench, parts: I.box, loaners: I.key, sales: I.tag, analytics: I.chart, settings: I.sliders, followups: I_FU, fleet: I_FLEET, oil: I.drop }[n[0]] || I.grid, count: n[2] ? String(n[2]) : '', go: this.dgo(n[0]), countStyle: 'font-size:11px;font-weight:500;padding:2px 7px;border-radius:7px;background:' + (n[0] === 'inbox' && n[2] ? RED : 'rgba(235,235,245,.12)') + ';color:#fff', style: 'display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13px;cursor:pointer;transition:background .18s ease;' + (s.dView === n[0] ? 'background:#1c1c1e;color:#fff;font-weight:500;' : 'color:rgba(235,235,245,' + (built.indexOf(n[0]) >= 0 ? '.7' : '.4') + ');') })),
       dOverview: s.dView === 'overview', dApprovals: s.dView === 'approvals', dInbox: s.dView === 'inbox', dSales: s.dView === 'sales', dLoaners: s.dView === 'loaners', dAnalytics: s.dView === 'analytics', dEmpty: built.indexOf(s.dView) < 0,
       dTeam: s.dView === 'team', dCheckin: s.dView === 'checkin', dAppointments: s.dView === 'appointments', dCustomers: s.dView === 'customers', dParts: s.dView === 'parts', dTechs: s.dView === 'technicians', dSettings: s.dView === 'settings',
       dSchedule: s.dView === 'schedule', dCustomer: s.dView === 'customer', dEstimate: s.dView === 'estimate', dTires: s.dView === 'tires', dFollowups: s.dView === 'followups', dFleet: s.dView === 'fleet', dOil: s.dView === 'oil',
@@ -1346,7 +1347,7 @@ export class AppLogic extends DCLogic {
     const WI0 = { name: '', phone: '', plate: '', car: '', odo: '', concern: '', service: 'Multi-point inspection', bay: 3, visit: 'Wait', found: null };
     const wi = s.wi || WI0;
     const setWi = patch => this.setState({ wi: Object.assign({}, wi, patch) });
-    const ciCarLabel = wi.found ? wi.found.name : wi.car.trim();
+    const ciCarLabel = wi.found && !wi.found.none ? wi.found.name : wi.car.trim();
     const ciOk = wi.name.trim().length > 1 && ciCarLabel.length > 2;
     const SERVICES = ['Oil change', 'Brake inspection', 'Tire rotation', 'Multi-point inspection', 'Check engine light', 'Tires', 'Other'];
     const busyBays = {}; for (const b of sched) if (b.start <= 14.7 && b.start + b.dur > 14.7) busyBays[b.bay] = b.who.split(' ')[0];
@@ -1357,19 +1358,24 @@ export class AppLogic extends DCLogic {
       ciName: wi.name, onCiName: e => setWi({ name: e.target.value }), ciPhone: wi.phone, onCiPhone: e => setWi({ phone: e.target.value.replace(/[^\d() -]/g, '').slice(0, 14) }),
       ciCustomerNote: wi.phone.replace(/\D/g, '').length >= 10 ? 'They get a text with a link to follow the visit, approve work and pay. No app download needed.' : 'Add a mobile number and they can follow the visit from their phone.',
       ciPlate: wi.plate, onCiPlate: e => setWi({ plate: e.target.value.toUpperCase().slice(0, 17), found: null }), onCiPlateKey: e => { if (e.key === 'Enter') V.ciLookup(); },
-      ciLookup: () => { const p = wi.plate.trim(); if (!p) return; const hit = p.length > 10 ? { name: '2021 Toyota Tacoma', sub: 'TRD Off-Road · VIN ···' + p.slice(-4) + ' · serviced here 11 times', ph: PH } : { name: '2020 Honda CR-V', sub: 'EX-L · UT ' + p + ' · new to RyGuys', ph: PH }; setWi({ found: hit }); },
+      ciLookup: () => { const p = wi.plate.trim(); if (!p) return; if (LAUNCH) { lookupPlate(p).then(hit => setWi(hit ? { found: { name: hit.name, sub: hit.sub, ph: PH }, name: wi.name || (hit.customer && hit.customer.name) || '', phone: wi.phone || (hit.customer && hit.customer.phone) || '' } : { found: { name: 'Not on file yet', sub: 'UT ' + p.toUpperCase() + ' · add the vehicle below', ph: PH, none: true } })); return; } const hit = p.length > 10 ? { name: '2021 Toyota Tacoma', sub: 'TRD Off-Road · VIN ···' + p.slice(-4) + ' · serviced here 11 times', ph: PH } : { name: '2020 Honda CR-V', sub: 'EX-L · UT ' + p + ' · new to RyGuys', ph: PH }; setWi({ found: hit }); },
       ciFound: !!wi.found, ciFoundName: wi.found && wi.found.name, ciFoundSub: wi.found && wi.found.sub, ciFoundPh: wi.found && wi.found.ph,
       ciCar: wi.car, onCiCar: e => setWi({ car: e.target.value }), ciOdo: wi.odo, onCiOdo: e => setWi({ odo: e.target.value.replace(/\D/g, '').slice(0, 7) }),
       ciConcern: wi.concern, onCiConcern: e => setWi({ concern: e.target.value }),
       ciServices: SERVICES.map(x => ({ label: x, pick: () => setWi({ service: x }), style: chipS(wi.service === x) })),
       ciBays: [1, 2, 3, 4, 5].map(b => ({ label: 'Bay 0' + b, sub: busyBays[b] ? busyBays[b] + ' · in use' : BAY_TECH[b], pick: () => setWi({ bay: b }), style: chipS(wi.bay === b) + 'flex:1;text-align:center;padding:9px 6px;' + (busyBays[b] && wi.bay !== b ? 'opacity:.45;' : '') })),
       ciVisits: ['Wait', 'Drop off', 'Loaner'].map(x => ({ label: x, pick: () => setWi({ visit: x }), style: chipS(wi.visit === x) + 'flex:1;text-align:center;' })),
-      ciFoot: ciOk ? ciCarLabel + ' · ' + wi.service + ' · Bay 0' + wi.bay + ' · ' + BAY_TECH[wi.bay].replace(/\.$/, '') + '. Goes to the technician iPad and the lobby board now.' : 'Name and vehicle are enough to check in. Everything else can be added from the work order.',
+      ciFoot: ciOk ? ciCarLabel + ' · ' + wi.service + ' · Bay 0' + wi.bay + (LAUNCH ? '. Shows on Today and on the customer\u2019s phone right away.' : ' · ' + BAY_TECH[wi.bay].replace(/\.$/, '') + '. Goes to the technician iPad and the lobby board now.') : 'Name and vehicle are enough to check in. Everything else can be added from the work order.',
       ciCta: 'Check in', ciCtaStyle: 'padding:13px 24px;border-radius:12px;font-size:13px;font-weight:600;transition:all .2s ease;white-space:nowrap;' + (ciOk ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;'),
       ciSubmit: () => {
         if (!ciOk) return;
         const id = 'wi' + Date.now();
         const job = { id, who: wi.name.trim(), car: ciCarLabel.replace(/^\d{4} /, ''), job: wi.service, bay: wi.bay, start: 14.75, dur: wi.service === 'Oil change' ? 0.75 : wi.service === 'Tire rotation' ? 0.5 : 1.5, status: 'Checked in', c: ACC };
+        if (LAUNCH) { // real record: the Overview and the customer's phone pick it up
+          checkInWalkIn({ name: wi.name, phone: wi.phone, car: ciCarLabel, plate: wi.plate, odo: wi.odo, service: wi.service, bay: wi.bay, visit: wi.visit, concern: wi.concern }).then(err => this.notify(err ? 'Check-in failed: ' + err : wi.name.trim().split(' ')[0] + ' checked in · Bay 0' + wi.bay));
+          this.setState({ wi: null, dView: 'overview' });
+          return;
+        }
         this.setState({ sched: sched.concat(job), walkins: (s.walkins || []).concat({ id, who: wi.name.trim(), car: job.car, job: wi.service, bay: wi.bay, visit: wi.visit, time: '2:41 PM', concern: wi.concern }), wi: null, dView: 'schedule' });
         this.notify(wi.name.trim().split(' ')[0] + ' checked in · Bay 0' + wi.bay + ' · ' + BAY_TECH[wi.bay]);
       }

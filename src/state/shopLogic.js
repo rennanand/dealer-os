@@ -4,6 +4,7 @@ import { DCLogic } from '../runtime/logic.js';
 import { supabase, SHOP_ID } from './supabase.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
+const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
 const iso = (d) => { const t = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return t.toISOString().slice(0, 10); };
 const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };
@@ -23,11 +24,12 @@ const TIMES = []; for (let h = 7; h <= 18; h++) for (const m of [0, 30]) TIMES.p
 const DEMO = {
   customers: [{ id: 'c1', name: 'Sarah Mitchell', phone: '4355550141', email: '', city: 'Ephraim, UT', created_at: '2025-03-01' }, { id: 'c2', name: 'Dale Christensen', phone: '4355550177', email: '', city: 'Gunnison, UT', created_at: '2024-06-12' }],
   vehicles: [{ id: 'v1', customer_id: 'c1', year: 2021, make: 'Toyota', model: '4Runner', plate: 'UT 4RNR', odometer: 61220 }, { id: 'v2', customer_id: 'c2', year: 2018, make: 'Ford', model: 'F-150', plate: 'UT F150', odometer: 142300 }],
-  appointments: [{ id: 'a1', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T10:30:00', job: 'Tire replacement', visit: 'wait', status: 'booked' }, { id: 'a2', customer_id: 'c2', vehicle_id: 'v2', starts_at: today() + 'T08:00:00', job: 'Plugs + coils', visit: 'dropoff', status: 'done' }],
+  appointments: [{ id: 'a1', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T10:30:00', job: 'Tire replacement', visit: 'wait', status: 'in_progress', bay: 2 }, { id: 'a2', customer_id: 'c2', vehicle_id: 'v2', starts_at: today() + 'T08:00:00', job: 'Plugs + coils', visit: 'dropoff', status: 'done' }, { id: 'a3', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T15:00:00', job: 'Inspection', visit: 'dropoff', status: 'booked' }],
+  rentals: [{ id: 'r1', number: 'LN-3107', customer_id: 'c2', customer_name: 'Dale Christensen', status: 'out', start_date: today(), end_date: addDays(today(), 1), vehicle_id: 'lv1' }], loanerFleet: [{ id: 'lv1', year: 2027, make: 'Tesla', model: 'Model 3', status: 'out' }],
 };
 
 export class ShopLogic extends DCLogic {
-  state = { customers: [], vehicles: [], appointments: [], rentals: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
@@ -39,15 +41,16 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r] = await Promise.all([
+    const [c, v, a, r, lf] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
-      supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
+      supabase.from('loaner_vehicles').select('id,year,make,model,color,status').eq('shop_id', SHOP_ID).neq('status', 'retired'),
+      supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loading: false, err: '' });
+    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -127,8 +130,34 @@ export class ShopLogic extends DCLogic {
     const custOpts = s.customers.map((c) => ({ id: c.id, label: c.name + (c.phone ? ' · ' + fmtPhone(c.phone) : '') }));
     const naCars = na && na.customer_id ? s.vehicles.filter((v) => v.customer_id === na.customer_id) : [];
 
+    // Overview: today's day from the same records
+    const nowIso = new Date().toISOString();
+    const todays = s.appointments.filter((a) => iso(new Date(a.starts_at)) === today() && a.status !== 'cancelled');
+    const openRentals = s.rentals.filter((r) => r.status === 'out' || r.status === 'signed' || r.status === 'sent');
+    const out = openRentals.filter((r) => r.status === 'out');
+    const dueBack = out.filter((r) => r.end_date && r.end_date <= today());
+    const lvName = (id) => { const v = s.loanerFleet.find((x) => x.id === id); return v ? vehName(v) : 'Loaner'; };
+    const PCT = { arrived: 10, in_progress: 55, done: 100 };
+    const floor = [1, 2, 3, 4, 5].map((bay) => {
+      const a = todays.find((x) => x.bay === bay && (x.status === 'arrived' || x.status === 'in_progress')) || todays.find((x) => x.bay === bay && x.status === 'done');
+      const c = a && this.custOf(a.customer_id), v = a && this.vehOf(a.vehicle_id), st = a && STATUS[a.status];
+      const pct = a ? PCT[a.status] || 0 : 0;
+      return { bay: 'Bay 0' + bay, open: !a, car: a ? vehName(v) || 'Vehicle' : 'Open', who: a ? (c ? c.name : 'Walk-in') + ' · ' + (a.job || 'Service') : 'Nothing assigned', status: a ? st[0] : '', color: a ? st[1] : 'rgba(235,235,245,.3)', pctLabel: a ? pct + '%' : '—', eta: a ? fmtTime(a.starts_at) : '',
+        dot: 'width:7px;height:7px;border-radius:4px;background:' + (a ? st[1] : 'rgba(235,235,245,.18)'), pill: pill(a ? st[1] : DIM), go: a ? () => set({ selId: a.id, day: today() }) : null,
+        ruler: { base: 'height:2px;background:rgba(235,235,245,.1);border-radius:1px', fill: 'height:2px;border-radius:1px;width:' + pct + '%;background:' + (a ? st[1] : 'transparent') },
+        style: 'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px;min-height:170px;' + (a ? 'cursor:pointer' : 'opacity:.6') };
+    });
+    const upNext = s.appointments.filter((a) => a.status === 'booked' && a.starts_at >= nowIso).slice(0, 4).map((a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id); return { id: a.id, who: c ? c.name : 'Walk-in', car: (vehName(v) || 'Vehicle') + ' · ' + (a.job || 'Service'), when: (iso(new Date(a.starts_at)) === today() ? '' : DAY_LABEL(iso(new Date(a.starts_at))) + ' · ') + fmtTime(a.starts_at), open: () => set({ selId: a.id, day: iso(new Date(a.starts_at)) }) }; });
+    const loanerRows = openRentals.slice(0, 4).map((r) => ({ id: r.id, who: r.customer_name, car: lvName(r.vehicle_id) + ' · ' + r.number, state: r.status === 'out' ? (r.end_date && r.end_date <= today() ? 'Due back' : 'Out · back ' + fmtDay(r.end_date + 'T12:00:00')) : r.status === 'signed' ? 'Signed · keys at the desk' : 'Awaiting signature', color: r.status === 'out' ? (r.end_date && r.end_date <= today() ? YEL : ACC) : r.status === 'signed' ? GRN : YEL }));
+    const overview = {
+      sub: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + todays.length + (todays.length === 1 ? ' appointment' : ' appointments') + ' · ' + out.length + (out.length === 1 ? ' loaner out' : ' loaners out'),
+      stats: [{ n: String(todays.length), l: 'Appointments today' }, { n: String(todays.filter((a) => a.status === 'arrived' || a.status === 'in_progress').length), l: 'In the shop now' }, { n: String(todays.filter((a) => a.status === 'done').length), l: 'Complete' }, { n: String(out.length), l: 'Loaners out' }, { n: String(dueBack.length), l: 'Loaners due back' }],
+      baysNow: floor.filter((b) => !b.open).length + ' of 5', floor, upNext, loanerRows,
+      noUpNext: !s.loading && !upNext.length, noLoaners: !s.loading && !loanerRows.length,
+    };
+
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }),
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),
@@ -164,4 +193,36 @@ export class ShopLogic extends DCLogic {
       custOpts, naCars: naCars.map((v) => ({ id: v.id, label: vehName(v) + (v.plate ? ' · ' + v.plate : '') })), times: TIMES.map((t) => ({ v: t, label: fmtTime('2000-01-01T' + t + ':00') })),
     };
   }
+}
+
+/** Walk-in check-in from the Overview: creates (or finds by phone) the customer, the vehicle, and an
+ *  appointment already in the "arrived" state with its bay. Returns an error message or ''. */
+export async function checkInWalkIn(d) {
+  if (!supabase) return '';
+  const phone = (d.phone || '').replace(/\D/g, '');
+  let cust = null;
+  if (phone) { const { data } = await supabase.from('customers').select('*').eq('shop_id', SHOP_ID).eq('phone', phone).maybeSingle(); cust = data; }
+  if (!cust) {
+    const { data, error } = await supabase.from('customers').insert({ shop_id: SHOP_ID, name: d.name.trim(), phone }).select().single();
+    if (error) return error.message; cust = data;
+  }
+  const parts = (d.car || '').trim().split(/\s+/), year = /^\d{4}$/.test(parts[0]) ? parseInt(parts.shift(), 10) : null;
+  let veh = null;
+  if (d.plate) { const { data } = await supabase.from('customer_vehicles').select('*').eq('customer_id', cust.id).eq('plate', d.plate.trim().toUpperCase()).maybeSingle(); veh = data; }
+  if (!veh && (parts[0] || d.plate)) {
+    const { data, error } = await supabase.from('customer_vehicles').insert({ shop_id: SHOP_ID, customer_id: cust.id, year, make: parts[0] || '', model: parts.slice(1).join(' '), plate: (d.plate || '').trim().toUpperCase(), odometer: parseInt(d.odo, 10) || null }).select().single();
+    if (error) return error.message; veh = data;
+  } else if (veh && d.odo) await supabase.from('customer_vehicles').update({ odometer: parseInt(d.odo, 10) || null }).eq('id', veh.id);
+  const visit = { Wait: 'wait', 'Drop off': 'dropoff', Loaner: 'loaner' }[d.visit] || 'dropoff';
+  const { error } = await supabase.from('appointments').insert({ shop_id: SHOP_ID, customer_id: cust.id, vehicle_id: veh ? veh.id : null, starts_at: new Date().toISOString(), job: d.service || 'Service', visit, status: 'arrived', bay: d.bay || null, notes: (d.concern || '').trim() });
+  return error ? error.message : '';
+}
+
+/** Plate lookup for the check-in screen: the vehicle and its owner, if the shop has seen it before. */
+export async function lookupPlate(plate) {
+  if (!supabase) return null;
+  const { data: v } = await supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).eq('plate', plate.trim().toUpperCase()).maybeSingle();
+  if (!v) return null;
+  const [{ data: c }, { count }] = await Promise.all([supabase.from('customers').select('*').eq('id', v.customer_id).maybeSingle(), supabase.from('appointments').select('id', { count: 'exact', head: true }).eq('vehicle_id', v.id).eq('status', 'done')]);
+  return { name: vehName(v) || 'Vehicle on file', sub: [v.plate, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : '', count ? 'serviced here ' + count + (count === 1 ? ' time' : ' times') : 'new to the shop'].filter(Boolean).join(' · '), customer: c };
 }
