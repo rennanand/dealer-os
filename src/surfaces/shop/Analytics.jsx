@@ -8,7 +8,7 @@ export function Analytics({ vm }) {
         <div style={css('display:flex;justify-content:space-between;align-items:flex-end')}>
           <div>
             <div style={css('font-size:32px;font-weight:600;letter-spacing:-1px')}>Reports</div>
-            <div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:5px')}>September 5 – October 5</div>
+            <div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:5px')}>{vm.repSub || 'September 5 – October 5'}</div>
           </div>
           <div style={css('display:flex;gap:6px')}>
             {L(vm.repRanges).map((r, _i) => (
@@ -34,7 +34,7 @@ export function Analytics({ vm }) {
             'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4);margin-top:10px',
           )}
         >
-          {'Revenue · '}
+          {(vm.repTitle || 'Revenue') + ' · '}
           {T(vm.repRangeLabel)}
         </div>
         <div style={css('margin-top:26px;display:grid;grid-template-columns:minmax(0,1fr) 44px')}>

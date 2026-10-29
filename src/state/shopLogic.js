@@ -31,7 +31,7 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, estId: null, fuTab: 'Open', fuNote: '', techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, estId: null, fuTab: 'Open', fuNote: '', repRange: '31 days', techs: [], newTech: null, editTech: null, messages: [], threadId: null, reply: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
@@ -332,6 +332,52 @@ export class ShopLogic extends DCLogic {
       fuNote: s.fuNote || 'Remind sends an in-app message to the customer. Snooze hides the item for 30 days. Nothing is sent automatically.',
     };
 
+    // Reports on real numbers. No payments are recorded, so money figures are approved work from estimates.
+    const repRange = s.repRange || '31 days';
+    const dayKey = (ts) => iso(new Date(ts));
+    const monthKey = (ts) => dayKey(ts).slice(0, 7);
+    const buckets = repRange === '12 months' ? Array.from({ length: 12 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() - 11 + i); return d.toISOString().slice(0, 7); }) : Array.from({ length: repRange === '7 days' ? 7 : 31 }, (_, i) => addDays(today(), i - (repRange === '7 days' ? 6 : 30)));
+    const keyOf = (ts) => (repRange === '12 months' ? monthKey(ts) : dayKey(ts));
+    const apptOf = (f) => s.appointments.find((a) => a.id === f.appointment_id);
+    const decided = s.findings.filter((f) => f.status !== 'pending' && f.decided_at);
+    const approvedAll = s.findings.filter((f) => f.status === 'approved' || f.status === 'done');
+    const repData = buckets.map((k) => approvedAll.filter((f) => keyOf(f.decided_at || f.created_at) === k).reduce((t, f) => t + f.price_cents, 0) / 100);
+    const doneVisits = s.appointments.filter((a) => a.status === 'done');
+    const visitsIn = buckets.map((k) => doneVisits.filter((a) => keyOf(a.done_at || a.starts_at) === k).length);
+    const repMax = Math.max(100, Math.max.apply(null, repData) * 1.1);
+    const sum = (arr) => arr.reduce((t, x) => t + x, 0);
+    const fmt0 = (n) => '$' + Math.round(n).toLocaleString('en-US');
+    const monthDone = doneVisits.filter((a) => monthKey(a.done_at || a.starts_at) === today().slice(0, 7));
+    const apprRate = decided.length ? Math.round((approvedAll.filter((f) => f.decided_at).length / decided.length) * 100) : null;
+    const apprMins = decided.length ? Math.round(decided.reduce((t, f) => t + (new Date(f.decided_at) - new Date(f.created_at)) / 60000, 0) / decided.length) : null;
+    const newCust = s.customers.filter((c) => monthKey(c.created_at) === today().slice(0, 7)).length;
+    const loanerDays = s.rentals.filter((r) => (r.status === 'out' || r.status === 'returned') && r.start_date && r.end_date && r.start_date.slice(0, 7) === today().slice(0, 7)).reduce((t, r) => t + Math.max(1, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 864e5)), 0);
+    const byJob = {}; for (const a of doneVisits) { const k = (a.job || 'Service').trim(); byJob[k] = byJob[k] || { n: 0, v: 0 }; byJob[k].n++; byJob[k].v += s.findings.filter((f) => f.appointment_id === a.id && (f.status === 'approved' || f.status === 'done')).reduce((t, f) => t + f.price_cents, 0) / 100; }
+    const topJobs = Object.keys(byJob).map((k) => ({ k, ...byJob[k] })).sort((x, y) => y.n - x.n).slice(0, 5);
+    const topMax = topJobs.length ? topJobs[0].n : 1;
+    const techRows = s.techs.filter((t) => t.active !== false).map((t) => { const jobs = doneVisits.filter((a) => a.tech_id === t.id), fs = s.findings.filter((f) => jobs.some((a) => a.id === f.appointment_id) && f.status !== 'pending'), ok = fs.filter((f) => f.status === 'approved' || f.status === 'done'); return { k: t.name, v: String(jobs.length) + (jobs.length === 1 ? ' visit' : ' visits'), s: fs.length ? Math.round((ok.length / fs.length) * 100) + '% approval · ' + fmt0(ok.reduce((x, f) => x + f.price_cents, 0) / 100) + ' approved' : 'No estimates yet', r: '' }; });
+    const reports = {
+      repSub: (repRange === '12 months' ? new Date(buckets[0] + '-15').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : new Date(buckets[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })) + ' – ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · no card payments are recorded in Revyn yet, so money figures are approved estimates',
+      repTitle: 'Approved work', repRanges: ['7 days', '31 days', '12 months'].map((r) => ({ label: r, pick: () => set({ repRange: r }), style: 'padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .18s ease;' + (repRange === r ? 'background:#fff;color:#000;' : 'background:#1c1c1e;color:rgba(235,235,245,.7);') })),
+      repRangeLabel: 'last ' + repRange, repTotal: fmt0(sum(repData)),
+      repGrid: [0, 0.5, 1].map((f) => ({ v: f === 0 ? '0' : fmt0(Math.round((repMax * f) / 10) * 10), style: 'position:absolute;left:0;right:0;bottom:' + f * 100 + '%;height:1px;background:rgba(235,235,245,' + (f === 0 ? '.18' : '.07') + ')' + (f === 0.5 ? ';background-image:linear-gradient(90deg,rgba(235,235,245,.2) 50%,transparent 50%);background-size:6px 1px;background-color:transparent' : ''), lbl: 'position:absolute;right:0;bottom:' + f * 100 + '%;transform:translateY(50%);font-size:11px;color:rgba(235,235,245,.45)' })),
+      repBars: repData.map((v, i) => ({ style: 'flex:1;border-radius:2px 2px 0 0;transition:height .5s ease;height:' + Math.max(v ? 2 : 0, Math.round((v / repMax) * 100)) + '%;background:' + (i === repData.length - 1 ? '#30d158' : 'rgba(48,209,88,.72)') })),
+      repTicks: repRange === '12 months' ? buckets.filter((_, i) => i % 2 === 0).map((k, i) => ({ l: new Date(k + '-15').toLocaleDateString('en-US', { month: 'short' }), left: ((i * 2) / 12 * 100).toFixed(1) + '%' })) : repRange === '7 days' ? buckets.map((k, i) => ({ l: new Date(k + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }), left: ((i / 7) * 100).toFixed(1) + '%' })) : [0, 7, 14, 21, 28].map((i) => ({ l: String(new Date(buckets[i] + 'T12:00:00').getDate()), left: ((i / 31) * 100).toFixed(1) + '%' })),
+      repLegend: [{ k: 'Visits', v: String(sum(visitsIn)) }, { k: 'Estimates', v: String(decided.filter((f) => buckets.includes(keyOf(f.decided_at))).length) }, { k: 'Avg', v: fmt0(sum(repData) / Math.max(1, repData.filter(Boolean).length)) + (repRange === '12 months' ? '/mo' : '/day') }],
+      repTop: topJobs.length ? topJobs.map((t) => ({ k: t.k, v: t.n + (t.n === 1 ? ' visit' : ' visits') + (t.v ? ' · ' + fmt0(t.v) : ''), bar: 'height:100%;width:' + Math.round((t.n / topMax) * 100) + '%;background:#30d158;border-radius:2px' })) : [{ k: 'No finished visits yet', v: '', bar: 'height:100%;width:0' }],
+      repTechs: techRows.length ? techRows : [{ k: 'No technicians yet', v: '', s: 'Add them on the Technicians page.', r: '' }],
+      metrics: [
+        { l: 'Visits today', n: String(todays.length), d: todays.filter((a) => a.status === 'done').length + ' complete', c: DIM },
+        { l: 'Visits this month', n: String(monthDone.length), d: 'finished', c: DIM },
+        { l: 'Approved work this month', n: fmt0(approvedAll.filter((f) => monthKey(f.decided_at || f.created_at) === today().slice(0, 7)).reduce((t, f) => t + f.price_cents, 0) / 100), d: 'from estimates in the app', c: GRN },
+        { l: 'Approval rate', n: apprRate === null ? '—' : apprRate + '%', d: decided.length ? decided.length + ' decided' : 'No estimates decided yet', c: apprRate === null ? DIM : apprRate >= 70 ? GRN : YEL },
+        { l: 'Average approval time', n: apprMins === null ? '—' : apprMins < 60 ? apprMins + ' min' : (apprMins / 60).toFixed(1) + ' h', d: 'from sent to tapped', c: DIM },
+        { l: 'Declined value, open', n: fmt0(fuOpen.reduce((t, r) => t + r.value, 0) / 100), d: fuOpen.length + ' follow-ups', c: fuOpen.length ? YEL : DIM },
+        { l: 'Customers', n: String(s.customers.length), d: newCust + ' new this month', c: DIM },
+        { l: 'Loaner days this month', n: String(loanerDays), d: out.length + ' out now', c: DIM },
+      ],
+    };
+
     const schedule = {
       sub: DAY_LABEL(s.day) + ' · 5 bays · ' + dayJobs.length + (dayJobs.length === 1 ? ' job' : ' jobs'),
       nowPill: pill(ACC), nowLabel: 'Now · ' + fmtH(nowH), showNow: s.day === today() && nowH >= H0 && nowH <= H1,
@@ -341,7 +387,7 @@ export class ShopLogic extends DCLogic {
     };
 
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
       search: s.search, setSearch: (v) => set({ search: v }),

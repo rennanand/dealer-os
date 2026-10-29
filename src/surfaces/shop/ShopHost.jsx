@@ -9,6 +9,7 @@ import { TechniciansLive } from './TechniciansLive.jsx';
 import { Inbox } from './Inbox.jsx';
 import { Approvals } from './Approvals.jsx';
 import { Followups } from './Followups.jsx';
+import { Analytics } from './Analytics.jsx';
 import { css } from '../../runtime/tpl.js';
 
 /** Customers and Appointments run on real records, separate from the demo view-model.
@@ -25,6 +26,7 @@ function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox }) {
   if (page === 'technicians') return <TechniciansLive vm={vm} />;
   if (page === 'approvals') return <Approvals vm={{ queueFull: vm.approvals.queueFull, estSel: vm.approvals.estSel, sendReminder: vm.approvals.sendReminder }} />;
   if (page === 'followups') return <Followups vm={vm.followups} />;
+  if (page === 'analytics') return <Analytics vm={vm.reports} />;
   if (page === 'inbox') {
     const ib = vm.inbox;
     if (ib.none) return (
