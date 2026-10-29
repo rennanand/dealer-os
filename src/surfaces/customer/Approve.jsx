@@ -42,7 +42,7 @@ export function Approve({ vm }) {
               <div style={css('font-size:28px;font-weight:600;letter-spacing:-.8px;margin-top:22px')}>Approved.</div>
               <div style={css('font-size:13.5px;line-height:1.5;color:rgba(235,235,245,.55);margin-top:8px')}>
                 {'You approved '}
-                {T(vm.approveTotal)}. Your technician has been notified and the parts are in stock.
+                {T(vm.approveTotal)}. {vm.approvedSub || 'Your technician has been notified and the parts are in stock.'}
               </div>{' '}
               <div
                 onClick={vm.goService}

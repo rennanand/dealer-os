@@ -1,7 +1,7 @@
 // View-model for the live Customers and Appointments pages (real records in Supabase).
 // Without a backend it runs on a few in-memory rows so the screens can be reviewed.
 import { DCLogic } from '../runtime/logic.js';
-import { supabase, SHOP_ID } from './supabase.js';
+import { supabase, SHOP_ID, SUPABASE_URL } from './supabase.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
@@ -29,28 +29,30 @@ const DEMO = {
 };
 
 export class ShopLogic extends DCLogic {
-  state = { drag: null, schedMsg: '', customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
+  state = { drag: null, schedMsg: '', findings: [], photos: [], newFinding: null, customers: [], vehicles: [], appointments: [], rentals: [], loanerFleet: [], loading: !!supabase, err: '', day: today(), selId: null, custId: null, newAppt: null, newCust: null, search: '', busy: false, editVeh: null };
 
   async componentDidMount() {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
     await this.reload();
     this.chan = supabase.channel('shop:' + SHOP_ID);
-    for (const t of ['customers', 'customer_vehicles', 'appointments']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
+    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
     this.chan.subscribe();
   }
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, r, lf] = await Promise.all([
+    const [c, v, a, r, lf, fi, ph] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
       supabase.from('loaner_vehicles').select('id,year,make,model,color,status').eq('shop_id', SHOP_ID).neq('status', 'retired'),
+      supabase.from('findings').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -60)).order('created_at'),
+      supabase.from('visit_photos').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -60)).order('created_at'),
       supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
-    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], loading: false, err: '' });
+    this.setState({ customers: c.data, vehicles: v.data, appointments: a.data, rentals: r.data || [], loanerFleet: lf.data || [], findings: fi.data || [], photos: ph.data || [], loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -100,6 +102,34 @@ export class ShopLogic extends DCLogic {
     this.setState({ appointments: this.state.appointments.map((a) => (a.id === id ? { ...a, ...p } : a)) });
     if (supabase) { const { error } = await supabase.from('appointments').update(p).eq('id', id); if (error) this.setState({ err: error.message }); }
   }
+
+  async addFinding(apptId, d) {
+    const row = { appointment_id: apptId, tier: d.tier || 'now', name: d.name.trim(), plain: (d.plain || '').trim(), tech: (d.tech || '').trim(), meas: (d.meas || '').trim(), meas_label: (d.meas_label || '').trim(), urgency: (d.urgency || '').trim(), wait_text: (d.wait_text || '').trim(), price_cents: Math.round(parseFloat(String(d.price || '0').replace(/[^\d.]/g, '')) * 100) || 0 };
+    if (!row.name) return;
+    if (!supabase) { this.setState({ findings: this.state.findings.concat({ id: 'f' + Date.now(), status: 'pending', created_at: new Date().toISOString(), ...row }), newFinding: null }); return; }
+    const { data, error } = await supabase.from('findings').insert({ ...row, shop_id: SHOP_ID }).select().single();
+    if (error) return this.setState({ err: error.message });
+    this.setState({ findings: this.state.findings.concat(data), newFinding: null });
+  }
+  async setFinding(id, p) {
+    this.setState({ findings: this.state.findings.map((f) => (f.id === id ? { ...f, ...p } : f)) });
+    if (supabase) { const { error } = await supabase.from('findings').update(p).eq('id', id); if (error) this.setState({ err: error.message }); }
+  }
+  async removeFinding(id) {
+    this.setState({ findings: this.state.findings.filter((f) => f.id !== id) });
+    if (supabase) await supabase.from('findings').delete().eq('id', id);
+  }
+  async addVisitPhoto(apptId, file, caption, findingId) {
+    if (!file) return;
+    if (!supabase) { this.setState({ photos: this.state.photos.concat({ id: 'p' + Date.now(), appointment_id: apptId, finding_id: findingId || null, path: '', local: URL.createObjectURL(file), caption: caption || '', created_at: new Date().toISOString() }) }); return; }
+    const path = apptId + '/' + Date.now() + '.jpg';
+    const up = await supabase.storage.from('visit-photos').upload(path, file, { contentType: file.type || 'image/jpeg' });
+    if (up.error) return this.setState({ err: up.error.message });
+    const { data, error } = await supabase.from('visit_photos').insert({ shop_id: SHOP_ID, appointment_id: apptId, finding_id: findingId || null, path, caption: caption || '' }).select().single();
+    if (error) return this.setState({ err: error.message });
+    this.setState({ photos: this.state.photos.concat(data) });
+  }
+  photoUrl(p) { return p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path); }
 
   custOf(id) { return this.state.customers.find((c) => c.id === id) || null; }
   vehOf(id) { return this.state.vehicles.find((v) => v.id === id) || null; }
@@ -227,6 +257,11 @@ export class ShopLogic extends DCLogic {
         noShow: sel.status === 'booked' ? () => this.setAppt(sel.id, { status: 'no_show' }) : null,
         setBay: (b) => this.setAppt(sel.id, { bay: parseInt(b, 10) || null }), setNotes: (v) => this.setAppt(sel.id, { notes: v }),
         openCustomer: selCust ? () => set({ custId: selCust.id }) : null, smsHref: selCust && selCust.phone ? 'sms:' + selCust.phone : '',
+        findings: s.findings.filter((f) => f.appointment_id === sel.id).map((f) => ({ id: f.id, name: f.name, tier: { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }[f.tier] || f.tier, price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'No charge', status: { pending: 'Waiting for approval', approved: 'Approved', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], plain: f.plain, meas: [f.meas_label, f.meas].filter(Boolean).join(' · '), remove: () => this.removeFinding(f.id), markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null, photos: s.photos.filter((p) => p.finding_id === f.id).map((p) => this.photoUrl(p)) })),
+        photos: s.photos.filter((p) => p.appointment_id === sel.id).map((p) => ({ id: p.id, url: this.photoUrl(p), caption: p.caption })),
+        addPhoto: (file, caption, findingId) => this.addVisitPhoto(sel.id, file, caption, findingId),
+        newFinding: s.newFinding, openNewFinding: () => set({ newFinding: { tier: 'now', name: '', plain: '', meas: '', meas_label: '', urgency: '', price: '' } }), setNewFinding: (p) => set({ newFinding: { ...s.newFinding, ...p } }), cancelNewFinding: () => set({ newFinding: null }), saveNewFinding: () => s.newFinding && this.addFinding(sel.id, s.newFinding),
+        pendingCount: s.findings.filter((f) => f.appointment_id === sel.id && f.status === 'pending').length,
       } : null,
       newAppt: na, openNewAppt: () => set({ newAppt: { customer_id: '', vehicle_id: '', name: '', phone: '', year: '', make: '', model: '', plate: '', day: s.day, time: '09:00', visit: 'dropoff', job: '' } }),
       setNewAppt: (p) => set({ newAppt: { ...na, ...p, ...(p.customer_id !== undefined && p.customer_id !== na.customer_id ? { vehicle_id: '' } : {}) } }), cancelNewAppt: () => set({ newAppt: null }),

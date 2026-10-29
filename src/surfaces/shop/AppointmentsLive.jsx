@@ -116,6 +116,7 @@ export function AppointmentsLive({ vm }) {
               <div style={css(LBL + ';margin-bottom:6px')}>Notes</div>
               <textarea key={a.id} defaultValue={a.notes} onBlur={(e) => e.target.value !== a.notes && a.setNotes(e.target.value)} placeholder="Concern as described, what the tech found, parts on order." rows={4} style={css(INPUT + ';resize:vertical;line-height:1.5')} />
             </div>
+            <Findings a={a} />
             <div style={css('flex:1')} />
             {a.next ? <div onClick={a.next.go} style={css(BTN + ';text-align:center')}>{a.next.label}</div> : null}
             <div style={css('display:flex;gap:8px')}>
@@ -128,6 +129,69 @@ export function AppointmentsLive({ vm }) {
           <div style={css('margin:auto;text-align:center;font-size:13px;color:rgba(235,235,245,.4);line-height:1.6')}>Select an appointment<br />to check it in and track it.</div>
         )}
       </div>
+    </div>
+  );
+}
+
+const TIERS = [['now', 'Now'], ['soon', 'Soon'], ['monitor', 'Monitor']];
+function Findings({ a }) {
+  const nf = a.newFinding;
+  const fileRef = React.useRef(null);
+  const [forId, setForId] = React.useState(null);
+  const pick = (id) => { setForId(id || null); fileRef.current && fileRef.current.click(); };
+  return (
+    <div>
+      <div style={css('display:flex;justify-content:space-between;align-items:center')}>
+        <div style={css(LBL)}>Findings{a.pendingCount ? ' · ' + a.pendingCount + ' waiting' : ''}</div>
+        <div style={css('display:flex;gap:12px')}>
+          <div onClick={() => pick(null)} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>Add photo</div>
+          {!nf ? <div onClick={a.openNewFinding} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>Add finding</div> : null}
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" capture="environment" style={css('display:none')} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) a.addPhoto(f, '', forId); e.target.value = ''; }} />
+      {a.findings.map((f) => (
+        <div key={f.id} style={css('padding:11px 0;border-bottom:1px solid rgba(235,235,245,.07)')}>
+          <div style={css('display:flex;justify-content:space-between;gap:10px;font-size:13px')}>
+            <div style={css('font-weight:500')}>{f.name}</div>
+            <div style={css('white-space:nowrap')}>{f.price}</div>
+          </div>
+          <div style={css('font-size:12px;color:rgba(235,235,245,.5);margin-top:3px')}>{f.tier}{f.meas ? ' · ' + f.meas : ''}</div>
+          {f.plain ? <div style={css('font-size:12px;color:rgba(235,235,245,.6);margin-top:4px;line-height:1.45')}>{f.plain}</div> : null}
+          {f.photos.length ? <div style={css('display:flex;gap:6px;margin-top:8px')}>{f.photos.map((u, i) => <div key={i} style={css('width:54px;height:40px;border-radius:7px;background:#222 url(' + u + ') center/cover')} />)}</div> : null}
+          <div style={css('display:flex;justify-content:space-between;align-items:center;margin-top:8px')}>
+            <div style={css('font-size:12px;font-weight:500;color:' + f.color)}>{f.status}</div>
+            <div style={css('display:flex;gap:12px;font-size:12px;color:rgba(235,235,245,.5)')}>
+              <div onClick={() => pick(f.id)} style={css('cursor:pointer')}>Photo</div>
+              {f.markDone ? <div onClick={f.markDone} style={css('cursor:pointer;color:#30d158')}>Mark done</div> : null}
+              <div onClick={f.remove} style={css('cursor:pointer')}>Remove</div>
+            </div>
+          </div>
+        </div>
+      ))}
+      {a.photos.length ? (
+        <div style={css('margin-top:10px')}>
+          <div style={css(LBL)}>Photos · {a.photos.length}</div>
+          <div style={css('display:flex;gap:6px;margin-top:8px;flex-wrap:wrap')}>{a.photos.map((p) => <a key={p.id} href={p.url} target="_blank" rel="noreferrer" style={css('width:62px;height:46px;border-radius:7px;background:#222 url(' + p.url + ') center/cover;display:block')} />)}</div>
+        </div>
+      ) : null}
+      {!a.findings.length && !nf ? <div style={css('font-size:12.5px;color:rgba(235,235,245,.4);padding:10px 0;line-height:1.5')}>Nothing recorded yet. A finding goes to the customer's phone with its price; they approve or decline there.</div> : null}
+      {nf ? (
+        <div style={css('margin-top:10px;display:flex;flex-direction:column;gap:8px')}>
+          <div style={css('display:flex;gap:6px')}>{TIERS.map(([k, l]) => <div key={k} onClick={() => a.setNewFinding({ tier: k })} style={css('flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;' + (nf.tier === k ? 'background:#fff;color:#000' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7)'))}>{l}</div>)}</div>
+          <input value={nf.name} placeholder="What (e.g. Front brake pads + rotors)" onChange={(e) => a.setNewFinding({ name: e.target.value })} style={css(INPUT)} autoFocus />
+          <textarea value={nf.plain} placeholder="In plain words, for the customer" rows={2} onChange={(e) => a.setNewFinding({ plain: e.target.value })} style={css(INPUT + ';resize:vertical;line-height:1.45')} />
+          <div style={css('display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px')}>
+            <input value={nf.meas_label} placeholder="Measured" onChange={(e) => a.setNewFinding({ meas_label: e.target.value })} style={css(INPUT)} />
+            <input value={nf.meas} placeholder="3 mm" onChange={(e) => a.setNewFinding({ meas: e.target.value })} style={css(INPUT)} />
+            <input value={nf.price} inputMode="decimal" placeholder="$ price" onChange={(e) => a.setNewFinding({ price: e.target.value })} style={css(INPUT)} />
+          </div>
+          <input value={nf.urgency} placeholder="How soon (e.g. Safe to drive today; within a few weeks)" onChange={(e) => a.setNewFinding({ urgency: e.target.value })} style={css(INPUT)} />
+          <div style={css('display:flex;gap:8px')}>
+            <div onClick={nf.name.trim() ? a.saveNewFinding : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (nf.name.trim() ? '' : 'opacity:.4;cursor:default'))}>Send to customer</div>
+            <div onClick={a.cancelNewFinding} style={css(GHOST + ';flex:1;text-align:center;padding:9px 0')}>Cancel</div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

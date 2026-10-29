@@ -27,7 +27,7 @@ export function Findings({ vm }) {
         <div style={css('padding:6px 22px 0')}>
           <div style={css('font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15')}>We found a few things.</div>
           <div style={css('font-size:13px;line-height:1.5;color:rgba(235,235,245,.5);margin-top:8px')}>
-            Your technician completed a full inspection of Quicksilver.
+            {vm.findingsSub || 'Your technician completed a full inspection of Quicksilver.'}
           </div>
         </div>
         <div
