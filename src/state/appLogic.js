@@ -1387,6 +1387,7 @@ export class AppLogic extends DCLogic {
       tabs: (V.tabs || []).map(t => Object.assign({}, t, { badge: false }))
     });
     const staff = this.props.staff || { name: 'Tyler L.', role: 'Service advisor' };
+    V.signOut = this.props.signOut || null;
     V.staffName = staff.name; V.staffRole = staff.role; V.staffInitials = staff.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     V.lobbyIdle = !!s.shopClosed;
     V.idleTitle = 'Closed for the day.'; V.idleSub = 'Opens tomorrow at 8:00 AM.';

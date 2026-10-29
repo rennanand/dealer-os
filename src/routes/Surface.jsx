@@ -134,7 +134,7 @@ export function ShopRoute() {
   const auth = useAuth();
   const staff = auth.member ? { name: auth.member.name || (auth.session?.user?.email || '').split('@')[0], role: ROLE_LABEL[auth.member.role] || auth.member.role } : undefined;
   return (
-    <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'desk', staff }}>
+    <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'desk', staff, signOut: auth.session ? signOut : null }}>
       {(vm) => (
         <div className="surface surface-shop">
           <Fitted fit={fit}>

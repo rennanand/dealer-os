@@ -68,12 +68,17 @@ export function ShopApp({ vm }) {
                 'width:30px;height:30px;border-radius:15px;background:#1c1c1e;display:flex;align-items:center;justify-content:center;font-size:11px',
               )}
             >
-              TL
+              {T(vm.staffInitials)}
             </div>
-            <div>
-              <div style={css('font-size:12.5px;font-weight:500')}>{T(vm.staffName)}</div>
+            <div style={css('flex:1;min-width:0')}>
+              <div style={css('font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis')}>{T(vm.staffName)}</div>
               <div style={css('font-size:11px;color:rgba(235,235,245,.4)')}>{T(vm.staffRole)}</div>
             </div>
+            {vm.signOut ? (
+              <div onClick={vm.signOut} title="Sign out" style={css('font-size:11px;color:rgba(235,235,245,.4);cursor:pointer;padding:4px 0')} className="px3">
+                Sign out
+              </div>
+            ) : null}
           </div>
         </div>
         <div style={css('flex:1;min-width:0;overflow-y:auto;padding:30px 34px')} className="hidescroll">

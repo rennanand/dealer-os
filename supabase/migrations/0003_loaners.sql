@@ -23,7 +23,7 @@ create table if not exists public.rentals (
   id              uuid primary key default gen_random_uuid(),
   shop_id         text not null default 'ryguys',
   number          text not null,                         -- LN-3107, shown to the customer
-  token           text not null unique default encode(gen_random_bytes(18), 'base64url'),
+  token           text not null unique default encode(gen_random_bytes(18), 'hex'),
   vehicle_id      uuid references public.loaner_vehicles (id),
   customer_name   text not null default '',
   customer_phone  text not null default '',
