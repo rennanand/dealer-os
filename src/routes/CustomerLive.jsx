@@ -11,7 +11,7 @@ import { signOut } from '../state/auth.js';
 // that number is what ties this account to its vehicles, visits and loaners.
 const PAGE = "position:fixed;inset:0;background:#000;color:#fff;overflow-y:auto;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
 const WRAP = 'max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 22px) 22px calc(env(safe-area-inset-bottom,0px) + 30px)';
-const INPUT = 'width:100%;background:#141416;border:0;outline:0;border-radius:12px;padding:16px 14px;font-size:18px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:var(--data-font,inherit)';
+const INPUT = 'width:100%;background:rgba(255,255,255,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:0;outline:0;border-radius:12px;padding:16px 14px;font-size:18px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:var(--data-font,inherit)';
 const CTA = (ok) => 'text-align:center;padding:15px 0;border-radius:12px;font-size:13px;font-weight:600;' + (ok ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);');
 const fmtPhone = (d) => (d.length <= 3 ? d : d.length <= 6 ? '(' + d.slice(0, 3) + ') ' + d.slice(3) : '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6, 10));
 

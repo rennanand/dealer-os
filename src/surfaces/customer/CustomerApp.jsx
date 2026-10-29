@@ -55,19 +55,19 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,44,.92);backdrop-filter:blur(20px);border-radius:18px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
+                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,46,.62);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 36px rgba(0,0,0,.5);border-radius:22px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
               )}
             >
               <div
                 style={css(
-                  'width:30px;height:30px;border-radius:7px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto',
+                  'width:30px;height:30px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#000',
                 )}
               >
-                <img src="/uploads/revyn.png" alt="" style={css('height:12px;width:auto')} />
+                <img src="/icon.png" alt="" style={css('width:30px;height:30px;display:block')} />
               </div>
               <div style={css('flex:1;min-width:0')}>
                 <div style={css('display:flex;justify-content:space-between;font-size:11px;color:rgba(235,235,245,.5)')}>
-                  <span>RyGuys</span>
+                  <span>{vm.toastFrom || 'RyGuys'}</span>
                   <span>now</span>
                 </div>
                 <div style={css('font-size:13px;line-height:1.3;margin-top:2px')}>{T(vm.toast)}</div>
@@ -149,16 +149,14 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;left:0;right:0;bottom:0;z-index:6;padding:9px 10px calc(var(--sab) + 9px);background:rgba(0,0,0,.9);backdrop-filter:blur(18px);border-top:1px solid rgba(235,235,245,.07);display:flex;gap:2px',
+                'position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 6px);z-index:6;padding:6px 6px;border-radius:30px;background:rgba(18,18,22,.58);backdrop-filter:blur(34px) saturate(190%);-webkit-backdrop-filter:blur(34px) saturate(190%);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 12px 40px rgba(0,0,0,.55);display:flex;gap:2px',
               )}
             >
               {L(vm.tabs).map((t, _i) => (
                 <React.Fragment key={_i}>
                   <div
                     onClick={t?.go}
-                    style={css(
-                      'flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:7px 0 3px;cursor:pointer;position:relative',
-                    )}
+                    style={css(t?.itemStyle || 'flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:7px 0 3px;cursor:pointer;position:relative')}
                   >
                     <div style={css(t?.glyphStyle)}>
                       <svg viewBox="0 0 24 24" style={css('width:22px;height:22px;display:block')}>

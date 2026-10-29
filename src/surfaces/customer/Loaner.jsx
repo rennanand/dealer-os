@@ -7,7 +7,7 @@ export function Loaner({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -69,7 +69,7 @@ export function Loaner({ vm }) {
         <div style={css('padding:10px 18px 0;display:flex;gap:8px;flex-wrap:wrap')}>
           {L(vm.loanerIncl).map((x, _i) => (
             <React.Fragment key={_i}>
-              <div style={css('padding:9px 12px;border-radius:10px;background:#1c1c1e;font-size:12px')}>{T(x?.t)}</div>
+              <div style={css('padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:12px')}>{T(x?.t)}</div>
             </React.Fragment>
           ))}
         </div>

@@ -7,7 +7,7 @@ export function Account({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -27,7 +27,7 @@ export function Account({ vm }) {
         <div style={css('padding:12px 22px 0;display:flex;align-items:center;gap:14px')}>
           <div
             style={css(
-              'width:54px;height:54px;border-radius:27px;background:#1c1c1e;display:flex;align-items:center;justify-content:center;font-size:15px;letter-spacing:.5px',
+              'width:54px;height:54px;border-radius:27px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;font-size:15px;letter-spacing:.5px',
             )}
           >
             {vm.initials || 'RA'}

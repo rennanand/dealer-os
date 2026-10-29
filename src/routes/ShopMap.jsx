@@ -4,7 +4,7 @@ import { css } from '../runtime/tpl.js';
 // Shops on Revyn, on an Apple map. MapKit JS needs a token from the developer account
 // (VITE_MAPKIT_TOKEN); without one the section still shows the shop card and opens Apple Maps on tap.
 const TOKEN = import.meta.env.VITE_MAPKIT_TOKEN || '';
-const CARD = 'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px 18px';
+const CARD = 'background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px';
 const LBL = 'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)';
 const fmtPhone = (p) => { const d = (p || '').replace(/\D/g, ''); return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : p || ''; };
 export const mapsHref = (s) => 'https://maps.apple.com/?q=' + encodeURIComponent(s.name) + (s.lat ? '&ll=' + s.lat + ',' + s.lng : '') + '&address=' + encodeURIComponent(s.address || '');
@@ -34,7 +34,7 @@ function AppleMap({ shops, sel, onPick }) {
     return () => { dead = true; if (map) map.destroy(); };
   }, [shops.length]);
   if (failed) return null;
-  return <div ref={ref} style={css('height:220px;border-radius:16px;overflow:hidden;background:#141416')} />;
+  return <div ref={ref} style={css('height:220px;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)')} />;
 }
 
 export function ShopsSection({ shops, wide }) {

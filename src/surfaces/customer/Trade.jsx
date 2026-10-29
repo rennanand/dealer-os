@@ -7,7 +7,7 @@ export function Trade({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -29,7 +29,7 @@ export function Trade({ vm }) {
         </div>
         <div
           style={css(
-            'margin:18px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:15px 16px;display:flex;align-items:center;gap:13px',
+            'margin:18px 18px 0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:15px 16px;display:flex;align-items:center;gap:13px',
           )}
         >
           <div
@@ -82,7 +82,7 @@ export function Trade({ vm }) {
             onChange={vm.onTradeMiles}
             inputMode="numeric"
             style={css(
-              'width:100%;background:#1c1c1e;border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;outline:none;font-family:inherit',
+              'width:100%;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;outline:none;font-family:inherit',
             )}
           />
         </div>
@@ -106,7 +106,7 @@ export function Trade({ vm }) {
           <>
             <div
               style={css(
-                'margin:22px 18px 0;animation:sIn .32s ease;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:20px',
+                'margin:22px 18px 0;animation:sIn .32s ease;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:20px',
               )}
             >
               <div style={css('font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#e0312b')}>

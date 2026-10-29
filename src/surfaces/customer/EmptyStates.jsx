@@ -26,7 +26,7 @@ export function HomeEmpty({ vm }) {
     <div style={css(PAGE)}>
       <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
         <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>Welcome to RyGuys.</div>
-        <div onClick={vm.goAccount} style={css('width:34px;height:34px;border-radius:17px;background:#141416;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer')}>
+        <div onClick={vm.goAccount} style={css('width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer')}>
           {vm.initials || '—'}
         </div>
       </div>

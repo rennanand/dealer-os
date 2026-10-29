@@ -7,7 +7,7 @@ export function Approve({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -115,7 +115,7 @@ export function Approve({ vm }) {
             <div
               onClick={vm.goMessages}
               style={css(
-                'flex:0 0 40%;text-align:center;padding:15px 0;border-radius:12px;background:#1c1c1e;font-size:13px;font-weight:500;color:#fff;cursor:pointer',
+                'flex:0 0 40%;text-align:center;padding:15px 0;border-radius:12px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:13px;font-weight:500;color:#fff;cursor:pointer',
               )}
             >
               Ask a question

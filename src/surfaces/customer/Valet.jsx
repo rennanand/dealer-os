@@ -7,7 +7,7 @@ export function Valet({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -75,7 +75,7 @@ export function Valet({ vm }) {
             </div>
             <div
               style={css(
-                'margin:20px 18px 0;height:200px;border-radius:16px;position:relative;overflow:hidden;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);background:radial-gradient(ellipse at 30% 40%,#1d1f23 0%,#121214 60%,#0b0b0c 100%)',
+                'margin:20px 18px 0;height:200px;border-radius:16px;position:relative;overflow:hidden;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);background:radial-gradient(ellipse at 30% 40%,#1d1f23 0%,#121214 60%,#0b0b0c 100%)',
               )}
             >
               <div
@@ -106,7 +106,7 @@ export function Valet({ vm }) {
             </div>
             <div
               style={css(
-                'margin:14px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:14px 16px;display:flex;align-items:center;gap:14px',
+                'margin:14px 18px 0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:14px 16px;display:flex;align-items:center;gap:14px',
               )}
             >
               <div

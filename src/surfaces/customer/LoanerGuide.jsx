@@ -52,7 +52,7 @@ export function LoanerGuide({ vm }) {
               <div
                 onClick={vm.guidePrev}
                 style={css(
-                  'flex:0 0 auto;padding:15px 20px;border-radius:12px;background:#1c1c1e;font-size:13px;font-weight:500;cursor:pointer',
+                  'flex:0 0 auto;padding:15px 20px;border-radius:12px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:13px;font-weight:500;cursor:pointer',
                 )}
               >
                 Back

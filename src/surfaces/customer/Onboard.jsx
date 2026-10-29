@@ -50,7 +50,7 @@ export function Onboard({ vm }) {
               </div>
               <div
                 style={css(
-                  'margin-top:28px;display:flex;align-items:center;gap:10px;padding:16px 18px;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);border-radius:14px',
+                  'margin-top:28px;display:flex;align-items:center;gap:10px;padding:16px 18px;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px',
                 )}
               >
                 <div style={css('font-size:20px;color:rgba(235,235,245,.5)')}>+1</div>
@@ -108,7 +108,7 @@ export function Onboard({ vm }) {
               <div
                 onClick={vm.obAutofill}
                 style={css(
-                  'margin-top:18px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;background:#141416;border:1px solid rgba(255,255,255,.06);font-size:12.5px;color:rgba(235,235,245,.8);cursor:pointer',
+                  'margin-top:18px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);font-size:12.5px;color:rgba(235,235,245,.8);cursor:pointer',
                 )}
               >
                 <svg viewBox="0 0 24 24" style={css('width:15px;height:15px;display:block;flex:0 0 auto')}>
@@ -154,7 +154,7 @@ export function Onboard({ vm }) {
                   onChange={vm.onObPlate}
                   placeholder="RYG 8A42"
                   style={css(
-                    'flex:1;min-width:0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);border-radius:14px;border:none;padding:16px 18px;color:#fff;font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;outline:none;font-family:inherit',
+                    'flex:1;min-width:0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px;border:none;padding:16px 18px;color:#fff;font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;outline:none;font-family:inherit',
                   )}
                 />
                 <div
@@ -197,7 +197,7 @@ export function Onboard({ vm }) {
                       onChange={vm.onObName}
                       placeholder="Quicksilver"
                       style={css(
-                        'margin-top:8px;width:100%;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);border-radius:14px;border:none;padding:14px 16px;color:#fff;font-size:15px;outline:none;font-family:inherit',
+                        'margin-top:8px;width:100%;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);border-radius:14px;border:none;padding:14px 16px;color:#fff;font-size:15px;outline:none;font-family:inherit',
                       )}
                     />{' '}
                     <div style={css('margin-top:14px;display:flex;gap:8px;align-items:center;font-size:12.5px;color:rgba(235,235,245,.6)')}>

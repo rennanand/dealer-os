@@ -8,7 +8,7 @@ export function HealthDetail({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -84,7 +84,7 @@ export function HealthDetail({ vm }) {
         <div style={css('padding:22px 18px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px')}>
           {L(vm.hdt?.pos).map((p, _i) => (
             <React.Fragment key={_i}>
-              <div style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:14px 16px')}>
+              <div style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:14px 16px')}>
                 <div
                   style={css(
                     'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)',

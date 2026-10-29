@@ -8,7 +8,7 @@ export function Service({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -32,7 +32,7 @@ export function Service({ vm }) {
             <div style={css('padding:calc(var(--sat) + 13px) 30px 0;text-align:center')}>
               <div
                 style={css(
-                  'width:56px;height:56px;border-radius:28px;background:#1c1c1e;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#30d158',
+                  'width:56px;height:56px;border-radius:28px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);margin:0 auto;display:flex;align-items:center;justify-content:center;color:#30d158',
                 )}
               >
                 <svg viewBox="0 0 24 24" style={css('width:24px;height:24px;display:block;flex:0 0 auto')}>
@@ -71,7 +71,7 @@ export function Service({ vm }) {
             {vm.showRings === false ? null : (<>
             <div
               style={css(
-                'margin:20px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px;display:flex;align-items:center;gap:18px',
+                'margin:20px 18px 0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:18px 20px;display:flex;align-items:center;gap:18px',
               )}
             >
               <div style={css('position:relative;width:124px;height:124px;flex:0 0 auto')}>
@@ -160,7 +160,7 @@ export function Service({ vm }) {
                 <React.Fragment key={_i}>
                   <div
                     style={css(
-                      'flex:0 0 300px;scroll-snap-align:start;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:250px',
+                      'flex:0 0 300px;scroll-snap-align:start;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:250px',
                     )}
                   >
                     {c?.scene ? (

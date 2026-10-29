@@ -7,7 +7,7 @@ export function Rate({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -46,7 +46,7 @@ export function Rate({ vm }) {
               <div
                 onClick={vm.goHome}
                 style={css(
-                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:12px;background:#1c1c1e;font-size:13px;font-weight:600;cursor:pointer',
+                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:12px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:13px;font-weight:600;cursor:pointer',
                 )}
               >
                 Done
@@ -122,7 +122,7 @@ export function Rate({ vm }) {
                 onChange={vm.onRateNote}
                 placeholder={vm.ratePlaceholder || 'Anything else? Marcus reads these.'}
                 style={css(
-                  'width:100%;min-height:88px;resize:none;background:#1c1c1e;border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
+                  'width:100%;min-height:88px;resize:none;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
                 )}
               />
             </div>

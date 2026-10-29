@@ -7,7 +7,7 @@ export function Pickup({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -56,7 +56,7 @@ export function Pickup({ vm }) {
             <div
               onClick={vm.goLoanerReturn}
               style={css(
-                'margin:12px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer',
+                'margin:12px 18px 0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer',
               )}
             >
               <div style={css('flex:1')}>
@@ -110,7 +110,7 @@ export function Pickup({ vm }) {
             <>
               <div
                 style={css(
-                  'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px;display:flex;align-items:center;gap:12px;animation:fadeIn .3s ease',
+                  'background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px;display:flex;align-items:center;gap:12px;animation:fadeIn .3s ease',
                 )}
               >
                 <div style={css('width:10px;height:10px;border-radius:5px;background:#e0312b;box-shadow:0 0 0 4px rgba(224,49,43,.22)')} />

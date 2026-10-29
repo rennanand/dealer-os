@@ -7,7 +7,7 @@ export function Book({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -50,7 +50,7 @@ export function Book({ vm }) {
               <div
                 onClick={vm.goHome}
                 style={css(
-                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:11px;background:#1c1c1e;font-size:13px;font-weight:500;cursor:pointer',
+                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:11px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:13px;font-weight:500;cursor:pointer',
                 )}
               >
                 Done
@@ -89,7 +89,7 @@ export function Book({ vm }) {
             {vm.bk1 && vm.bookVehicles ? (
               <div style={css('padding:20px 18px 0;display:flex;flex-direction:column;gap:10px')}>
                 {vm.bookVehicles.map((v, i) => (
-                  <div key={i} onClick={v.pick} style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:15px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;' + (v.on ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)' : ''))}>
+                  <div key={i} onClick={v.pick} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:15px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;' + (v.on ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)' : ''))}>
                     <div style={css('width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;' + (v.on ? 'background:#fff;color:#000' : 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)'))}>
                       {v.on ? <svg viewBox="0 0 24 24" style={css('width:12px;height:12px;display:block')}><path d="M5 12.5l4.5 4.5L19 7" style={css('fill:none;stroke:currentColor;stroke-width:2.6px;stroke-linecap:round;stroke-linejoin:round')} /></svg> : null}
                     </div>
@@ -107,7 +107,7 @@ export function Book({ vm }) {
                 <div style={css('padding:20px 18px 0')}>
                   <div
                     style={css(
-                      'background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:15px 16px;display:flex;align-items:center;gap:13px',
+                      'background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:15px 16px;display:flex;align-items:center;gap:13px',
                     )}
                   >
                     <div
@@ -142,7 +142,7 @@ export function Book({ vm }) {
                     onChange={vm.onBookDesc}
                     placeholder="Car shakes when I brake."
                     style={css(
-                      'width:100%;min-height:110px;resize:none;background:#1c1c1e;border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
+                      'width:100%;min-height:110px;resize:none;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
                     )}
                   />{' '}
                   <div

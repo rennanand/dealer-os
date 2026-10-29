@@ -78,7 +78,7 @@ export function Messages({ vm }) {
             onKeyDown={vm.onDraftKey}
             placeholder={vm.msgPlaceholder || "Message Tyler"}
             style={css(
-              'flex:1;background:#1c1c1e;border:none;border-radius:20px;padding:12px 16px;color:#fff;font-size:13px;outline:none;font-family:inherit',
+              'flex:1;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:none;border-radius:20px;padding:12px 16px;color:#fff;font-size:13px;outline:none;font-family:inherit',
             )}
           />
           <div

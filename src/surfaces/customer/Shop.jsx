@@ -23,7 +23,7 @@ export function Shop({ vm }) {
             <React.Fragment key={_i}>
               <div
                 onClick={v?.open}
-                style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);overflow:hidden;cursor:pointer')}
+                style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);overflow:hidden;cursor:pointer')}
                 className="px4"
               >
                 <div style={css(`height:200px;position:relative;${v?.ph ?? ''}`)}>

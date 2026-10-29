@@ -30,7 +30,7 @@ export function Ask({ vm }) {
           <div style={css('width:40px')} />
         </div>
         <div
-          style={css('margin:14px 18px 0;background:#1c1c1e;border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:12px')}
+          style={css('margin:14px 18px 0;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:12px')}
         >
           <div style={css(`width:44px;height:34px;border-radius:7px;${vm.ph ?? ''}`)} />
           <div style={css('flex:1')}>
@@ -74,7 +74,7 @@ export function Ask({ vm }) {
             onKeyDown={vm.onAskKey}
             placeholder="Ask anything about this vehicle"
             style={css(
-              'flex:1;background:#1c1c1e;border:none;border-radius:20px;padding:12px 16px;color:#fff;font-size:13px;outline:none;font-family:inherit',
+              'flex:1;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:none;border-radius:20px;padding:12px 16px;color:#fff;font-size:13px;outline:none;font-family:inherit',
             )}
           />
           <div

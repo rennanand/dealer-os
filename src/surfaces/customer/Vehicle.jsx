@@ -7,7 +7,7 @@ export function Vehicle({ vm }) {
       <div style={css('animation:sIn .26s ease;padding-bottom:130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -53,7 +53,7 @@ export function Vehicle({ vm }) {
               <div
                 onClick={vm.toggleInvHist}
                 style={css(
-                  'margin-top:18px;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:15px 16px;cursor:pointer',
+                  'margin-top:18px;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:15px 16px;cursor:pointer',
                 )}
               >
                 <div style={css('display:flex;align-items:center;gap:12px')}>
@@ -202,7 +202,7 @@ export function Vehicle({ vm }) {
         <div
           onClick={vm.goTestdrive}
           style={css(
-            'flex:0 0 42%;text-align:center;padding:15px 0;border-radius:12px;background:#1c1c1e;font-size:13px;font-weight:500;color:#fff;cursor:pointer',
+            'flex:0 0 42%;text-align:center;padding:15px 0;border-radius:12px;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);font-size:13px;font-weight:500;color:#fff;cursor:pointer',
           )}
         >
           Test drive

@@ -12,7 +12,7 @@ export function Home({ vm }) {
             <div
               onClick={vm.goUpdates}
               style={css(
-                'width:34px;height:34px;border-radius:17px;background:#141416;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;color:rgba(235,235,245,.85)',
+                'width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;color:rgba(235,235,245,.85)',
               )}
             >
               <svg viewBox="0 0 24 24" style={css('width:17px;height:17px;display:block;flex:0 0 auto')}>
@@ -34,7 +34,7 @@ export function Home({ vm }) {
             <div
               onClick={vm.goAccount}
               style={css(
-                'width:34px;height:34px;border-radius:17px;background:#141416;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;color:rgba(235,235,245,.9)',
+                'width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;color:rgba(235,235,245,.9)',
               )}
             >
               {vm.initials || 'RA'}
@@ -70,7 +70,7 @@ export function Home({ vm }) {
         </div>
         <div
           style={css(
-            'margin:22px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 18px 16px',
+            'margin:22px 18px 0;background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:18px 18px 16px',
           )}
         >
           {vm.homeScene ? (
@@ -150,7 +150,7 @@ export function Home({ vm }) {
               >
                 <div
                   style={css(
-                    'width:48px;height:48px;border-radius:24px;background:#141416;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:rgba(235,235,245,.9)',
+                    'width:48px;height:48px;border-radius:24px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:rgba(235,235,245,.9)',
                   )}
                 >
                   <svg viewBox="0 0 24 24" style={css('width:20px;height:20px;display:block;flex:0 0 auto')}>
@@ -200,7 +200,7 @@ export function Home({ vm }) {
         <div style={css('margin:24px 18px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
           <div
             onClick={vm.goCare}
-            style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px;cursor:pointer')}
+            style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px;cursor:pointer')}
             className="px4"
           >
             <div style={css('display:flex;align-items:center;justify-content:space-between;color:rgba(235,235,245,.85)')}>
@@ -217,7 +217,7 @@ export function Home({ vm }) {
           </div>
           <div
             onClick={vm.goRewards}
-            style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px;cursor:pointer')}
+            style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px;cursor:pointer')}
             className="px4"
           >
             <div style={css('display:flex;align-items:center;justify-content:space-between;color:rgba(235,235,245,.85)')}>

@@ -2,8 +2,8 @@ import React from 'react';
 import { T, L, css } from '../../runtime/tpl.js';
 
 // Small pages the live customer app needs that the prototype did not have as data-driven screens.
-const BAR = 'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.86);backdrop-filter:blur(18px);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center';
-const INPUT = "width:100%;background:#1c1c1e;border:0;outline:0;border-radius:12px;padding:14px;font-size:15px;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
+const BAR = 'position:sticky;top:0;z-index:5;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center';
+const INPUT = "width:100%;background:rgba(255,255,255,.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);border:0;outline:0;border-radius:12px;padding:14px;font-size:15px;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
 const CTA = (ok) => 'margin-top:14px;text-align:center;padding:14px 0;border-radius:12px;font-size:13px;font-weight:600;' + (ok ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);');
 const Back = ({ go, title, right }) => (
   <div style={css(BAR)}>
@@ -49,7 +49,7 @@ export function GarageLive({ vm }) {
       </div>
       <div style={css('padding:18px 18px 0;display:flex;flex-direction:column;gap:10px')}>
         {L(vm.garageCars).map((c) => (
-          <div key={c.id} onClick={c.pick} style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
+          <div key={c.id} onClick={c.pick} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
             <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + c.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
             <div style={css('flex:1;min-width:0')}>
               <div style={css('font-size:15px;font-weight:500')}>{T(c.name)}</div>
@@ -75,7 +75,7 @@ export function ShopLive({ vm }) {
           <div style={css('font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)')}>Your loaners</div>
           <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
             {vm.myLoaners.map((r) => (
-              <div key={r.number} onClick={() => { window.location.href = '/rental/' + r.token; }} style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
+              <div key={r.number} onClick={() => { window.location.href = '/rental/' + r.token; }} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
                 <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + (r.paint || '#b9bdc3') + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
                 <div style={css('flex:1;min-width:0')}>
                   <div style={css('font-size:15px;font-weight:500')}>{r.vehicle || 'Loaner'}</div>
