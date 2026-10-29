@@ -12,6 +12,7 @@ import { Fleet } from './Fleet.jsx';
 import { Followups } from './Followups.jsx';
 import { Inbox } from './Inbox.jsx';
 import { LoanersHost } from './LoanersHost.jsx';
+import { ShopHost } from './ShopHost.jsx';
 import { ShopSettingsLive } from './ShopSettingsLive.jsx';
 import { TeamLive } from './TeamLive.jsx';
 import { LAUNCH } from '../../state/options.js';
@@ -92,9 +93,10 @@ export function ShopApp({ vm }) {
           {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics ? <Analytics vm={vm} /> : null}
           {vm.dSchedule ? <Schedule vm={vm} /> : null}
-          {vm.dAppointments ? <Appointments vm={vm} /> : null}
+          {LAUNCH && (vm.dAppointments || vm.dCustomers) ? <ShopHost page={vm.dCustomers ? 'customers' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} /> : null}
+          {vm.dAppointments && !LAUNCH ? <Appointments vm={vm} /> : null}
           {vm.dCheckin ? <Checkin vm={vm} /> : null}
-          {vm.dCustomers ? <Customers vm={vm} /> : null}
+          {vm.dCustomers && !LAUNCH ? <Customers vm={vm} /> : null}
           {vm.dCustomer ? <Customer vm={vm} /> : null}
           {vm.dParts ? <Parts vm={vm} /> : null}
           {vm.dTechs ? <Techs vm={vm} /> : null}
