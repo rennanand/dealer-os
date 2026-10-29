@@ -43,11 +43,13 @@ export function AddVehicle({ vm }) {
 export function GarageLive({ vm }) {
   return (
     <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
+      <div style={css('padding:0 22px 14px')}><img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} /></div>
       <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
         <div style={css('font-size:28px;font-weight:600;letter-spacing:-.9px')}>Vehicles</div>
         <div onClick={vm.addVehicle} style={css('font-size:12px;color:#e0312b;cursor:pointer;font-weight:500')}>Add</div>
       </div>
-      <div style={css('padding:18px 18px 0;display:flex;flex-direction:column;gap:10px')}>
+      <div style={css('height:236px')} />
+      <div style={css('padding:0 18px;display:flex;flex-direction:column;gap:10px')}>
         {L(vm.garageCars).map((c) => (
           <div key={c.id} onClick={c.pick} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
             <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + c.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
@@ -68,6 +70,7 @@ import { ShopsSection } from '../../routes/ShopMap.jsx';
 export function ShopLive({ vm }) {
   return (
     <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 22px 112px')}>
+      <div style={css('padding:0 0 14px')}><img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} /></div>
       <div style={css('font-size:28px;font-weight:600;letter-spacing:-.9px')}>Shop</div>
       <ShopsSection shops={vm.shopInfo ? [vm.shopInfo] : []} wide={false} />
       {vm.myLoaners && vm.myLoaners.length ? (

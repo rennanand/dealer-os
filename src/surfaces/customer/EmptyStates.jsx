@@ -25,7 +25,10 @@ export function HomeEmpty({ vm }) {
   return (
     <div style={css(PAGE)}>
       <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
-        <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>Welcome to RyGuys.</div>
+        <div style={css('display:flex;flex-direction:column;gap:9px')}>
+          <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} />
+          <div style={css('font-size:13.5px;color:rgba(235,235,245,.5)')}>{vm.greeting || 'Welcome.'}</div>
+        </div>
         <div onClick={vm.goAccount} style={css('width:34px;height:34px;border-radius:17px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer')}>
           {vm.initials || '—'}
         </div>

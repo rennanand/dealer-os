@@ -5,6 +5,7 @@ export function History({ vm }) {
   return (
     <>
       <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
+        <div style={css('padding:0 22px 14px')}><img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} /></div>
         <div style={css('padding:0 22px')}>
           <div style={css('font-size:30px;font-weight:600;letter-spacing:-.9px')}>{vm.svcCarName || 'Quicksilver'}</div>
           <div style={css('font-size:12.5px;color:rgba(235,235,245,.5);margin-top:6px')}>

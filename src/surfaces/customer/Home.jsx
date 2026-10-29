@@ -7,7 +7,10 @@ export function Home({ vm }) {
     <>
       <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
         <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
-          <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>{vm.greeting || 'Good morning, Rennan.'}</div>
+          <div style={css('display:flex;flex-direction:column;gap:9px')}>
+            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} />
+            <div style={css('font-size:13.5px;color:rgba(235,235,245,.5)')}>{vm.greeting || 'Good morning, Rennan.'}</div>
+          </div>
           <div style={css('display:flex;gap:9px')}>
             <div
               onClick={vm.goUpdates}

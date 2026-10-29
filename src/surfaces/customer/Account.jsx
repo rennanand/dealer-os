@@ -70,11 +70,12 @@ export function Account({ vm }) {
             </React.Fragment>
           ))}
         </div>
-        <div style={css('margin-top:26px;display:flex;justify-content:center')}>
-          <div style={css('background:#fff;border-radius:10px;padding:14px 18px')}>
-            <img src="/uploads/revyn.png" alt={'RyGuys Tire & Auto Sales'} style={css('height:58px;width:auto;display:block')} />
+        {vm.signOutNow ? (
+          <div style={css('padding:26px 22px 0')}>
+            <div onClick={vm.signOutNow} style={css('text-align:center;padding:14px 0;border-radius:14px;font-size:13px;font-weight:600;color:#ff6b64;background:rgba(255,255,255,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);cursor:pointer')}>Sign out</div>
+            <div style={css('font-size:11.5px;color:rgba(235,235,245,.35);text-align:center;margin-top:10px;line-height:1.5')}>Your vehicles and visits stay with your mobile number. Sign back in any time.</div>
           </div>
-        </div>
+        ) : null}
         <div style={css('font-size:11px;line-height:1.6;color:rgba(235,235,245,.28);text-align:center;margin-top:14px')}>
           {vm.accountFoot1 || 'v4.0 · 145 S Main St, Manti UT'}
           <br />
