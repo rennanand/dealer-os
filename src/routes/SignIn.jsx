@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from '../runtime/tpl.js';
-import { sendCode, verifyCode, signInPassword, signUpPassword } from '../state/auth.js';
+import { sendCode, verifyCode, signInPassword, signUpPassword, resetPassword } from '../state/auth.js';
 import { Backdrop } from './Backdrop.jsx';
 
 // Staff sign in with a password for the pilot (no email provider needed). Email codes stay
@@ -19,6 +19,7 @@ export function SignIn({ title = 'Sign in', note }) {
   const [mode, setMode] = React.useState('in');
   const [name, setName] = React.useState('');
   const [done, setDone] = React.useState('');
+  const forgot = async () => { if (!emailOk || busy) return setErr('Type your email first, then tap Forgot password.'); setBusy(true); const { error } = await resetPassword(email); setBusy(false); if (error) return setErr(error.message); setDone('Check ' + email.trim() + ' for a link to set a new password.'); };
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState('');
@@ -45,8 +46,7 @@ export function SignIn({ title = 'Sign in', note }) {
       <Backdrop>
         <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 34px)')}>
           <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
-            <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
-            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>{mode === 'up' ? 'Create your account.' : title}</div>
+            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>{mode === 'up' ? 'Create your account.' : title}</div>
             <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Use the email the shop invited. Pick a password of at least 8 characters.' : note || 'Your email and password.')}</div>
           </div>
           {!done ? (
@@ -56,8 +56,9 @@ export function SignIn({ title = 'Sign in', note }) {
             <input type="password" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ok && go()} style={css(INPUT + ';margin-top:8px')} />
             {err ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:12px')}>{err}</div> : null}
             <div onClick={() => ok && go()} style={css('margin-top:14px;' + btn(ok && !busy))}>{busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}</div>
-            <div onClick={() => { setMode(mode === 'up' ? 'in' : 'up'); setErr(''); }} style={css('text-align:center;font-size:12px;color:rgba(235,235,245,.5);margin-top:14px;cursor:pointer')}>
-              {mode === 'up' ? 'Already have an account? Sign in' : 'First time here? Create your account'}
+            <div style={css('display:flex;justify-content:center;gap:18px;margin-top:14px;font-size:12px;color:rgba(235,235,245,.5)')}>
+              <div onClick={() => { setMode(mode === 'up' ? 'in' : 'up'); setErr(''); }} style={css('cursor:pointer')}>{mode === 'up' ? 'Already have an account? Sign in' : 'First time here? Create your account'}</div>
+              {mode === 'in' ? <div onClick={forgot} style={css('cursor:pointer')}>Forgot password?</div> : null}
             </div>
           </div>
           ) : null}
@@ -69,7 +70,6 @@ export function SignIn({ title = 'Sign in', note }) {
     <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
       <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px 34px')}>
         <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
-          <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
           <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{step === 0 ? title : 'Enter your code.'}</div>
           <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>
             {step === 0 ? note || 'We will email you a six-digit code. No password to remember.' : 'Sent to ' + email.trim() + '. It expires in an hour.'}

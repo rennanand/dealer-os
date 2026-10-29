@@ -12,8 +12,7 @@ export function Landing() {
     <Backdrop>
       <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 26px calc(env(safe-area-inset-bottom,0px) + 22px)')}>
       <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:26px')}>
-        <img src="/uploads/revyn.png" alt="Revyn" style={css('height:16px;width:auto;display:block')} />
-        <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px;text-wrap:pretty;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>Loaner cars, without the clipboard.</div>
+        <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;text-wrap:pretty;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>Loaner cars, without the clipboard.</div>
         <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.7);margin-top:12px;text-wrap:pretty')}>
           Agreements signed on the customer's phone. Handoff and return recorded in a minute. Every rental in one place.
         </div>
