@@ -61,10 +61,10 @@ export function Service({ vm }) {
           <>
             <div style={css('height:196px')} />
             <div style={css('padding:6px 22px 0;text-align:center')}>
-              <div style={css('font-size:26px;font-weight:600;letter-spacing:-.7px')}>Quicksilver</div>{' '}
+              <div style={css('font-size:26px;font-weight:600;letter-spacing:-.7px')}>{vm.svcCarName || 'Quicksilver'}</div>{' '}
               <div style={css(vm.svcKickerStyle)}>{T(vm.svcKicker)}</div>{' '}
               <div style={css('font-size:12.5px;color:rgba(235,235,245,.5);margin-top:6px')}>
-                {'2022 Tesla Model Y · '}
+                {(vm.svcCarSub || '2022 Tesla Model Y') + ' · '}
                 {T(vm.odoLabel)}
               </div>
             </div>

@@ -42,7 +42,7 @@ export function Book({ vm }) {
               <div style={css('font-size:28px;font-weight:600;letter-spacing:-.8px;margin-top:22px')}>Appointment booked</div>
               <div style={css('font-size:15px;margin-top:10px')}>{T(vm.bookWhen)}</div>
               <div style={css('font-size:13px;color:rgba(235,235,245,.5);margin-top:4px')}>
-                {'Quicksilver · '}
+                {(vm.bookCar || 'Quicksilver') + ' · '}
                 {T(vm.bookNeed)}
                 {' · '}
                 {T(vm.bookVisit)}
@@ -86,7 +86,23 @@ export function Book({ vm }) {
                 </div>
               </>
             ) : null}
-            {vm.bk1 ? (
+            {vm.bk1 && vm.bookVehicles ? (
+              <div style={css('padding:20px 18px 0;display:flex;flex-direction:column;gap:10px')}>
+                {vm.bookVehicles.map((v, i) => (
+                  <div key={i} onClick={v.pick} style={css('background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:15px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;' + (v.on ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)' : ''))}>
+                    <div style={css('width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;' + (v.on ? 'background:#fff;color:#000' : 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)'))}>
+                      {v.on ? <svg viewBox="0 0 24 24" style={css('width:12px;height:12px;display:block')}><path d="M5 12.5l4.5 4.5L19 7" style={css('fill:none;stroke:currentColor;stroke-width:2.6px;stroke-linecap:round;stroke-linejoin:round')} /></svg> : null}
+                    </div>
+                    <div style={css('flex:1')}>
+                      <div style={css('font-size:14.5px;font-weight:500')}>{v.label}</div>
+                      {v.sub ? <div style={css('font-size:12px;color:rgba(235,235,245,.45);margin-top:3px')}>{v.sub}</div> : null}
+                    </div>
+                  </div>
+                ))}
+                {!vm.bookVehicles.length ? <div style={css('font-size:13px;color:rgba(235,235,245,.5);padding:6px 4px;line-height:1.5')}>No vehicle on file yet. Continue to add one.</div> : null}
+              </div>
+            ) : null}
+            {vm.bk1 && !vm.bookVehicles ? (
               <>
                 <div style={css('padding:20px 18px 0')}>
                   <div

@@ -203,6 +203,7 @@ const OIL_FILTERS = [['90915-YZZD3', 'Toyota 4-cyl, V6', 14], ['PH7317', 'Honda,
 // Sample recall result for the prototype. Production queries the NHTSA recalls API by VIN.
 const RECALLS = { rennan: [{ id: '24V-000', t: 'Rearview camera image may be delayed on startup', d: 'A software condition can delay the backup camera image for several seconds after shifting into reverse. Remedy is an over-the-air software update. No parts, no charge.', m: 'Sample result · remedy available · about 20 minutes in the bay' }] };
 
+export const ICONS = I;
 export class AppLogic extends DCLogic {
   state = {
     device: this.props.defaultDevice || 'phone', stage: typeof this.props.startStage === 'number' ? this.props.startStage : 6, toast: '',

@@ -41,6 +41,7 @@ import { Trade } from './Trade.jsx';
 import { Updates } from './Updates.jsx';
 import { Valet } from './Valet.jsx';
 import { Vehicle } from './Vehicle.jsx';
+import { AddVehicle, GarageLive, ShopLive } from './LivePages.jsx';
 
 export function CustomerApp({ vm }) {
   return (
@@ -103,6 +104,9 @@ export function CustomerApp({ vm }) {
           {vm.pHistoryEmpty ? <HistoryEmpty /> : null}
           {vm.pMessagesEmpty ? <MessagesEmpty vm={vm} /> : null}
           {vm.pGarage ? <Garage vm={vm} /> : null}
+          {vm.pGarageLive ? <GarageLive vm={vm} /> : null}
+          {vm.pAddVehicle ? <AddVehicle vm={vm} /> : null}
+          {vm.pShopLive ? <ShopLive vm={vm} /> : null}
           {vm.pHealth ? <Health vm={vm} /> : null}
           {vm.pService ? <Service vm={vm} /> : null}
           {vm.pFindings ? <Findings vm={vm} /> : null}

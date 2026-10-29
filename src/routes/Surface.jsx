@@ -7,6 +7,7 @@ import { supabase, SHOP_ID, AUTH_ON } from '../state/supabase.js';
 import { useAuth, signOut, STAFF } from '../state/auth.js';
 import { SignIn, Blocked } from './SignIn.jsx';
 import { MyLoaners } from './MyLoaners.jsx';
+import { CustomerLiveRoute } from './CustomerLive.jsx';
 import { OfflineBar } from './Offline.jsx';
 import { LAUNCH } from '../state/options.js';
 
@@ -21,12 +22,12 @@ import { LobbyIdle } from '../surfaces/lobby/LobbyIdle.jsx';
 /** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
 export function Require({ roles, title, children, customerHome }) {
   const auth = useAuth();
-  if (!AUTH_ON) return customerHome && LAUNCH ? <MyLoaners auth={{ session: { user: { id: 'demo' } }, member: { name: 'Rennan' } }} /> : <><OfflineBar />{children}</>; // no accounts yet
+  if (!AUTH_ON) return customerHome && LAUNCH ? <CustomerLiveRoute auth={{ session: { user: { id: 'demo' } }, member: { name: 'Rennan' } }} /> : <><OfflineBar />{children}</>; // no accounts yet
   if (auth.loading) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} />;
   if (!auth.session) return <SignIn title={title} />;
   if (!auth.member) return <Blocked message="This account is not part of RyGuys yet." onSignOut={signOut} />;
   if (roles && !roles.includes(auth.member.role)) return <Blocked message="This screen is for RyGuys staff." onSignOut={signOut} />;
-  if (customerHome && LAUNCH) return <MyLoaners auth={auth} />; // loaner launch: customers see their rentals, not the demo
+  if (customerHome && LAUNCH) return <><OfflineBar /><CustomerLiveRoute auth={auth} /></>; // loaner launch: customers see their rentals, not the demo
   return <><OfflineBar />{children}</>;
 }
 

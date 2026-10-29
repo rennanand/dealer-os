@@ -7,7 +7,7 @@ export function Home({ vm }) {
     <>
       <div style={css('animation:sIn .28s ease;padding:calc(var(--sat) + 11px) 0 112px')}>
         <div style={css('padding:0 22px;display:flex;justify-content:space-between;align-items:center')}>
-          <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>Good morning, Rennan.</div>
+          <div style={css('font-size:14px;color:rgba(235,235,245,.55)')}>{vm.greeting || 'Good morning, Rennan.'}</div>
           <div style={css('display:flex;gap:9px')}>
             <div
               onClick={vm.goUpdates}
@@ -37,7 +37,7 @@ export function Home({ vm }) {
                 'width:34px;height:34px;border-radius:17px;background:#141416;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;color:rgba(235,235,245,.9)',
               )}
             >
-              RA
+              {vm.initials || 'RA'}
             </div>
           </div>
         </div>
@@ -167,6 +167,7 @@ export function Home({ vm }) {
             </React.Fragment>
           ))}
         </div>
+        {vm.showExtras === false ? null : (<>
         <div style={css('padding:28px 22px 0;display:flex;justify-content:space-between;align-items:baseline')}>
           <div
             style={css(
@@ -256,6 +257,7 @@ export function Home({ vm }) {
             </svg>
           </div>
         </div>
+        </>)}
       </div>
     </>
   );
