@@ -15,13 +15,34 @@ import { LAUNCH } from '../state/options.js';
 const makeTransport = () => (supabase ? supabaseTransport(supabase, SHOP_ID) : broadcastTransport('dealeros-shop'));
 import { CustomerApp } from '../surfaces/customer/CustomerApp.jsx';
 // Staff surfaces load on demand so the customer app's first paint does not wait for them.
-const lazyOf = (load, name) => React.lazy(() => load().then((m) => ({ default: m[name] })));
+// A page left open across a deploy can ask for a chunk that no longer exists; reload once to pick up the new build.
+const lazyOf = (load, name) => React.lazy(() => load().then((m) => ({ default: m[name] })).catch((e) => {
+  const key = 'revyn.reloaded.' + name;
+  if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); window.location.reload(); return new Promise(() => {}); }
+  throw e;
+}));
+class Boundary extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Geist, Helvetica, Arial, sans-serif', padding: 24, textAlign: 'center' }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 600 }}>Something went wrong loading this page.</div>
+          <div style={{ fontSize: 13, color: 'rgba(235,235,245,.55)', marginTop: 8, maxWidth: 420 }}>{String(this.state.err && this.state.err.message || this.state.err)}</div>
+          <div onClick={() => { sessionStorage.clear(); window.location.reload(); }} style={{ marginTop: 20, display: 'inline-block', padding: '12px 22px', borderRadius: 12, background: '#fff', color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Reload</div>
+        </div>
+      </div>
+    );
+  }
+}
 const Demo = lazyOf(() => import('../surfaces/Demo.jsx'), 'Demo');
 const TechApp = lazyOf(() => import('../surfaces/tech/TechApp.jsx'), 'TechApp');
 const ShopApp = lazyOf(() => import('../surfaces/shop/ShopApp.jsx'), 'ShopApp');
 const LobbyBoard = lazyOf(() => import('../surfaces/lobby/LobbyBoard.jsx'), 'LobbyBoard');
 const LobbyIdle = lazyOf(() => import('../surfaces/lobby/LobbyIdle.jsx'), 'LobbyIdle');
-const Lazy = ({ children }) => <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#000' }} />}>{children}</React.Suspense>;
+const Lazy = ({ children }) => <Boundary><React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#000' }} />}>{children}</React.Suspense></Boundary>;
 
 /** Gate a surface behind sign-in. `roles` lists who may open it; omitted means any member. */
 export function Require({ roles, title, children, customerHome }) {
