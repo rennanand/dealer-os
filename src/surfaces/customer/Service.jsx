@@ -68,6 +68,7 @@ export function Service({ vm }) {
                 {T(vm.odoLabel)}
               </div>
             </div>
+            {vm.showRings === false ? null : (<>
             <div
               style={css(
                 'margin:20px 18px 0;background:#141416;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:18px 20px;display:flex;align-items:center;gap:18px',
@@ -117,6 +118,7 @@ export function Service({ vm }) {
                 ))}
               </div>
             </div>
+            </>)}
             <div style={css('padding:26px 22px 0;display:flex;align-items:center;justify-content:space-between')}>
               <div
                 style={css(

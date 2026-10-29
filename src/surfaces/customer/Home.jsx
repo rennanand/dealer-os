@@ -196,6 +196,7 @@ export function Home({ vm }) {
             </React.Fragment>
           ))}
         </div>
+        {vm.showPlans === false ? null : (<>
         <div style={css('margin:24px 18px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
           <div
             onClick={vm.goCare}
@@ -257,6 +258,7 @@ export function Home({ vm }) {
             </svg>
           </div>
         </div>
+        </>)}
         </>)}
       </div>
     </>
