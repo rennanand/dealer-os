@@ -1,13 +1,14 @@
 import React from 'react';
 import { css } from '../runtime/tpl.js';
 import { sendCode, verifyCode, signInPassword, signUpPassword } from '../state/auth.js';
+import { Backdrop } from './Backdrop.jsx';
 
 // Staff sign in with a password for the pilot (no email provider needed). Email codes stay
 // available for customers once a mail provider is configured: VITE_SIGNIN=code.
 const MODE = import.meta.env.VITE_SIGNIN === 'code' ? 'code' : 'password';
 
 const FONT = "font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
-const INPUT = 'width:100%;background:#141416;border:0;outline:0;border-radius:12px;padding:16px 14px;font-size:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);' + FONT;
+const INPUT = 'width:100%;background:rgba(20,20,22,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:0;outline:0;border-radius:12px;padding:16px 14px;font-size:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);' + FONT;
 const btn = (ok) => 'text-align:center;padding:15px 0;border-radius:12px;font-size:13px;font-weight:600;transition:all .2s ease;' + (ok ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);cursor:default;');
 
 /** Email → six-digit code. One field per step, in the app's own language. */
@@ -41,13 +42,13 @@ export function SignIn({ title = 'Sign in', note }) {
   const ok = MODE === 'password' ? emailOk && password.length >= 8 && (mode === 'in' || name.trim().length > 1) : step === 0 ? emailOk : code.length === 6;
   if (MODE === 'password') {
     return (
-      <div style={css('position:fixed;inset:0;background:#000;color:#fff;display:flex;justify-content:center;' + FONT)}>
-        <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px 34px')}>
+      <Backdrop>
+        <div style={css('width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 34px)')}>
           <div style={css('flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px')}>
             <div style={css('background:#fff;border-radius:8px;padding:8px 10px;align-self:flex-start')}>
               <img src="/uploads/ryguys-logo-trim.png" alt="RyGuys" style={css('height:20px;width:auto;display:block')} />
             </div>
-            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px')}>{mode === 'up' ? 'Create your account.' : title}</div>
+            <div style={css('font-size:34px;font-weight:600;letter-spacing:-1.2px;line-height:1.05;margin-top:22px;text-shadow:0 2px 24px rgba(0,0,0,.5)')}>{mode === 'up' ? 'Create your account.' : title}</div>
             <div style={css('font-size:14px;line-height:1.55;color:rgba(235,235,245,.55);margin-top:12px')}>{done || (mode === 'up' ? 'Use the email the shop invited. Pick a password of at least 8 characters.' : note || 'Your email and password.')}</div>
           </div>
           {!done ? (
@@ -57,13 +58,13 @@ export function SignIn({ title = 'Sign in', note }) {
             <input type="password" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ok && go()} style={css(INPUT + ';margin-top:8px')} />
             {err ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:12px')}>{err}</div> : null}
             <div onClick={() => ok && go()} style={css('margin-top:14px;' + btn(ok && !busy))}>{busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}</div>
-            <div onClick={() => { setMode(mode === 'up' ? 'in' : 'up'); setErr(''); }} style={css('text-align:center;font-size:12px;color:rgba(235,235,245,.4);margin-top:14px;cursor:pointer')}>
+            <div onClick={() => { setMode(mode === 'up' ? 'in' : 'up'); setErr(''); }} style={css('text-align:center;font-size:12px;color:rgba(235,235,245,.5);margin-top:14px;cursor:pointer')}>
               {mode === 'up' ? 'Already have an account? Sign in' : 'First time here? Create your account'}
             </div>
           </div>
           ) : null}
         </div>
-      </div>
+      </Backdrop>
     );
   }
   return (
