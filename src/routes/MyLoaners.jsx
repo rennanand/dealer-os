@@ -4,6 +4,7 @@ import { css } from '../runtime/tpl.js';
 import { supabase } from '../state/supabase.js';
 import { signOut } from '../state/auth.js';
 import { dayLabel } from '../state/agreement.js';
+import { ShopsSection } from './ShopMap.jsx';
 
 // A customer's own loaners in the app. Matched to the mobile number the shop has on the
 // rental, so the first open asks for it once.
@@ -20,6 +21,7 @@ const VSTATUS = { booked: ['Booked', '#fff'], arrived: ['Checked in', '#ffd60a']
 const STEPS = ['Booked', 'Checked in', 'In service', 'Complete'];
 const STEP_OF = { booked: 0, arrived: 1, in_progress: 2, done: 3 };
 const whenLabel = (ts) => { const d = new Date(ts), t = new Date(), same = (a, b) => a.toDateString() === b.toDateString(); const tm = new Date(t.getTime() + 864e5); const day = same(d, t) ? 'Today' : same(d, tm) ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); return day + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); };
+const DEMO_SHOP = { shop_id: 'ryguys', name: 'RyGuys Tire & Auto Sales', address: '204 N Main St, Manti, UT 84642', city: 'Manti, UT', phone: '4358354869', hours: 'Mon, Tue, Thu, Fri · 8:00 AM – 5:30 PM', lat: 39.2686964, lng: -111.636588, open_days: [1, 2, 4, 5], open_from: '08:00', open_to: '17:30' };
 const fmtPhone = (d) => (d.length <= 3 ? d : d.length <= 6 ? '(' + d.slice(0, 3) + ') ' + d.slice(3) : '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6, 10));
 
 // Wide layouts (iPhone Duo unfolded, iPad, landscape) get two columns; the width is read from the window
@@ -34,11 +36,13 @@ export function MyLoaners({ auth }) {
   const [visits, setVisits] = React.useState([]);
   const [book, setBook] = React.useState(null);
   const [open, setOpen] = React.useState(null);
+  const [shops, setShops] = React.useState([]);
   const [phone, setPhone] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const load = React.useCallback(async () => {
-    if (!supabase) { setProfile({ phone: '4355550142' }); setRentals([{ number: 'LN-3107', status: 'sent', token: 'demo', start_date: '2026-11-02', end_date: '2026-11-03', vehicle: '2027 Tesla Model 3', color: 'Quicksilver', paint: '#b9bdc3' }]); setVisits([{ id: 'a1', starts_at: new Date(Date.now() + 864e5).toISOString(), job: 'Oil change', visit: 'wait', status: 'booked', vehicle: '2021 Toyota 4Runner' }]); return; }
+    if (!supabase) { setProfile({ phone: '4355550142' }); setRentals([{ number: 'LN-3107', status: 'sent', token: 'demo', start_date: '2026-11-02', end_date: '2026-11-03', vehicle: '2027 Tesla Model 3', color: 'Quicksilver', paint: '#b9bdc3' }]); setVisits([{ id: 'a1', starts_at: new Date(Date.now() + 864e5).toISOString(), job: 'Oil change', visit: 'wait', status: 'booked', vehicle: '2021 Toyota 4Runner' }]); setShops([DEMO_SHOP]); return; }
     const { data } = await supabase.from('customer_profiles').select('*').eq('user_id', auth.session.user.id).maybeSingle();
+    supabase.rpc('shops_public').then((x) => setShops(Array.isArray(x.data) ? x.data : [DEMO_SHOP]));
     setProfile(data || null);
     if (data && data.phone) { const [r, a] = await Promise.all([supabase.rpc('my_rentals'), supabase.rpc('my_appointments')]); setRentals(r.data || []); setVisits(a.data || []); }
   }, [auth.session]);
@@ -66,7 +70,7 @@ export function MyLoaners({ auth }) {
       </div></div>
     );
   }
-  if (book) return <BookVisit auth={auth} draft={book} setDraft={setBook} onDone={() => { setBook(null); load(); }} />;
+  if (book) return <BookVisit auth={auth} shop={shops[0] || DEMO_SHOP} draft={book} setDraft={setBook} onDone={() => { setBook(null); load(); }} />;
   const openVisit = open && visits.find((v) => v.id === open);
   if (openVisit) return <VisitDetail v={openVisit} back={() => setOpen(null)} cancel={async () => { if (supabase) await supabase.rpc('cancel_my_appointment', { p_id: openVisit.id }); setOpen(null); load(); }} />;
   const upcoming = visits.filter((v) => v.status !== 'cancelled' && v.status !== 'no_show' && (v.status !== 'done' || Date.now() - new Date(v.starts_at) < 864e5));
@@ -117,6 +121,7 @@ export function MyLoaners({ auth }) {
       </div>
       </div>
       </div>
+      <ShopsSection shops={shops} wide={wide} />
       <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:auto;padding-top:30px;text-align:center')}>Number on file: {fmtPhone(profile.phone)} · <span onClick={() => setProfile({ phone: '' })} style={css('cursor:pointer;color:rgba(235,235,245,.55)')}>change</span></div>
     </div></div>
   );
@@ -159,15 +164,17 @@ function VisitDetail({ v, back, cancel }) {
 }
 
 const JOBS = ['Oil change', 'Tires', 'Brakes', 'Check engine light', 'Inspection', 'Something else'];
-const TIMES = []; for (let h = 8; h <= 17; h++) for (const m of [0, 30]) if (!(h === 17 && m === 30)) TIMES.push((h < 10 ? '0' : '') + h + ':' + (m ? '30' : '00'));
+const slotsFor = (shop) => { const [fh, fm] = (shop.open_from || '08:00').split(':').map(Number), [th, tm] = (shop.open_to || '17:00').split(':').map(Number); const out = []; for (let t = fh * 60 + fm; t <= th * 60 + tm - 60; t += 30) out.push((t / 60 < 10 ? '0' : '') + Math.floor(t / 60) + ':' + (t % 60 ? '30' : '00')); return out; };
+const DOWS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const isoDay = (d) => { const t = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return t.toISOString().slice(0, 10); };
 const CHIP = (on) => 'padding:10px 14px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;' + (on ? 'background:#fff;color:#000' : 'background:#141416;color:rgba(235,235,245,.75);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)');
-function BookVisit({ draft: d, setDraft, onDone }) {
+function BookVisit({ draft: d, setDraft, onDone, shop }) {
+  const openDays = shop.open_days || [1, 2, 3, 4, 5], TIMES = slotsFor(shop);
   const set = (p) => setDraft({ ...d, ...p });
   const [err, setErr] = React.useState(''); const [busy, setBusy] = React.useState(false);
-  const days = []; for (let i = 0; i < 14; i++) { const t = new Date(); t.setDate(t.getDate() + i); if (t.getDay() !== 0) days.push(t); }
+  const days = []; for (let i = 0; i < 21 && days.length < 12; i++) { const t = new Date(); t.setDate(t.getDate() + i); if (openDays.includes(t.getDay())) days.push(t); }
   const titles = ['What does your car need?', 'Which car?', 'When works?', 'Review and book.'];
-  const subs = ['Pick the closest one; the shop confirms details at check-in.', 'Year, make and model is plenty.', 'The shop is open Monday to Saturday.', 'The shop sees this right away.'];
+  const subs = ['Pick the closest one; the shop confirms details at check-in.', 'Year, make and model is plenty.', 'Open ' + openDays.map((n) => DOWS[n]).join(', ') + '.', 'The shop sees this right away.'];
   const ok = [d.job.trim(), d.vehicle.trim(), d.day && d.time, true][d.step];
   const submit = async () => {
     if (busy) return; setBusy(true); setErr('');
