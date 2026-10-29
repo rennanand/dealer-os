@@ -78,7 +78,7 @@ export function ShopLive({ vm }) {
           <div style={css('font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)')}>Your loaners</div>
           <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
             {vm.myLoaners.map((r) => (
-              <div key={r.number} onClick={() => { window.location.href = '/rental/' + r.token; }} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
+              <div key={r.number} onClick={() => { window.location.assign('/rental/' + r.token + '?app=1'); }} style={css('background:rgba(255,255,255,.065);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border-radius:20px;border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.13);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
                 <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + (r.paint || '#b9bdc3') + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
                 <div style={css('flex:1;min-width:0')}>
                   <div style={css('font-size:15px;font-weight:500')}>{r.vehicle || 'Loaner'}</div>

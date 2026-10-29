@@ -48,6 +48,20 @@ function SignaturePad({ strokes, setStrokes }) {
 }
 export const toPath = (strokes) => strokes.map((k) => (k.length === 1 ? 'M' + k[0][0] + ' ' + k[0][1] + ' l.6 0' : k.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' '))).join(' ');
 
+// Inside the app the agreement opens in place; this bar brings the customer back to the Service tab.
+function AppBar() {
+  if (!(window.history.length > 1 && /[?&]app=1/.test(window.location.search))) return null;
+  return (
+    <div style={css('position:sticky;top:0;z-index:5;margin:0 -22px 10px;padding:calc(env(safe-area-inset-top,0px) + 8px) 22px 10px;background:rgba(8,8,10,.52);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);display:flex;align-items:center')}>
+      <div onClick={() => window.history.back()} style={css('width:60px;display:flex;align-items:center;color:rgba(235,235,245,.85);cursor:pointer;margin-left:-7px')}>
+        <svg viewBox="0 0 24 24" style={css('width:22px;height:22px;display:block')}><path d="M15 6l-6 6 6 6" style={css('fill:none;stroke:currentColor;stroke-width:1.6px;stroke-linecap:round;stroke-linejoin:round')} /></svg>
+      </div>
+      <div style={css('flex:1;text-align:center;font-size:15px;font-weight:600')}>Loaner</div>
+      <div style={css('width:60px')} />
+    </div>
+  );
+}
+
 export function RentalRoute() {
   const { token } = useParams();
   const { loading, r, err, setR } = useRental(token);
@@ -104,7 +118,7 @@ export function RentalRoute() {
     const title = r.status === 'returned' ? 'Returned. Thank you, ' + first + '.' : r.status === 'out' ? 'Your loaner is out with you.' : r.status === 'cancelled' ? 'This rental was cancelled.' : 'Signed. The keys will be waiting.';
     const sub = r.status === 'returned' ? (r.in_odometer - r.out_odometer) + ' miles · returned at ' + r.in_level + '%' + (r.extra_cents ? ' · ' + fmt0(r.extra_cents / 100) + ' in extras, settled at the counter' : r.shop_pays ? ' · no charge' : ' · ' + fmt0(total) + ' settled at the counter') : r.status === 'out' ? 'Due back ' + dayLabel(r.end_date) + ', or when your car is ready.' : 'Show this screen at the front desk when you arrive.';
     return (
-      <div style={css(PAGE)}><div style={css(WRAP)}>
+      <div style={css(PAGE)}><div style={css(WRAP)}><AppBar /><AppBar />
         <Header />
         <div style={css('font-size:28px;font-weight:600;letter-spacing:-.9px;line-height:1.1;margin-top:26px;text-wrap:pretty')}>{title}</div>
         <div style={css('font-size:14px;line-height:1.5;color:rgba(235,235,245,.55);margin-top:10px')}>{sub}</div>

@@ -102,6 +102,7 @@ export function AppointmentsLive({ vm }) {
               <div style={css('font-size:12.5px;color:rgba(235,235,245,.5);margin-top:3px')}>{T(a.time)} · {T(a.visit)}{a.phone ? ' · ' + a.phone : ''}</div>
             </div>
             <div style={css('font-size:13px;font-weight:500;color:' + a.color)}>{T(a.status)}{a.bay ? ' · Bay ' + a.bay : ''}</div>
+            {a.rating ? <div style={css('font-size:12.5px;color:#ffd60a')}>{a.rating}{a.ratingTags ? <span style={css('color:rgba(235,235,245,.5)')}> · {a.ratingTags}</span> : null}</div> : null}
             <div>
               <KV k="Service" v={a.job} />
               <KV k="Vehicle" v={a.car + (a.plate ? ' · ' + a.plate : '')} />
