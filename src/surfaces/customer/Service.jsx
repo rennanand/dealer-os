@@ -7,7 +7,7 @@ export function Service({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.88);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -31,7 +31,7 @@ export function Service({ vm }) {
             <div style={css('padding:calc(var(--sat) + 13px) 30px 0;text-align:center')}>
               <div
                 style={css(
-                  'width:56px;height:56px;border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);margin:0 auto;display:flex;align-items:center;justify-content:center;color:#30d158',
+                  'width:56px;height:56px;border-radius:28px;background:#2a2a2e;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#30d158',
                 )}
               >
                 <svg viewBox="0 0 24 24" style={css('width:24px;height:24px;display:block;flex:0 0 auto')}>
@@ -70,7 +70,7 @@ export function Service({ vm }) {
             {vm.showRings === false ? null : (<>
             <div
               style={css(
-                'margin:20px 18px 0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:18px 20px;display:flex;align-items:center;gap:18px',
+                'margin:20px 18px 0;background:#141416;border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:18px',
               )}
             >
               <div style={css('position:relative;width:124px;height:124px;flex:0 0 auto')}>
@@ -159,7 +159,7 @@ export function Service({ vm }) {
                 <React.Fragment key={_i}>
                   <div
                     style={css(
-                      'flex:0 0 300px;scroll-snap-align:start;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:250px',
+                      'flex:0 0 300px;scroll-snap-align:start;background:#141416;border-radius:16px;padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:250px',
                     )}
                   >
                     {c?.scene ? (

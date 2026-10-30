@@ -384,7 +384,7 @@ export class CustomerLive extends AppLogic {
       addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }),
       startMessage: openUrl(shop.phone ? 'sms:' + shop.phone : ''),
       garageCars: cars.map((c, i) => ({ ...c, pick: () => this.setState({ vIdx: i, view: 'home' }), visits: (live.vehicles[i] || {}).visits || 0 })),
-      tabs: (V.tabs || []).map((t) => { const on = /color:#fff/.test(t.glyphStyle); return Object.assign({}, t, { badge: false, itemStyle: 'flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0 7px;cursor:pointer;position:relative;border-radius:24px;transition:background .25s ease;' + (on ? 'background:rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)' : '') }); }),
+      tabs: (V.tabs || []).map((t) => { const on = /color:#fff/.test(t.glyphStyle); return Object.assign({}, t, { badge: false, itemStyle: 'flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0 7px;cursor:pointer;position:relative;border-radius:24px;transition:background .25s ease;' + (on ? 'background:rgba(255,255,255,.1)' : '') }); }),
       pShop: false, pShopLive: view === 'shop', goShop: this.go('shop'),
       showTabs: !nativeTabs() && ['home', 'garage', 'service', 'shop', 'history', 'account'].indexOf(view) >= 0,
       nativeTabs: !!nativeTabs(),

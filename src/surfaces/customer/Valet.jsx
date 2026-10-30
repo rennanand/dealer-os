@@ -7,7 +7,7 @@ export function Valet({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.88);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -75,7 +75,7 @@ export function Valet({ vm }) {
             </div>
             <div
               style={css(
-                'margin:20px 18px 0;height:200px;border-radius:16px;position:relative;overflow:hidden;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);background:radial-gradient(ellipse at 30% 40%,#1d1f23 0%,#121214 60%,#0b0b0c 100%)',
+                'margin:20px 18px 0;height:200px;border-radius:16px;position:relative;overflow:hidden;background:#141416;border-radius:16px;background:radial-gradient(ellipse at 30% 40%,#1d1f23 0%,#121214 60%,#0b0b0c 100%)',
               )}
             >
               <div
@@ -92,7 +92,7 @@ export function Valet({ vm }) {
               </div>{' '}
               <div
                 style={css(
-                  `position:absolute;top:12px;right:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);${vm.valetMapPill ?? ''}`,
+                  `position:absolute;top:12px;right:12px;background:rgba(0,0,0,.55);${vm.valetMapPill ?? ''}`,
                 )}
               >
                 {T(vm.valetEta)}
@@ -106,7 +106,7 @@ export function Valet({ vm }) {
             </div>
             <div
               style={css(
-                'margin:14px 18px 0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:14px 16px;display:flex;align-items:center;gap:14px',
+                'margin:14px 18px 0;background:#141416;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px',
               )}
             >
               <div

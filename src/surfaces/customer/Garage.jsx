@@ -15,7 +15,7 @@ export function Garage({ vm }) {
             <React.Fragment key={_i}>
               <div
                 onClick={g?.go}
-                style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);overflow:hidden;cursor:pointer')}
+                style={css('background:#141416;border-radius:16px;overflow:hidden;cursor:pointer')}
                 className="px4"
               >
                 <div style={css('padding:16px 16px 17px;display:flex;align-items:center;gap:12px')}>

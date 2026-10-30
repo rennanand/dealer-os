@@ -7,7 +7,7 @@ export function Trade({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:rgba(0,0,0,.88);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -29,7 +29,7 @@ export function Trade({ vm }) {
         </div>
         <div
           style={css(
-            'margin:18px 18px 0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:15px 16px;display:flex;align-items:center;gap:13px',
+            'margin:18px 18px 0;background:#141416;border-radius:16px;padding:15px 16px;display:flex;align-items:center;gap:13px',
           )}
         >
           <div
@@ -82,7 +82,7 @@ export function Trade({ vm }) {
             onChange={vm.onTradeMiles}
             inputMode="numeric"
             style={css(
-              'width:100%;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);border-radius:12px;padding:14px;color:#fff;font-size:14px;outline:none;font-family:inherit',
+              'width:100%;background:#2a2a2e;border-radius:12px;padding:14px;color:#fff;font-size:14px;outline:none;font-family:inherit',
             )}
           />
         </div>
@@ -106,7 +106,7 @@ export function Trade({ vm }) {
           <>
             <div
               style={css(
-                'margin:22px 18px 0;animation:sIn .32s ease;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:20px',
+                'margin:22px 18px 0;animation:sIn .32s ease;background:#141416;border-radius:16px;padding:20px',
               )}
             >
               <div style={css('font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#e0312b')}>

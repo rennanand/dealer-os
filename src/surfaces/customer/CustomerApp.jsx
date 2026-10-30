@@ -49,14 +49,14 @@ export function CustomerApp({ vm }) {
     <>
       <div
         style={css(
-          "position:relative;height:100%;background:radial-gradient(70% 45% at 12% -5%,rgba(112,132,255,.42) 0%,rgba(112,132,255,0) 60%),radial-gradient(55% 35% at 95% 22%,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 60%),radial-gradient(60% 30% at 50% 58%,rgba(120,90,255,.14) 0%,rgba(120,90,255,0) 70%),radial-gradient(90% 40% at 50% 108%,rgba(224,49,43,.3) 0%,rgba(224,49,43,0) 62%),linear-gradient(180deg,#0c0c12 0%,#08080b 100%);color:#fff;overflow:hidden;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif",
+          "position:relative;height:100%;background:#000;color:#fff;overflow:hidden;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif",
         )}
       >
         {vm.toast ? (
           <>
             <div
               style={css(
-                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,46,.62);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 36px rgba(0,0,0,.5);border-radius:22px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
+                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:#1c1c20;border-radius:22px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
               )}
             >
               <div
@@ -76,7 +76,6 @@ export function CustomerApp({ vm }) {
             </div>{' '}
           </>
         ) : null}{' '}
-        {vm.heroStyle && !/opacity:0/.test(vm.heroStyle) ? <div style={css('position:absolute;left:-10%;right:-10%;top:40px;height:320px;z-index:3;pointer-events:none;background:radial-gradient(45% 55% at 50% 58%,' + (/^#[0-9a-f]{6}$/i.test(vm.heroPaint || '') ? vm.heroPaint + '66' : 'rgba(255,255,255,.18)') + ' 0%,rgba(0,0,0,0) 70%)')} /> : null}
         <div style={css(vm.heroStyle)}>
           <div ref={vm.heroInnerRef} style={css('height:100%;will-change:transform')}>
             <div className="sc-host-x" style={css('height:100%')}>
@@ -152,7 +151,7 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 6px);z-index:6;padding:6px 6px;border-radius:30px;background:rgba(18,18,22,.58);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 12px 40px rgba(0,0,0,.55);display:flex;gap:2px',
+                'position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 6px);z-index:6;padding:6px 6px;border-radius:30px;background:#141416;display:flex;gap:2px',
               )}
             >
               {L(vm.tabs).map((t, _i) => (
