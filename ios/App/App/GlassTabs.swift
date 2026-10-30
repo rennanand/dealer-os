@@ -32,7 +32,10 @@ public class GlassTabsPlugin: CAPPlugin, CAPBridgedPlugin {
         } else {
             effect = UIBlurEffect(style: .systemThinMaterialDark)
         }
+        host.overrideUserInterfaceStyle = .dark
+        bridge?.viewController?.overrideUserInterfaceStyle = .dark
         let b = UIVisualEffectView(effect: effect)
+        b.overrideUserInterfaceStyle = .dark
         b.translatesAutoresizingMaskIntoConstraints = false
         b.clipsToBounds = true
         if #available(iOS 26.0, *) {

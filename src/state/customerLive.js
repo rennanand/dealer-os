@@ -7,11 +7,13 @@ import { dayLabel } from './agreement.js';
 import { setupPush } from './push.js';
 import { syncNativeTabs, nativeTabs } from './glassTabs.js';
 
-const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
+const ACC = '#3d8bfd', RED = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
 const PAINTS = [['white', '#eef0f2'], ['pearl', '#eceff3'], ['black', '#0f1013'], ['silver', '#c3c8ce'], ['gray', '#8a8f95'], ['grey', '#8a8f95'], ['charcoal', '#3a3d42'], ['red', '#c8101a'], ['maroon', '#6a0f1a'], ['burgundy', '#6a0f1a'], ['blue', '#1f4fa0'], ['navy', '#15284f'], ['green', '#1f5a3a'], ['tan', '#c2b08c'], ['beige', '#c2b08c'], ['gold', '#b8923a'], ['orange', '#e0561a'], ['yellow', '#e3bd1f'], ['brown', '#5a4030'], ['bronze', '#8a6a3a'], ['teal', '#2f8a96'], ['purple', '#5a2a7a']];
 const paintOf = (v) => { const t = ((v.color || '') + ' ' + (v.model || '')).toLowerCase(); const hit = PAINTS.find(([k]) => t.includes(k)); return hit ? hit[1] : '#b9bdc3'; };
-const vehName = (v) => (v ? [v.year, v.make, v.model].filter(Boolean).join(' ') : '');
+const cap = (t) => String(t || '').trim().split(/\s+/).filter(Boolean).map((w) => (/^\d/.test(w) || /[A-Z]/.test(w.slice(1)) ? w : w[0].toUpperCase() + w.slice(1))).join(' ');
+const vehName = (v) => (v ? [v.year, cap(v.make), cap(v.model)].filter(Boolean).join(' ') : '');
+const vehTitle = (v) => cap(v.nickname) || [cap(v.make), cap(v.model)].filter(Boolean).join(' ') || 'Your car';
 const iso = (d) => { const t = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return t.toISOString().slice(0, 10); };
 const today = () => iso(new Date());
 const fmtT = (ts) => (ts ? new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '');
@@ -160,12 +162,13 @@ export class CustomerLive extends AppLogic {
     if (!nextDue.length) nextDue.push({ name: 'Reminders', due: 'After your first visit', c: DIM, bar: bar(0, '#fff'), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, err: '' } }) });
 
     // ---- vehicles and the 3D hero
-    const cars = live.vehicles.map((v) => ({ id: v.id, name: v.model || vehName(v) || 'Your car', sub: [v.year ? v.year + ' ' + v.make : v.make, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi · entered by you' : 'Add your mileage', v.plate].filter(Boolean).join(' · '), paint: paintOf(v), ph: '' }));
+    const cars = live.vehicles.map((v) => ({ id: v.id, name: vehTitle(v), sub: [v.year, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : 'Add your mileage', v.plate].filter(Boolean).join(' · '), paint: paintOf(v), ph: '' }));
     const vIdx = Math.min(s.vIdx || 0, Math.max(0, cars.length - 1)), car0 = cars[vIdx] || { name: 'Your car', sub: '', paint: '#b9bdc3' };
     Object.assign(V, {
       greeting: first ? (hour < 12 ? 'Good morning, ' : hour < 17 ? 'Good afternoon, ' : 'Good evening, ') + first + '.' : 'Welcome.',
       initials, hasUnread: false, myCars: cars, car0, multiCar: cars.length > 1, dots: cars.map((_, i) => ({ style: 'width:6px;height:6px;border-radius:3px;transition:background .2s ease;background:' + (i === vIdx ? '#fff' : 'rgba(235,235,245,.25)') })),
       heroPaint: cars.length ? car0.paint : V.heroPaint,
+      heroStyle: view === 'home' && cars.length ? V.heroStyle.replace(/translateY\([-\d.]+px\)/, 'translateY(calc(var(--sat) + 88px))') : V.heroStyle,
       odoLabel: live.vehicles[vIdx] && live.vehicles[vIdx].odometer ? live.vehicles[vIdx].odometer.toLocaleString('en-US') + ' mi' : 'Mileage',
       goOdometer: () => { const v = live.vehicles[vIdx]; if (!v) return; const val = window.prompt('Current mileage for your ' + (v.model || 'car') + ':', v.odometer || ''); const n = parseInt(String(val || '').replace(/\D/g, ''), 10); if (n && supabase) supabase.rpc('update_my_odometer', { p_vehicle: v.id, p_odometer: n }).then(() => this.loadLive()); },
       nextDue: nextDue, showExtras: true, showPlans: false,
@@ -207,7 +210,7 @@ export class CustomerLive extends AppLogic {
     const photoUrl = (p) => p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path);
     const phStyle = (p) => (p ? 'background:#151517 url(' + photoUrl(p) + ') center/cover' : 'background:radial-gradient(ellipse at 50% 62%,#2b2b30 0%,#151517 58%,#0b0b0c 100%)');
     const fmtC = (c) => '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const TIER = { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }, TCOL = { now: ACC, soon: YEL, monitor: GRN };
+    const TIER = { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }, TCOL = { now: RED, soon: YEL, monitor: GRN };
     const needsApproval = pending.length > 0;
     const sel = s.planSel || {};
     const planOn = (f) => (sel[f.id] === undefined ? f.tier !== 'monitor' : sel[f.id]);
