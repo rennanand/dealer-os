@@ -8,6 +8,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard scene is UIWindowScene else { return }
+        // Wrap the Capacitor view controller in a real UITabBarController so iOS draws its own
+        // Liquid Glass tab bar (iOS 26+). The web app drives it through the GlassTabs plugin.
+        if let win = window, let bridge = win.rootViewController as? BridgeViewController, !(bridge.parent is RevynTabController) {
+            win.rootViewController = RevynTabController(hosting: bridge)
+        }
         if let url = connectionOptions.urlContexts.first?.url {
             _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])
         }

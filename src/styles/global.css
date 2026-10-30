@@ -29,3 +29,6 @@ body.route-demo{overflow-y:scroll}
 .surface-shop{background:#0d0d0e;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif}
 .surface-shop>div:not(.fit),.surface-shop>.fit>div{height:100% !important}
 .surface-lobby{display:flex;align-items:center;justify-content:center}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pulse{animation:pulse 1.5s ease-in-out infinite}

@@ -22,7 +22,10 @@ export function Home({ vm }) {
             {vm.multiCar ? <svg viewBox="0 0 24 24" style={css('width:18px;height:18px;display:block;color:rgba(235,235,245,.6)')}><path d="M6 9l6 6 6-6" style={css(ICON)} /></svg> : null}
           </div>
           <div style={css('font-size:14px;color:rgba(235,235,245,.55);margin-top:8px')}>{T(vm.car0?.sub)}</div>
-          <div style={css('font-size:15px;font-weight:500;margin-top:6px;color:' + colorOf(vm.homeKickerStyle))}>{T(vm.homeKicker)}</div>
+          <div className={vm.homeRings ? 'pulse' : ''} style={css('display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;margin-top:6px;color:' + colorOf(vm.homeKickerStyle))}>
+            {vm.homeRings ? <span style={css('width:8px;height:8px;border-radius:4px;background:currentColor;flex:0 0 auto')} /> : null}
+            <span>{T(vm.homeKicker)}</span>
+          </div>
         </div>
         <div style={css('display:flex;align-items:center;gap:4px;background:#141416;border-radius:22px;padding:4px;flex:0 0 auto;margin-top:2px')}>
           <div onClick={vm.goUpdates} style={css('width:38px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;color:#fff')}>

@@ -7,7 +7,7 @@ import { dayLabel } from './agreement.js';
 import { setupPush } from './push.js';
 import { syncNativeTabs, nativeTabs } from './glassTabs.js';
 
-const ACC = '#3d8bfd', RED = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
+const ACC = '#e0312b', RED = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
 const PAINTS = [['white', '#eef0f2'], ['pearl', '#eceff3'], ['black', '#0f1013'], ['silver', '#c3c8ce'], ['gray', '#8a8f95'], ['grey', '#8a8f95'], ['charcoal', '#3a3d42'], ['red', '#c8101a'], ['maroon', '#6a0f1a'], ['burgundy', '#6a0f1a'], ['blue', '#1f4fa0'], ['navy', '#15284f'], ['green', '#1f5a3a'], ['tan', '#c2b08c'], ['beige', '#c2b08c'], ['gold', '#b8923a'], ['orange', '#e0561a'], ['yellow', '#e3bd1f'], ['brown', '#5a4030'], ['bronze', '#8a6a3a'], ['teal', '#2f8a96'], ['purple', '#5a2a7a']];
 const paintOf = (v) => { const t = ((v.color || '') + ' ' + (v.model || '')).toLowerCase(); const hit = PAINTS.find(([k]) => t.includes(k)); return hit ? hit[1] : '#b9bdc3'; };
