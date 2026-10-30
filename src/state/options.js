@@ -15,3 +15,7 @@ export const LAUNCH = import.meta.env.VITE_LAUNCH || '';
 
 /** Native app build (Capacitor): opens straight on the customer app. VITE_TARGET=app */
 export const IS_APP = import.meta.env.VITE_TARGET === 'app';
+
+/** Bisect switches for the native app: VITE_SAFE="three,push,tabs" turns those parts off in a build. */
+const SAFE_LIST = String(import.meta.env.VITE_SAFE || '').split(',').map((x) => x.trim()).filter(Boolean);
+export const SAFE = { three: SAFE_LIST.includes('three'), push: SAFE_LIST.includes('push'), tabs: SAFE_LIST.includes('tabs'), list: SAFE_LIST };

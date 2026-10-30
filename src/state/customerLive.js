@@ -5,6 +5,7 @@ import { AppLogic, ICONS as I } from './appLogic.js';
 import { supabase, SUPABASE_URL } from './supabase.js';
 import { dayLabel } from './agreement.js';
 import { setupPush } from './push.js';
+import { SAFE } from './options.js';
 import { syncNativeTabs, nativeTabs } from './glassTabs.js';
 
 const ACC = '#e0312b', RED = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
@@ -50,7 +51,7 @@ export class CustomerLive extends AppLogic {
     super.componentDidMount();
     if (!supabase) window.__revyn = this; // review builds only: lets a script stage a visit
     this.loadLive();
-    setupPush(this.props.userId, (d) => { this.loadLive(); if (d && d.view) this.setState({ view: d.view }); });
+    if (!SAFE.push) setupPush(this.props.userId, (d) => { this.loadLive(); if (d && d.view) this.setState({ view: d.view }); });
     this._poll = setInterval(() => this.loadLive(), 15000);
   }
   componentDidUpdate(prev) {
