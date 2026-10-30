@@ -1,4 +1,5 @@
 import React from 'react';
+import { threeEnabled, threeAuto, setThree } from '../../state/safeMode.js';
 import { T, L, css, val } from '../../runtime/tpl.js';
 
 export function Account({ vm }) {
@@ -69,6 +70,15 @@ export function Account({ vm }) {
               </div>
             </React.Fragment>
           ))}
+        </div>
+        <div style={css('margin:18px 22px 0;background:#141416;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px')}>
+          <div style={css('flex:1')}>
+            <div style={css('font-size:16px;font-weight:600')}>3D car</div>
+            <div style={css('font-size:12.5px;color:rgba(235,235,245,.5);margin-top:3px;line-height:1.4')}>{threeEnabled() ? 'On. Turn off if the app feels slow or unstable.' : threeAuto() ? 'Turned off after the app closed unexpectedly. Turn it back on to try again.' : 'Off.'}</div>
+          </div>
+          <div onClick={() => { setThree(!threeEnabled()); location.reload(); }} style={css('width:50px;height:30px;border-radius:15px;position:relative;cursor:pointer;transition:background .2s;background:' + (threeEnabled() ? '#30d158' : 'rgba(255,255,255,.18)'))}>
+            <div style={css('position:absolute;top:2px;width:26px;height:26px;border-radius:13px;background:#fff;transition:left .2s;left:' + (threeEnabled() ? '22px' : '2px'))} />
+          </div>
         </div>
         {vm.signOutNow ? (
           <div style={css('padding:26px 22px 0')}>

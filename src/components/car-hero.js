@@ -45,7 +45,7 @@
       renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
       this.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.lost = true; }); this.canvas.addEventListener('webglcontextrestored', () => { this.lost = false; });
       renderer.setClearColor(0x000000, 0);
-      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.shadowMap.enabled = false; renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0;
       const scene = this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
@@ -61,7 +61,6 @@
       this.car = await this.loadModel(THREE);
       if (!this.alive) return;
       scene.add(this.car);
-      this.addLampGlow(THREE, scene);
       this.setPaint(); if (this.paintTarget) this.mats.paint.color.copy(this.paintTarget);
       this.setView();
       this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(this);
@@ -94,7 +93,7 @@
     makeMaterials(THREE) {
       const M = (name, c, rough, metal, extra) => { const m = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: rough, metalness: metal }, extra || {})); m.name = name; return m; };
       return {
-        paint: (() => { const m = new THREE.MeshPhysicalMaterial({ color: 0xb9bdc3, roughness: 0.1, metalness: 0.8, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.6 }); m.name = 'paint'; return m; })(),
+        paint: (() => { const m = new THREE.MeshStandardMaterial({ color: 0xb9bdc3, roughness: 0.12, metalness: 0.8, envMapIntensity: 1.7 }); m.name = 'paint'; return m; })(),
         glass: M('glass', PALETTE.glass, 0.1, 0.9, { transparent: true, opacity: 0.92, envMapIntensity: 1.8 }),
         chrome: M('chrome', PALETTE.chrome, 0.12, 1), satin_black: M('satin_black', PALETTE.satin_black, 0.6, 0.3),
         rubber: M('rubber', PALETTE.rubber, 0.95, 0), underbody: M('underbody', PALETTE.underbody, 0.9, 0.1), interior: M('interior', PALETTE.interior, 0.9, 0),

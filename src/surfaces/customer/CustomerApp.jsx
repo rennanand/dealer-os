@@ -41,10 +41,11 @@ import { Updates } from './Updates.jsx';
 import { Valet } from './Valet.jsx';
 import { Vehicle } from './Vehicle.jsx';
 import { AddVehicle, GarageLive, ShopLive } from './LivePages.jsx';
+import { threeEnabled } from '../../state/safeMode.js';
 
 export function CustomerApp({ vm }) {
   // The 3D car and the line-art scenes (three.js, ~700 KB) load after the first paint so the app opens at once.
-  React.useEffect(() => { import('../../components/car-hero.js'); import('../../components/service-scene.js'); }, []);
+  React.useEffect(() => { if (threeEnabled()) { import('../../components/car-hero.js'); import('../../components/service-scene.js'); } }, []);
   return (
     <>
       <div

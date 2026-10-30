@@ -1,5 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { markBoot } from './state/safeMode.js';
+markBoot();
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import '@fontsource/geist/300.css';
 import '@fontsource/geist/400.css';
