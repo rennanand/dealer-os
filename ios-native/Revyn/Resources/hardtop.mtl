@@ -1,0 +1,29 @@
+newmtl chrome
+Kd 0.8 0.8 0.8
+
+newmtl satin_black
+Kd 0.8 0.8 0.8
+
+newmtl paint
+Kd 0.8 0.8 0.8
+
+newmtl taillamp
+Kd 0.8 0.8 0.8
+
+newmtl amber
+Kd 0.8 0.8 0.8
+
+newmtl headlamp
+Kd 0.8 0.8 0.8
+
+newmtl rubber
+Kd 0.8 0.8 0.8
+
+newmtl underbody
+Kd 0.8 0.8 0.8
+
+newmtl interior
+Kd 0.8 0.8 0.8
+
+newmtl glass
+Kd 0.8 0.8 0.8

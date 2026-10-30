@@ -11,3 +11,4 @@ ios/App/App/config.xml
 ios/App/build
 ios/App/DerivedData
 .vercel
+ios-native/Revyn/Core/Secrets.swift
