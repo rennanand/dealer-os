@@ -56,7 +56,7 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,46,.62);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 36px rgba(0,0,0,.5);border-radius:22px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
+                'position:absolute;top:calc(var(--sat) + 9px);left:12px;right:12px;z-index:20;background:rgba(40,40,46,.62);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 36px rgba(0,0,0,.5);border-radius:22px;padding:12px 14px;display:flex;gap:11px;align-items:center;animation:toastIn .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 8px 30px rgba(0,0,0,.5)',
               )}
             >
               <div
@@ -76,13 +76,14 @@ export function CustomerApp({ vm }) {
             </div>{' '}
           </>
         ) : null}{' '}
-        {vm.heroStyle && !/opacity:0/.test(vm.heroStyle) ? <div style={css('position:absolute;left:-10%;right:-10%;top:40px;height:320px;z-index:3;pointer-events:none;background:radial-gradient(45% 55% at 50% 58%,' + (/^#[0-9a-f]{6}$/i.test(vm.heroPaint || '') ? vm.heroPaint + '66' : 'rgba(255,255,255,.18)') + ' 0%,rgba(0,0,0,0) 70%);filter:blur(28px)')} /> : null}
+        {vm.heroStyle && !/opacity:0/.test(vm.heroStyle) ? <div style={css('position:absolute;left:-10%;right:-10%;top:40px;height:320px;z-index:3;pointer-events:none;background:radial-gradient(45% 55% at 50% 58%,' + (/^#[0-9a-f]{6}$/i.test(vm.heroPaint || '') ? vm.heroPaint + '66' : 'rgba(255,255,255,.18)') + ' 0%,rgba(0,0,0,0) 70%)')} /> : null}
         <div style={css(vm.heroStyle)}>
           <div ref={vm.heroInnerRef} style={css('height:100%;will-change:transform')}>
             <div className="sc-host-x" style={css('height:100%')}>
               <car-hero
                 view={vm.heroView}
                 paint={vm.heroPaint}
+                paused={/opacity:0/.test(vm.heroStyle || '') ? 'true' : 'false'}
                 zoom={vm.heroZoom}
                 autorotate={vm.heroAuto}
                 drag={'true'}
@@ -151,7 +152,7 @@ export function CustomerApp({ vm }) {
           <>
             <div
               style={css(
-                'position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 6px);z-index:6;padding:6px 6px;border-radius:30px;background:rgba(18,18,22,.58);backdrop-filter:blur(34px) saturate(190%);-webkit-backdrop-filter:blur(34px) saturate(190%);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 12px 40px rgba(0,0,0,.55);display:flex;gap:2px',
+                'position:absolute;left:14px;right:14px;bottom:calc(var(--sab) + 6px);z-index:6;padding:6px 6px;border-radius:30px;background:rgba(18,18,22,.58);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 12px 40px rgba(0,0,0,.55);display:flex;gap:2px',
               )}
             >
               {L(vm.tabs).map((t, _i) => (

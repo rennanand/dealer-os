@@ -7,7 +7,7 @@ export function Loaner({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -69,7 +69,7 @@ export function Loaner({ vm }) {
         <div style={css('padding:10px 18px 0;display:flex;gap:8px;flex-wrap:wrap')}>
           {L(vm.loanerIncl).map((x, _i) => (
             <React.Fragment key={_i}>
-              <div style={css('padding:9px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:12px')}>{T(x?.t)}</div>
+              <div style={css('padding:9px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:12px')}>{T(x?.t)}</div>
             </React.Fragment>
           ))}
         </div>

@@ -41,7 +41,7 @@
       if (!this.isConnected) return;
       this.THREE = THREE; this.alive = true;
       const r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
-      r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); r.setClearColor(0x000000, 0);
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
       this.scene3 = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
       this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(this);
@@ -210,7 +210,8 @@
     loop() {
       if (!this.alive) return;
       this.raf = requestAnimationFrame(() => this.loop());
-      if (!this.visible || !this.def) return;
+      if (!this.visible || document.hidden || !this.def) return;
+      const now = performance.now(); if (now - (this.lastT || 0) < 33) return; this.lastT = now;
       let moving = false;
       for (const k in this.t) { const d = this.t[k] - (this.p[k] === undefined ? this.t[k] : this.p[k]); if (Math.abs(d) > 0.0005) moving = true; this.p[k] = (this.p[k] === undefined ? this.t[k] : this.p[k]) + d * 0.06; }
       this.def.apply(this.p);

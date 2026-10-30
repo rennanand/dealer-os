@@ -29,7 +29,7 @@ export function HomeEmpty({ vm }) {
           <img src="/uploads/revyn.png" alt="Revyn" style={css('height:11px;width:auto;display:block;opacity:.92')} />
           <div style={css('font-size:13.5px;color:rgba(235,235,245,.5)')}>{vm.greeting || 'Welcome.'}</div>
         </div>
-        <div onClick={vm.goAccount} style={css('width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer')}>
+        <div onClick={vm.goAccount} style={css('width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer')}>
           {vm.initials || '—'}
         </div>
       </div>

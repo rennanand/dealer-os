@@ -7,7 +7,7 @@ export function Rate({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -46,7 +46,7 @@ export function Rate({ vm }) {
               <div
                 onClick={vm.goHome}
                 style={css(
-                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:13px;font-weight:600;cursor:pointer',
+                  'margin-top:28px;display:inline-block;padding:13px 26px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:13px;font-weight:600;cursor:pointer',
                 )}
               >
                 Done
@@ -122,7 +122,7 @@ export function Rate({ vm }) {
                 onChange={vm.onRateNote}
                 placeholder={vm.ratePlaceholder || 'Anything else? Marcus reads these.'}
                 style={css(
-                  'width:100%;min-height:88px;resize:none;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
+                  'width:100%;min-height:88px;resize:none;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);border-radius:12px;padding:14px;color:#fff;font-size:14px;line-height:1.5;outline:none;font-family:inherit',
                 )}
               />
             </div>

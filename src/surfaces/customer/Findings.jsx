@@ -7,7 +7,7 @@ export function Findings({ vm }) {
       <div style={css('animation:sIn .28s ease;padding:0 0 130px')}>
         <div
           style={css(
-            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
+            'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center',
           )}
         >
           <div
@@ -62,7 +62,7 @@ export function Findings({ vm }) {
                 </div>
                 {L(grp?.items).map((f, _i1) => (
                   <React.Fragment key={_i1}>
-                    <div style={css('margin-top:9px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);border-radius:14px;overflow:hidden')}>
+                    <div style={css('margin-top:9px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);border-radius:14px;overflow:hidden')}>
                       <div onClick={f?.toggle} style={css('padding:15px 16px;display:flex;align-items:center;gap:12px;cursor:pointer')}>
                         <div style={css(f?.dot)} />
                         <div style={css('flex:1;font-size:14.5px;font-weight:500')}>{T(f?.name)}</div>
@@ -138,7 +138,7 @@ export function Findings({ vm }) {
             <div
               onClick={vm.goMessages}
               style={css(
-                'flex:0 0 42%;text-align:center;padding:15px 0;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:13px;font-weight:500;color:#fff;cursor:pointer',
+                'flex:0 0 42%;text-align:center;padding:15px 0;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);font-size:13px;font-weight:500;color:#fff;cursor:pointer',
               )}
             >
               Ask a question

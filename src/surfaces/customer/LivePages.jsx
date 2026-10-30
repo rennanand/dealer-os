@@ -2,8 +2,8 @@ import React from 'react';
 import { T, L, css } from '../../runtime/tpl.js';
 
 // Small pages the live customer app needs that the prototype did not have as data-driven screens.
-const BAR = 'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center';
-const INPUT = "width:100%;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);outline:0;border-radius:12px;padding:14px;font-size:15px;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
+const BAR = 'position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(10,10,14,.72),rgba(10,10,14,.42));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 -1px 0 rgba(255,255,255,.06);padding:calc(var(--sat) + 5px) 22px 12px;display:flex;align-items:center';
+const INPUT = "width:100%;background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.085));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.22),0 8px 20px -8px rgba(0,0,0,.55);outline:0;border-radius:12px;padding:14px;font-size:15px;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
 const CTA = (ok) => 'margin-top:14px;text-align:center;padding:14px 0;border-radius:12px;font-size:13px;font-weight:600;' + (ok ? 'background:#fff;color:#000;cursor:pointer;' : 'background:rgba(235,235,245,.12);color:rgba(235,235,245,.4);');
 const Back = ({ go, title, right }) => (
   <div style={css(BAR)}>
@@ -51,7 +51,7 @@ export function GarageLive({ vm }) {
       <div style={css('height:236px')} />
       <div style={css('padding:0 18px;display:flex;flex-direction:column;gap:10px')}>
         {L(vm.garageCars).map((c) => (
-          <div key={c.id} onClick={c.pick} style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
+          <div key={c.id} onClick={c.pick} style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
             <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + c.paint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
             <div style={css('flex:1;min-width:0')}>
               <div style={css('font-size:15px;font-weight:500')}>{T(c.name)}</div>
@@ -78,7 +78,7 @@ export function ShopLive({ vm }) {
           <div style={css('font-family:var(--data-font,inherit);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(235,235,245,.4)')}>Your loaners</div>
           <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
             {vm.myLoaners.map((r) => (
-              <div key={r.number} onClick={() => { window.location.assign('/rental/' + r.token + '?app=1'); }} style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
+              <div key={r.number} onClick={() => { window.location.assign('/rental/' + r.token + '?app=1'); }} style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer')}>
                 <div style={css('width:40px;height:40px;border-radius:20px;flex:0 0 auto;background:' + (r.paint || '#b9bdc3') + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)')} />
                 <div style={css('flex:1;min-width:0')}>
                   <div style={css('font-size:15px;font-weight:500')}>{r.vehicle || 'Loaner'}</div>

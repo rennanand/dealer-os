@@ -14,7 +14,7 @@ export function Home({ vm }) {
             <div
               onClick={vm.goUpdates}
               style={css(
-                'width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;color:rgba(235,235,245,.85)',
+                'width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;color:rgba(235,235,245,.85)',
               )}
             >
               <svg viewBox="0 0 24 24" style={css('width:17px;height:17px;display:block;flex:0 0 auto')}>
@@ -36,7 +36,7 @@ export function Home({ vm }) {
             <div
               onClick={vm.goAccount}
               style={css(
-                'width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;color:rgba(235,235,245,.9)',
+                'width:34px;height:34px;border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;color:rgba(235,235,245,.9)',
               )}
             >
               {vm.initials || 'RA'}
@@ -72,7 +72,7 @@ export function Home({ vm }) {
         </div>
         <div
           style={css(
-            'margin:22px 18px 0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:18px 18px 16px',
+            'margin:22px 18px 0;background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:18px 18px 16px',
           )}
         >
           {vm.homeScene ? (
@@ -152,7 +152,7 @@ export function Home({ vm }) {
               >
                 <div
                   style={css(
-                    'width:48px;height:48px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:rgba(235,235,245,.9)',
+                    'width:48px;height:48px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.25),0 8px 20px -8px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:rgba(235,235,245,.9)',
                   )}
                 >
                   <svg viewBox="0 0 24 24" style={css('width:20px;height:20px;display:block;flex:0 0 auto')}>
@@ -202,7 +202,7 @@ export function Home({ vm }) {
         <div style={css('margin:24px 18px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
           <div
             onClick={vm.goCare}
-            style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px;cursor:pointer')}
+            style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px;cursor:pointer')}
             className="px4"
           >
             <div style={css('display:flex;align-items:center;justify-content:space-between;color:rgba(235,235,245,.85)')}>
@@ -219,7 +219,7 @@ export function Home({ vm }) {
           </div>
           <div
             onClick={vm.goRewards}
-            style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px;cursor:pointer')}
+            style={css('background:linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.085) 40%,rgba(255,255,255,.05) 100%);border-radius:22px;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.32),inset 1px 0 0 rgba(255,255,255,.07),0 20px 44px -14px rgba(0,0,0,.65);padding:16px;cursor:pointer')}
             className="px4"
           >
             <div style={css('display:flex;align-items:center;justify-content:space-between;color:rgba(235,235,245,.85)')}>

@@ -14,7 +14,7 @@
   const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   class CarHero extends HTMLElement {
-    static get observedAttributes() { return ['view', 'paint', 'zoom', 'autorotate', 'drag', 'swipe-target', 'swipetarget', 'model']; }
+    static get observedAttributes() { return ['view', 'paint', 'zoom', 'autorotate', 'drag', 'swipe-target', 'swipetarget', 'model', 'paused']; }
     constructor() {
       super();
       this.attachShadow({ mode: 'open' });
@@ -41,8 +41,9 @@
       const THREE = await loadThree();
       if (!this.isConnected) return;
       this.THREE = THREE; this.alive = true;
-      const renderer = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      const renderer = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, alpha: true, antialias: true, preserveDrawingBuffer: false, powerPreference: 'default' });
+      renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+      this.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.lost = true; }); this.canvas.addEventListener('webglcontextrestored', () => { this.lost = false; });
       renderer.setClearColor(0x000000, 0);
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0;
@@ -52,7 +53,7 @@
       scene.add(new THREE.HemisphereLight(0xffffff, 0x1a1c22, 0.4));
       const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-3, 3, 6); scene.add(fill);
       const key = new THREE.DirectionalLight(0xffffff, 1.3); key.position.set(4, 7, 3); key.castShadow = true;
-      key.shadow.mapSize.set(1024, 1024); key.shadow.camera.left = key.shadow.camera.bottom = -4; key.shadow.camera.right = key.shadow.camera.top = 4; key.shadow.radius = 6; key.shadow.bias = -0.0005;
+      key.shadow.mapSize.set(512, 512); key.shadow.camera.left = key.shadow.camera.bottom = -4; key.shadow.camera.right = key.shadow.camera.top = 4; key.shadow.radius = 6; key.shadow.bias = -0.0005;
       scene.add(key);
       const rim = new THREE.DirectionalLight(0xdfe8ff, 0.9); rim.position.set(-5, 4, -4); scene.add(rim);
       this.mats = this.makeMaterials(THREE);
@@ -281,7 +282,7 @@
     loop() {
       if (!this.alive) return;
       this.raf = requestAnimationFrame(() => this.loop());
-      if (!this.visible || !this.renderer || !this.car) return;
+      if (!this.visible || this.lost || document.hidden || this.getAttribute('paused') === 'true' || !this.renderer || !this.car) return;
       const now = performance.now();
       const st = this.strip();
       if (st && st.clientWidth) { const f = st.scrollLeft / st.clientWidth; this.tilt += ((f - Math.round(f)) * 2 - this.tilt) * 0.25; } else this.tilt *= 0.9;
