@@ -32,7 +32,7 @@ enum Theme {
             ("orange", 0xe0561a), ("yellow", 0xe3bd1f), ("pink", 0xd9789a), ("magenta", 0xb0307a), ("purple", 0x5a2a7a), ("violet", 0x6a3a9a), ("plum", 0x5a2a4a),
         ]
         var best: (Int, UInt32)? = nil
-        for (name, hex) in table where t.contains(name) {
+        for (name, hex) in table where t.range(of: name) != nil {
             if best == nil || name.count > best!.0 { best = (name.count, hex) }
         }
         return Color(hex: best?.1 ?? 0x868a93)

@@ -21,7 +21,12 @@ struct AccountView: View {
                     Text("Sign out").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.red).frame(maxWidth: .infinity).frame(height: 52).background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }.buttonStyle(.plain).padding(.top, 10)
                 Text("Your vehicles and visits stay with your mobile number. Sign back in any time.").font(.system(size: 12.5)).foregroundStyle(Theme.dimmer).multilineTextAlignment(.center)
-                Text("Revyn · " + (model.shop?.address ?? "")).font(.system(size: 11)).foregroundStyle(Theme.dimmer).padding(.top, 20)
+                HStack(spacing: 14) {
+                    ForEach(["Red", "Blue", "Silver", "Midnight Silver"], id: \.self) { w in
+                        HStack(spacing: 6) { Circle().fill(Theme.paint(named: w)).frame(width: 12, height: 12); Text(w).font(.system(size: 11)).foregroundStyle(Theme.dimmer) }
+                    }
+                }.padding(.top, 16)
+                Text("Revyn · " + (model.shop?.address ?? "")).font(.system(size: 11)).foregroundStyle(Theme.dimmer).padding(.top, 8)
             }.padding(16)
         }
         .background(Theme.bg)
