@@ -40,7 +40,7 @@ import { Trade } from './Trade.jsx';
 import { Updates } from './Updates.jsx';
 import { Valet } from './Valet.jsx';
 import { Vehicle } from './Vehicle.jsx';
-import { AddVehicle, GarageLive, ShopLive } from './LivePages.jsx';
+import { AddVehicle, GarageLive, ShopLive, VehicleEdit, InspectionReport } from './LivePages.jsx';
 import { threeEnabled } from '../../state/safeMode.js';
 import { SAFE } from '../../state/options.js';
 
@@ -110,6 +110,8 @@ export function CustomerApp({ vm }) {
           {vm.pGarage ? <Garage vm={vm} /> : null}
           {vm.pGarageLive ? <GarageLive vm={vm} /> : null}
           {vm.pAddVehicle ? <AddVehicle vm={vm} /> : null}
+          {vm.pVehicleEdit ? <VehicleEdit vm={vm} /> : null}
+          {vm.pInspection ? <InspectionReport vm={vm} /> : null}
           {vm.pShopLive ? <ShopLive vm={vm} /> : null}
           {vm.pHealth ? <Health vm={vm} /> : null}
           {vm.pService ? <Service vm={vm} /> : null}

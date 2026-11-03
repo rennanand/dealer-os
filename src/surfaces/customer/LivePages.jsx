@@ -98,3 +98,68 @@ export function ShopLive({ vm }) {
     </div>
   );
 }
+
+/** One vehicle: edit, decode a VIN, set the color, show it on Home, remove. Mirrors the iOS screen. */
+export function VehicleEdit({ vm }) {
+  const d = vm.editVeh || {};
+  const ok = !!(d.make || d.model) && !d.busy;
+  return (
+    <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
+      <Back go={vm.cancelEditVeh} title={d.nickname || [d.make, d.model].filter(Boolean).join(' ') || 'Vehicle'} />
+      <div style={css('height:220px')} />
+      <div style={css('padding:0 22px')}>
+        {d.specs ? <div style={css('font-size:13px;color:rgba(235,235,245,.55);text-align:center;margin-bottom:14px')}>{d.specs}</div> : null}
+        {d.lastKnown ? <div style={css('font-size:12.5px;color:rgba(235,235,245,.4);text-align:center;margin:-8px 0 14px')}>{d.lastKnown}</div> : null}
+        <input value={d.nickname || ''} placeholder="Nickname (optional) · The Falcon" onChange={(e) => vm.setEditVeh({ nickname: e.target.value })} style={css(INPUT)} />
+        <div style={css('display:flex;gap:8px;margin-top:10px')}>
+          <input value={d.vin || ''} placeholder="VIN · 17 characters" autoCapitalize="characters" onChange={(e) => vm.setEditVeh({ vin: e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17), decoded: null })} style={css(INPUT + ';font-family:var(--data-font,inherit);letter-spacing:.06em')} />
+          <div onClick={(d.vin || '').length === 17 && !d.decoding ? vm.decodeEditVin : null} style={css('flex:0 0 auto;padding:0 16px;border-radius:12px;background:' + ((d.vin || '').length === 17 ? '#fff;color:#000' : 'rgba(255,255,255,.08);color:rgba(235,235,245,.4)') + ';font-size:13px;font-weight:600;display:flex;align-items:center;cursor:pointer')}>{d.decoding ? '…' : 'Decode'}</div>
+        </div>
+        {d.decoded ? <div style={css('font-size:12.5px;color:#30d158;margin-top:8px')}>{d.decoded}</div> : d.decodeErr ? <div style={css('font-size:12.5px;color:#ffd60a;margin-top:8px')}>{d.decodeErr}</div> : <div style={css('font-size:12px;color:rgba(235,235,245,.35);margin-top:8px')}>On the door jamb sticker or the dash plate. Decoding fills in the car.</div>}
+        <div style={css('display:grid;grid-template-columns:90px 1fr;gap:10px;margin-top:10px')}>
+          <input value={d.year || ''} inputMode="numeric" placeholder="Year" onChange={(e) => vm.setEditVeh({ year: e.target.value.replace(/\D/g, '').slice(0, 4) })} style={css(INPUT)} />
+          <input value={d.make || ''} placeholder="Make" onChange={(e) => vm.setEditVeh({ make: e.target.value })} style={css(INPUT)} />
+        </div>
+        <input value={d.model || ''} placeholder="Model" onChange={(e) => vm.setEditVeh({ model: e.target.value })} style={css(INPUT + ';margin-top:10px')} />
+        <div style={css('display:flex;gap:10px;align-items:center;margin-top:10px')}>
+          <input value={d.color || ''} placeholder="Color · Red, Silver, Black…" onChange={(e) => vm.setEditVeh({ color: e.target.value })} style={css(INPUT)} />
+          <div style={css('width:28px;height:28px;border-radius:14px;flex:0 0 auto;background:' + vm.editPaint + ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)')} />
+        </div>
+        <input value={d.plate || ''} placeholder="Plate (optional)" onChange={(e) => vm.setEditVeh({ plate: e.target.value.toUpperCase() })} style={css(INPUT + ';margin-top:10px')} />
+        {d.err ? <div style={css('font-size:12.5px;color:#ff6b64;margin-top:12px')}>{d.err}</div> : null}
+        <div onClick={ok ? vm.saveEditVeh : null} style={css(CTA(ok))}>{d.busy ? 'Saving…' : 'Save'}</div>
+        <div onClick={vm.showOnHome} style={css('margin-top:10px;text-align:center;padding:15px 0;border-radius:12px;font-size:13px;font-weight:500;background:rgba(255,255,255,.08);cursor:pointer')}>{vm.editIsHome ? 'Shown on Home' : 'Show on Home'}</div>
+        <div onClick={vm.removeEditVeh} style={css('margin-top:16px;text-align:center;font-size:13px;font-weight:500;color:#ff6b64;cursor:pointer')}>Remove vehicle</div>
+        <div style={css('font-size:12px;color:rgba(235,235,245,.35);text-align:center;margin-top:18px;line-height:1.5')}>Mileage is entered by you and recorded again by the shop at check-in. Color sets the paint on your car here.</div>
+      </div>
+    </div>
+  );
+}
+
+/** The whole inspection the technician sent: every item, green to red, with measurements. */
+export function InspectionReport({ vm }) {
+  return (
+    <div style={css('animation:sIn .28s ease;padding:0 0 112px')}>
+      <Back go={vm.goService} title="Inspection" />
+      <div style={css('padding:26px 22px 0')}>
+        <div style={css('font-size:26px;font-weight:600;letter-spacing:-.7px;line-height:1.15')}>{vm.inspTitle}</div>
+        <div style={css('font-size:13.5px;color:rgba(235,235,245,.5);margin-top:6px')}>{vm.inspSub}</div>
+      </div>
+      <div style={css('margin:18px 16px 0;background:#141416;border-radius:16px;overflow:hidden')}>
+        {L(vm.inspItems).map((it, i) => (
+          <div key={i} style={css('display:flex;gap:14px;align-items:flex-start;padding:14px 18px;' + (i ? 'border-top:1px solid rgba(255,255,255,.06)' : ''))}>
+            <div style={css('width:22px;height:22px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:' + it.color)}>
+              <svg viewBox="0 0 24 24" style={css('width:14px;height:14px')}><path d={it.status === 'good' ? 'M5 12.5l4.5 4.5L19 7' : 'M12 6v8M12 18h.01'} style={css('fill:none;stroke:#000;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round')} /></svg>
+            </div>
+            <div style={css('flex:1;min-width:0')}>
+              <div style={css('display:flex;justify-content:space-between;gap:10px')}><div style={css('font-size:15px;font-weight:500')}>{it.label}</div><div style={css('font-size:12.5px;font-weight:500;color:' + it.color)}>{it.word}</div></div>
+              {it.meas ? <div style={css('font-family:var(--data-font,inherit);font-size:12.5px;color:rgba(235,235,245,.55);margin-top:3px')}>{(it.meas_label ? it.meas_label + ' ' : '') + it.meas}</div> : null}
+              {it.note ? <div style={css('font-size:13px;color:rgba(235,235,245,.55);margin-top:3px;line-height:1.45')}>{it.note}</div> : null}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={css('padding:14px 22px 0;font-size:12px;color:rgba(235,235,245,.35);line-height:1.5')}>Measured by the technician at this visit. Flagged items were sent to you as an estimate; nothing is done without your approval.</div>
+    </div>
+  );
+}

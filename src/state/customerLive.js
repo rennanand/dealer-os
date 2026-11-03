@@ -130,6 +130,27 @@ export class CustomerLive extends AppLogic {
     clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: '' }), 3400);
     this.loadLive();
   }
+  async decodeEditVin() {
+    const d = this.state.editVeh || {}; this.setState({ editVeh: { ...d, decoding: true, decodeErr: '' } });
+    try {
+      const { decodeVin } = await import('./vin.js'); const r = await decodeVin(d.vin);
+      if (!r) return this.setState({ editVeh: { ...this.state.editVeh, decoding: false, decodeErr: 'That VIN did not decode.' } });
+      this.setState({ editVeh: { ...this.state.editVeh, decoding: false, year: String(r.year || ''), make: r.make, model: r.model, trim: r.trim, engine: r.engine, body: r.body, drive: r.drive, fuel: r.fuel, decoded: [r.year, r.make, r.model, r.trim].filter(Boolean).join(' ') + (r.engine ? ' · ' + r.engine : '') } });
+    } catch (e) { this.setState({ editVeh: { ...this.state.editVeh, decoding: false, decodeErr: 'Could not reach the VIN service.' } }); }
+  }
+  async saveEditVeh() {
+    const d = this.state.editVeh; if (!d || !supabase) { this.setState({ editVeh: null, view: 'garage' }); return; }
+    this.setState({ editVeh: { ...d, busy: true } });
+    const { error } = await supabase.rpc('update_my_vehicle', { p_vehicle: d.id, p_year: parseInt(d.year, 10) || null, p_make: d.make || '', p_model: d.model || '', p_plate: d.plate || '', p_color: d.color || '', p_nickname: d.nickname || '', p_vin: d.vin || null, p_trim: d.trim == null ? null : d.trim, p_engine: d.engine == null ? null : d.engine, p_body: d.body == null ? null : d.body, p_drive: d.drive == null ? null : d.drive, p_fuel: d.fuel == null ? null : d.fuel });
+    if (error) return this.setState({ editVeh: { ...d, busy: false, err: error.message } });
+    this.setState({ editVeh: null, view: 'garage' }); await this.loadLive();
+  }
+  async removeEditVeh() {
+    const d = this.state.editVeh; if (!d) return;
+    if (!window.confirm('Remove this vehicle? Its past visits stay in History.')) return;
+    if (supabase) { const { error } = await supabase.rpc('remove_my_vehicle', { p_vehicle: d.id }); if (error) return this.setState({ editVeh: { ...d, err: error.message } }); }
+    this.setState({ editVeh: null, view: 'garage', vIdx: 0 }); await this.loadLive();
+  }
   async decodeAddVin() {
     const d = this.state.addVeh || {}; this.setState({ addVeh: { ...d, decoding: true, decodeErr: '' } });
     try {
@@ -185,8 +206,9 @@ export class CustomerLive extends AppLogic {
     Object.assign(V, {
       greeting: first ? (hour < 12 ? 'Good morning, ' : hour < 17 ? 'Good afternoon, ' : 'Good evening, ') + first + '.' : 'Welcome.',
       initials, hasUnread: false, myCars: cars, car0, multiCar: cars.length > 1, dots: cars.map((_, i) => ({ style: 'width:6px;height:6px;border-radius:3px;transition:background .2s ease;background:' + (i === vIdx ? '#fff' : 'rgba(235,235,245,.25)') })),
-      heroPaint: cars.length ? car0.paint : V.heroPaint,
-      heroStyle: view === 'home' && cars.length ? V.heroStyle.replace(/translateY\([-\d.]+px\)/, 'translateY(calc(var(--sat) + 88px))') : V.heroStyle,
+      heroPaint: view === 'vehicleEdit' && s.editVeh ? paintOf({ color: s.editVeh.color, model: s.editVeh.model }) : cars.length ? car0.paint : V.heroPaint,
+      heroStyle: view === 'vehicleEdit' ? 'position:absolute;left:0;right:0;z-index:4;top:0;height:240px;transition:opacity .35s ease;opacity:1;transform:translateY(calc(var(--sat) + 40px))' : view === 'home' && cars.length ? V.heroStyle.replace(/translateY\([-\d.]+px\)/, 'translateY(calc(var(--sat) + 88px))') : V.heroStyle,
+      heroView: view === 'vehicleEdit' ? 'orbit' : V.heroView, heroAuto: view === 'vehicleEdit' ? 'true' : V.heroAuto,
       odoLabel: live.vehicles[vIdx] && live.vehicles[vIdx].odometer ? live.vehicles[vIdx].odometer.toLocaleString('en-US') + ' mi' : 'Mileage',
       goOdometer: () => { const v = live.vehicles[vIdx]; if (!v) return; const val = window.prompt('Current mileage for your ' + (v.model || 'car') + ':', v.odometer || ''); const n = parseInt(String(val || '').replace(/\D/g, ''), 10); if (n && supabase) supabase.rpc('update_my_odometer', { p_vehicle: v.id, p_odometer: n }).then(() => this.loadLive()); },
       nextDue: nextDue, showExtras: true, showPlans: false,
@@ -254,7 +276,7 @@ export class CustomerLive extends AppLogic {
       { scene: started && cur < 8 ? sc.scene : '', phase: sc.phase, d: cur >= 8 ? I.check : cur === 0 ? I.clock : I.wrench, iconStyle: icon(cur >= 8 ? GRN : ACC, cur >= 8 ? 'rgba(48,209,88,.14)' : 'rgba(224,49,43,.16)'), k: cur >= 8 ? 'Ready for pickup' : cur >= 2 ? 'In service' : cur >= 1 ? 'Checked in' : 'Appointment', kColor: cur >= 8 ? GRN : ACC,
         t: act.job || 'Service', sub: cur >= 8 ? (act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Pay at the counter when you arrive.' : cur >= 1 ? (act.bay ? 'Bay 0' + act.bay + ' · ' : '') + 'Status is updated by the shop as your car moves through the day.' : when(act.starts_at) + ' · ' + (VISIT[act.visit] || 'Drop off'), cta: cur === 0 ? 'Cancel visit' : cur >= 8 ? 'Directions' : 'Call the shop', go: cur === 0 ? () => supabase && supabase.rpc('cancel_my_appointment', { p_id: act.id }).then(() => { this.loadLive(); this.setState({ view: 'home' }); }) : cur >= 8 ? openUrl(maps) : openUrl(tel) },
       findings.length ? { d: I.doc, iconStyle: icon(needsApproval ? YEL : '#fff', needsApproval ? 'rgba(255,214,10,.14)' : 'rgba(235,235,245,.12)'), k: needsApproval ? 'Estimate ready' : 'Inspection', kColor: needsApproval ? YEL : DIM, t: needsApproval ? 'We found ' + (pending.length === 1 ? 'one thing' : pending.length + ' things') + ' to review.' : findings.length + (findings.length === 1 ? ' finding' : ' findings') + ' on this visit.', sub: needsApproval ? 'Your approval is needed before any extra work starts.' : approved.length ? approved.length + ' approved · ' + fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' due at the counter.' : 'Nothing approved beyond the booked service.', cta: needsApproval ? 'Review estimate' : 'Inspection report', go: this.go('findings') }
-        : act.inspection && (act.inspection.items || []).length ? { d: I.check, iconStyle: icon(GRN, 'rgba(48,209,88,.14)'), k: 'Inspection report', kColor: GRN, t: act.inspection.items.filter((x) => x.status === 'good').length + ' checked good.', sub: act.inspection.items.map((x) => x.label + ' ' + (x.status === 'good' ? '✓' : x.status === 'monitor' ? '· monitor' : '· needs attention')).join(' · '), cta: '', go: null }
+        : act.inspection && (act.inspection.items || []).length ? { d: I.check, iconStyle: icon(GRN, 'rgba(48,209,88,.14)'), k: 'Inspection report', kColor: GRN, t: act.inspection.items.filter((x) => x.status === 'good').length + ' checked good.', sub: (act.inspection.tech ? 'Inspected by ' + act.inspection.tech + '. ' : '') + 'Every item, with what was measured.', cta: 'See report', go: () => this.setState({ view: 'inspection' }) }
         : { d: I.doc, iconStyle: icon(started ? '#fff' : DIM, 'rgba(235,235,245,.12)'), k: 'Inspection', kColor: DIM, t: started ? 'Nothing extra so far.' : 'After check-in', sub: started ? 'If the technician finds anything beyond ' + (act.job || 'the booked service').toLowerCase() + ', it shows up here with a price for you to approve.' : 'A technician looks the car over at the start of the visit; anything extra shows up here with a price for you to approve.', cta: '', go: null },
       photos.length ? { d: I.camera, iconStyle: icon('#fff', 'rgba(235,235,245,.12)'), k: 'Photos', kColor: DIM, t: photos.length + (photos.length === 1 ? ' photo' : ' photos') + ' from your technician', sub: photos[photos.length - 1].caption || 'Taken at the visit.', cta: 'See photos', go: this.go('photos') }
         : { d: I.camera, iconStyle: icon(DIM, 'rgba(235,235,245,.1)'), k: 'Photos', kColor: DIM, t: 'Photos from your technician', sub: started ? 'Added by the shop during the visit when there is something to show you.' : 'Taken during the visit when there is something to show you.', cta: '', go: null },
@@ -427,7 +449,15 @@ export class CustomerLive extends AppLogic {
       pAddVehicle: view === 'addVehicle', addVeh: s.addVeh, setAddVeh: (p) => this.setState({ addVeh: { ...s.addVeh, ...p } }), saveAddVeh: () => s.addVeh && (s.addVeh.make || s.addVeh.model) && this.addVehicle(s.addVeh), cancelAddVeh: () => this.setState({ addVeh: null, view: s.addVeh && s.addVeh.back === 'book' ? 'book' : 'home' }),
       addVehicle: () => this.setState({ addVeh: { year: '', make: '', model: '', plate: '', odometer: '' }, view: 'addVehicle' }),
       startMessage: openUrl(shop.phone ? 'sms:' + shop.phone : ''),
-      garageCars: cars.map((c, i) => ({ ...c, pick: () => this.setState({ vIdx: i, view: 'home' }), visits: (live.vehicles[i] || {}).visits || 0 })),
+      garageCars: cars.map((c, i) => ({ ...c, pick: () => { const v = live.vehicles[i]; this.setState({ editVeh: { id: v.id, idx: i, year: v.year ? String(v.year) : '', make: v.make || '', model: v.model || '', plate: v.plate || '', color: v.color || '', nickname: v.nickname || '', vin: v.vin || '', specs: [v.trim, v.engine, v.drive, v.body, v.fuel].filter(Boolean).join(' · '), lastKnown: v.last_visit_at ? 'Last visit ' + new Date(v.last_visit_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) + (v.last_service ? ' · ' + v.last_service : '') : '' }, view: 'vehicleEdit' }); }, visits: (live.vehicles[i] || {}).visits || 0 })),
+      editVeh: s.editVeh, setEditVeh: (p) => this.setState({ editVeh: { ...(s.editVeh || {}), ...p } }), saveEditVeh: () => this.saveEditVeh(), removeEditVeh: () => this.removeEditVeh(), decodeEditVin: () => this.decodeEditVin(), cancelEditVeh: () => this.setState({ editVeh: null, view: 'garage' }),
+      showOnHome: s.editVeh ? () => this.setState({ vIdx: s.editVeh.idx, editVeh: null, view: 'home' }) : null, editIsHome: !!(s.editVeh && s.editVeh.idx === vIdx),
+      editPaint: s.editVeh ? paintOf({ color: s.editVeh.color, model: s.editVeh.model }) : '#868a93',
+      pVehicleEdit: view === 'vehicleEdit' && !!s.editVeh,
+      // inspection report page
+      pInspection: view === 'inspection' && !!(act && act.inspection), inspItems: act && act.inspection ? (act.inspection.items || []).map((x) => ({ ...x, color: x.status === 'now' ? '#e0312b' : x.status === 'monitor' ? YEL : GRN, word: x.status === 'now' ? 'Needs attention' : x.status === 'monitor' ? 'Monitor' : 'Good' })) : [],
+      inspTitle: act && act.inspection ? (act.inspection.items || []).filter((x) => x.status === 'good').length + ' of ' + (act.inspection.items || []).length + ' checked good.' : '', inspSub: act && act.inspection ? [act.inspection.tech ? 'Inspected by ' + act.inspection.tech : '', act.inspection.sent_at ? new Date(act.inspection.sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''].filter(Boolean).join(' · ') : '',
+      goInspection: () => this.setState({ view: 'inspection' }), goGarage: () => this.setState({ view: 'garage' }),
       tabs: (V.tabs || []).map((t) => { const on = /color:#fff/.test(t.glyphStyle); return Object.assign({}, t, { badge: false, itemStyle: 'flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0 7px;cursor:pointer;position:relative;border-radius:24px;transition:background .25s ease;' + (on ? 'background:rgba(255,255,255,.1)' : '') }); }),
       pShop: false, pShopLive: view === 'shop', goShop: this.go('shop'),
       showTabs: !nativeTabs() && ['home', 'garage', 'service', 'shop', 'history', 'account'].indexOf(view) >= 0,
