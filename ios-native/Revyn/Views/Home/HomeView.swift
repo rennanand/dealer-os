@@ -183,7 +183,10 @@ struct HomeView: View {
                 SectionLabel(text: "Next due")
                 Button { odo = model.vehicle?.odometer.map(String.init) ?? ""; showOdo = true } label: { Text((model.vehicle?.odometer.map { $0.formatted() + " mi" } ?? "Add mileage") + " · Update").font(.system(size: 13)).foregroundStyle(Theme.blue) }
             }.padding(.vertical, 10)
-            if model.history.isEmpty {
+            if model.history.isEmpty, let lk = model.vehicle?.lastKnown {
+                HStack { Text("From the shop's records").font(.system(size: 15, weight: .medium)); Spacer(); Text(lk).font(.system(size: 13.5)).foregroundStyle(Theme.dim).lineLimit(1) }
+                    .padding(.vertical, 14).overlay(alignment: .top) { Divider().overlay(Theme.line) }
+            } else if model.history.isEmpty {
                 HStack { Text("Reminders").font(.system(size: 15, weight: .medium)); Spacer(); Text("After your first visit").font(.system(size: 13.5)).foregroundStyle(Theme.dim) }
                     .padding(.vertical, 14).overlay(alignment: .top) { Divider().overlay(Theme.line) }
             } else {

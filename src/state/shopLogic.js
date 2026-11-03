@@ -118,6 +118,33 @@ export class ShopLogic extends DCLogic {
     if (error) return this.setState({ err: error.message });
     this.setState({ findings: this.state.findings.concat(data), newFinding: null });
   }
+  // ---- import (migrating a shop) ----
+  async previewImport(file) {
+    const { buildImport } = await import('./importCsv.js');
+    const text = await file.text();
+    const { customers, map } = buildImport(text);
+    const vehicles = customers.reduce((n, c) => n + c.vehicles.length, 0);
+    const missing = ['name', 'phone', 'make'].filter((k) => map[k] === undefined && !(k === 'name' && map.first !== undefined));
+    this.setState({ importPreview: { file: file.name, customers, count: customers.length, vehicles, withPhone: customers.filter((c) => c.phone).length, mapped: Object.keys(map), missing, result: null, busy: false } });
+  }
+  async runImport() {
+    const p = this.state.importPreview; if (!p || p.busy) return;
+    this.setState({ importPreview: { ...p, busy: true } });
+    if (!supabase) { this.setState({ importPreview: { ...p, busy: false, result: { customers_new: p.count, customers_updated: 0, vehicles_new: p.vehicles, vehicles_updated: 0 } } }); return; }
+    let totals = { customers_new: 0, customers_updated: 0, vehicles_new: 0, vehicles_updated: 0 };
+    for (let i = 0; i < p.customers.length; i += 200) {  // batches keep each call small
+      const { data, error } = await supabase.rpc('import_customers', { p_rows: p.customers.slice(i, i + 200), p_source: /tekmetric/i.test(p.file) ? 'tekmetric' : 'csv' });
+      if (error) { this.setState({ importPreview: { ...p, busy: false }, err: error.message }); return; }
+      for (const k of Object.keys(totals)) totals[k] += (data && data[k]) || 0;
+    }
+    await this.reload();
+    this.setState({ importPreview: { ...p, busy: false, result: totals } });
+  }
+  async markInvited(id) {
+    this.setState({ customers: this.state.customers.map((c) => (c.id === id ? { ...c, invited_at: new Date().toISOString() } : c)) });
+    if (supabase) await supabase.rpc('mark_invited', { p_customer: id });
+  }
+
   // ---- repair orders (billing) ----
   async ensureRO(apptId) {
     const have = (this.state.ros || []).find((r) => r.appointment_id === apptId); if (have) return have.id;
@@ -473,15 +500,20 @@ export class ShopLogic extends DCLogic {
     return {
       loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires,
       // Customers page
-      customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + activeToday.size + ' active today',
+      customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + s.customers.filter((c) => c.joined_at).length + ' in the app · ' + activeToday.size + ' active today',
+      importPreview: s.importPreview, previewImport: (f) => this.previewImport(f), runImport: () => this.runImport(), closeImport: () => set({ importPreview: null }),
+      inviteText: (c) => 'Hi ' + (c.name || '').split(' ')[0] + ', this is ' + ((s.shop && s.shop.name) || 'the shop') + '. Your car, visits and estimates are now in the Revyn app. Sign in with this number: https://dealer-os-rosy.vercel.app/join',
       search: s.search, setSearch: (v) => set({ search: v }),
-      customers: custRows.map((c) => ({ id: c.id, initials: initials(c.name), name: c.name, vehicles: String(s.vehicles.filter((v) => v.customer_id === c.id).length), visits: String(apptsOf(c.id).filter((a) => a.status === 'done').length), last: lastVisit(c), ltv: rentalsOf(c).length + (rentalsOf(c).length === 1 ? ' loaner' : ' loaners'), open: () => set({ custId: c.id, newCust: null }), style: 'display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;align-items:center;padding:14px 12px;margin:0 -12px;border-bottom:1px solid rgba(235,235,245,.07);font-size:13.5px;cursor:pointer;border-radius:10px;' + (c.id === custId ? 'background:rgba(235,235,245,.06)' : '') })),
+      customers: custRows.map((c) => ({ id: c.id, initials: initials(c.name), name: c.name, vehicles: String(s.vehicles.filter((v) => v.customer_id === c.id).length), visits: String(apptsOf(c.id).filter((a) => a.status === 'done').length), last: lastVisit(c), ltv: c.joined_at ? 'In the app' : c.invited_at ? 'Invited' : rentalsOf(c).length + (rentalsOf(c).length === 1 ? ' loaner' : ' loaners'), joined: !!c.joined_at, open: () => set({ custId: c.id, newCust: null }), style: 'display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;align-items:center;padding:14px 12px;margin:0 -12px;border-bottom:1px solid rgba(235,235,245,.07);font-size:13.5px;cursor:pointer;border-radius:10px;' + (c.id === custId ? 'background:rgba(235,235,245,.06)' : '') })),
       noCustomers: !s.loading && !s.customers.length, noMatches: !!q && !custRows.length && !!s.customers.length,
       cust: cust ? { id: cust.id, initials: initials(cust.name), name: cust.name, meta: [fmtPhone(cust.phone), cust.city, 'Since ' + new Date(cust.created_at).getFullYear()].filter(Boolean).join(' · '), phone: cust.phone, email: cust.email, city: cust.city, notes: cust.notes || '',
         cars: custCars.map((v) => ({ id: v.id, n: vehName(v) || 'Vehicle', s: [v.plate, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : ''].filter(Boolean).join(' · ') })),
         visitsList: custAppts.slice(0, 6).map((a) => ({ t: (a.job || 'Service') + (a.status === 'done' ? '' : ' · ' + STATUS[a.status][0]), d: relDay(a.starts_at) })),
         loaners: custRentals.slice(0, 4).map((r) => ({ t: r.number + ' · ' + ({ draft: 'Draft', sent: 'Sent', signed: 'Signed', out: 'Out', returned: 'Returned', cancelled: 'Cancelled' }[r.status] || r.status), d: relDay(r.created_at) })),
         smsHref: cust.phone ? 'sms:' + cust.phone : '', telHref: cust.phone ? 'tel:' + cust.phone : '',
+        appStatus: cust.joined_at ? 'In the app since ' + relDay(cust.joined_at) : cust.invited_at ? 'Invited ' + relDay(cust.invited_at) + ' · not signed in yet' : 'Not in the app yet',
+        joined: !!cust.joined_at, invite: cust.phone && !cust.joined_at ? () => { const body = 'Hi ' + (cust.name || '').split(' ')[0] + ', this is ' + ((s.shop && s.shop.name) || 'the shop') + '. Your car, visits and estimates are now in the Revyn app. Sign in with this number: https://dealer-os-rosy.vercel.app/join'; this.markInvited(cust.id); window.location.href = 'sms:' + cust.phone + '?&body=' + encodeURIComponent(body); } : null,
+        lastKnown: custCars.map((v) => v.last_service ? (vehName(v) || 'Vehicle') + ' · ' + v.last_service + (v.last_visit_at ? ' · ' + new Date(v.last_visit_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '') : '').filter(Boolean),
         book: () => set({ newAppt: { customer_id: cust.id, vehicle_id: (custCars[0] || {}).id || '', day: s.day, time: '09:00', visit: 'dropoff', job: '' } }),
         setNotes: (v) => this.updateCustomer(cust.id, { notes: v }), message: () => set({ threadId: cust.id, goInbox: true }),
       } : null,

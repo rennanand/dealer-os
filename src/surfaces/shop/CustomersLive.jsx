@@ -21,13 +21,15 @@ export function CustomersLive({ vm }) {
           </div>
           <div style={css('display:flex;gap:8px;align-items:center')}>
             <input value={vm.search} onChange={(e) => vm.setSearch(e.target.value)} placeholder="Search name, phone, plate" style={css(INPUT + ';width:220px;padding:10px 12px')} />
+            <ImportButton vm={vm} />
             <div onClick={vm.openNewCust} style={css(BTN)}>Add customer</div>
           </div>
         </div>
         {vm.err ? <div onClick={vm.dismissErr} style={css('margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(224,49,43,.14);color:#ff6b64;font-size:12.5px;cursor:pointer')}>{vm.err}</div> : null}
+        {vm.importPreview ? <ImportPanel p={vm.importPreview} vm={vm} /> : null}
         <div style={css('margin-top:22px;border-top:1px solid rgba(235,235,245,.09)')}>
           <div style={css('display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;padding:12px 0;' + LBL + ';border-bottom:1px solid rgba(235,235,245,.07)')}>
-            <div>Customer</div><div>Vehicles</div><div>Visits</div><div>Last visit</div><div>Loaners</div>
+            <div>Customer</div><div>Vehicles</div><div>Visits</div><div>Last visit</div><div>App</div>
           </div>
           {L(vm.customers).map((r) => (
             <div key={r.id} onClick={r.open} style={css(r.style)}>
@@ -38,7 +40,7 @@ export function CustomersLive({ vm }) {
               <div style={css('color:rgba(235,235,245,.7)')}>{T(r.vehicles)}</div>
               <div style={css('color:rgba(235,235,245,.7)')}>{T(r.visits)}</div>
               <div style={css('color:rgba(235,235,245,.7)')}>{T(r.last)}</div>
-              <div>{T(r.ltv)}</div>
+              <div style={css(r.joined ? 'color:#30d158' : 'color:rgba(235,235,245,.5)')}>{T(r.ltv)}</div>
             </div>
           ))}
           {vm.loading ? <div style={css('padding:40px;text-align:center;font-size:13px;color:rgba(235,235,245,.45)')}>Loading…</div> : null}
@@ -104,6 +106,16 @@ export function CustomersLive({ vm }) {
                 </div>
               ) : null}
             </div>
+            <div style={css('display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04)')}>
+              <div style={css('font-size:12.5px;color:' + (c.joined ? '#30d158' : 'rgba(235,235,245,.6)'))}>{T(c.appStatus)}</div>
+              {c.invite ? <div onClick={c.invite} style={css('font-size:12px;font-weight:600;cursor:pointer')}>Text invite</div> : null}
+            </div>
+            {c.lastKnown && c.lastKnown.length ? (
+              <div>
+                <div style={css(LBL)}>From the old system</div>
+                {c.lastKnown.map((t, i) => <div key={i} style={css('font-size:12.5px;color:rgba(235,235,245,.6);padding:8px 0;border-bottom:1px solid rgba(235,235,245,.07)')}>{t}</div>)}
+              </div>
+            ) : null}
             <div>
               <div style={css(LBL)}>Recent visits</div>
               {L(c.visitsList).map((v, i) => <Row key={i} t={v.t} d={v.d} />)}
@@ -128,6 +140,39 @@ export function CustomersLive({ vm }) {
         ) : (
           <div style={css('margin:auto;text-align:center;font-size:13px;color:rgba(235,235,245,.4);line-height:1.6')}>Select a customer<br />to see their record.</div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ImportButton({ vm }) {
+  const ref = React.useRef(null);
+  return (
+    <>
+      <input ref={ref} type="file" accept=".csv,text/csv" style={css('display:none')} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) vm.previewImport(f); e.target.value = ''; }} />
+      <div onClick={() => ref.current && ref.current.click()} style={css(GHOST)}>Import CSV</div>
+    </>
+  );
+}
+
+/** Preview, then import. Repeat imports update rather than duplicate (matched by phone, VIN, plate). */
+function ImportPanel({ p, vm }) {
+  const r = p.result;
+  return (
+    <div style={css('margin-top:16px;padding:16px 18px;border-radius:14px;background:#141416;border:1px solid rgba(255,255,255,.06);animation:sIn .25s ease')}>
+      <div style={css('display:flex;justify-content:space-between;align-items:flex-start;gap:16px')}>
+        <div>
+          <div style={css('font-size:15px;font-weight:600')}>{r ? 'Imported' : 'Ready to import'} · {p.file}</div>
+          <div style={css('font-size:12.5px;color:rgba(235,235,245,.55);margin-top:4px;line-height:1.5')}>
+            {r ? <>{r.customers_new} new customers, {r.customers_updated} updated · {r.vehicles_new} new vehicles, {r.vehicles_updated} updated. They can sign in with their number and see their cars right away.</>
+              : <>{p.count} customers ({p.withPhone} with a phone number) · {p.vehicles} vehicles. Matched columns: {p.mapped.join(', ') || 'none'}.{p.missing.length ? <span style={css('color:#ffd60a')}> Not found: {p.missing.join(', ')} — check the column headers.</span> : null}</>}
+          </div>
+          {!r && p.customers.length ? <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:8px')}>First row: {p.customers[0].name || '—'} · {p.customers[0].phone || 'no phone'} · {(p.customers[0].vehicles[0] ? [p.customers[0].vehicles[0].year, p.customers[0].vehicles[0].make, p.customers[0].vehicles[0].model].filter(Boolean).join(' ') : 'no vehicle')}</div> : null}
+        </div>
+        <div style={css('display:flex;gap:8px;flex:0 0 auto')}>
+          {!r ? <div onClick={p.count && !p.busy ? vm.runImport : null} style={css(BTN + (p.count && !p.busy ? '' : ';opacity:.4;cursor:default'))}>{p.busy ? 'Importing…' : 'Import ' + p.count}</div> : null}
+          <div onClick={vm.closeImport} style={css(GHOST)}>{r ? 'Done' : 'Cancel'}</div>
+        </div>
       </div>
     </div>
   );

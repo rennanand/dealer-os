@@ -14,6 +14,8 @@ struct Vehicle: Codable, Identifiable, Hashable {
     var visits: Int?
     var color: String?
     var nickname: String?
+    var last_visit_at: Date?
+    var last_service: String?
 
     var title: String {
         if let n = nickname, !n.isEmpty { return n.capitalizedWords }
@@ -27,6 +29,7 @@ struct Vehicle: Codable, Identifiable, Hashable {
         if let p = plate, !p.isEmpty { parts.append(p) }
         return parts.joined(separator: " · ")
     }
+    var lastKnown: String? { guard let d = last_visit_at else { return nil }; return "Last visit " + d.formatted(.dateTime.month(.abbreviated).year()) + (last_service.map { $0.isEmpty ? "" : " · " + $0 } ?? "") }
     var fullName: String { [year.map(String.init), make?.capitalizedWords, model?.capitalizedWords].compactMap { $0 }.joined(separator: " ") }
 }
 

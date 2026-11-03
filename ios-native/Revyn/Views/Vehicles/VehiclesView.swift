@@ -23,6 +23,7 @@ struct VehiclesView: View {
                                         Text(v.title).font(.system(size: 19, weight: .semibold))
                                         Text(v.subtitle).font(.system(size: 13.5)).foregroundStyle(Theme.dim)
                                         if let n = v.visits, n > 0 { Text("\(n) visit\(n == 1 ? "" : "s") recorded").font(.system(size: 12.5)).foregroundStyle(Theme.dimmer) }
+                                        else if let lk = v.lastKnown { Text(lk).font(.system(size: 12.5)).foregroundStyle(Theme.dimmer) }
                                     }
                                     Spacer()
                                     if i == model.selectedVehicleIndex && model.vehicles.count > 1 { Image(systemName: "checkmark").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.dim) }
@@ -103,7 +104,7 @@ struct VehicleDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
-                CarView(paint: Theme.paint(for: Vehicle(id: live.id, year: live.year, make: live.make, model: live.model, plate: live.plate, odometer: live.odometer, visits: live.visits, color: color.isEmpty ? live.color : color, nickname: live.nickname)), angle: .orbit, autoRotate: true).frame(height: 220)
+                CarView(paint: Theme.paint(for: Vehicle(id: live.id, year: live.year, make: live.make, model: live.model, plate: live.plate, odometer: live.odometer, visits: live.visits, color: color.isEmpty ? live.color : color, nickname: live.nickname, last_visit_at: live.last_visit_at, last_service: live.last_service)), angle: .orbit, autoRotate: true).frame(height: 220)
                 TextField("Nickname (optional) · The Falcon", text: $nickname).textInputAutocapitalization(.words).field()
                 HStack(spacing: 10) {
                     TextField("Year", text: $year).keyboardType(.numberPad).field().frame(width: 110)
