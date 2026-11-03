@@ -4,16 +4,21 @@ import SwiftUI
 struct RevynApp: App {
     @UIApplicationDelegateAdaptor(PushDelegate.self) private var pushDelegate
     @StateObject private var model = AppModel()
+    @StateObject private var tech = TechModel()
     @Environment(\.scenePhase) private var phase
+
+    /// On iPad, Revyn is the technician's app. (Account → "Technician mode" flips it on a phone for testing.)
+    static var isTechDevice: Bool { UIDevice.current.userInterfaceIdiom == .pad || UserDefaults.standard.bool(forKey: "revyn.techMode") }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environmentObject(model)
-                .preferredColorScheme(.dark)
-                .tint(.white)
-                .onAppear { PushDelegate.model = model; model.start() }
-                .onChange(of: phase) { _, p in if p == .active { Task { await model.refresh() } } }
+            Group {
+                if RevynApp.isTechDevice { TechRootView().environmentObject(model).environmentObject(tech).onAppear { tech.start() } }
+                else { RootView().environmentObject(model).onAppear { PushDelegate.model = model; model.start() } }
+            }
+            .preferredColorScheme(.dark)
+            .tint(.white)
+            .onChange(of: phase) { _, p in if p == .active { Task { if RevynApp.isTechDevice { await tech.refresh() } else { await model.refresh() } } } }
         }
     }
 }

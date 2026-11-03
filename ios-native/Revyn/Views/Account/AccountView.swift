@@ -16,6 +16,8 @@ struct AccountView: View {
                     Row(icon: "bell", title: "Notifications", subtitle: "Check-in, estimates, ready for pickup, replies").onTapGesture { if let u = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(u) } }
                     Divider().overlay(Theme.line)
                     Row(icon: "mappin.and.ellipse", title: model.shop?.name ?? "Your shop", subtitle: model.shop?.address).onTapGesture { model.tab = .shop }
+                    Divider().overlay(Theme.line)
+                    Row(icon: "wrench.and.screwdriver", title: "Technician mode", subtitle: "Shows the iPad technician app on this phone after a relaunch. Staff accounts only.").onTapGesture { let on = !UserDefaults.standard.bool(forKey: "revyn.techMode"); UserDefaults.standard.set(on, forKey: "revyn.techMode"); model.toast = on ? "Technician mode on — relaunch Revyn." : "Technician mode off — relaunch Revyn." }
                 }.padding(.horizontal, 6).background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)).padding(.horizontal, 0)
                 Button { Task { await model.signOut() } } label: {
                     Text("Sign out").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.red).frame(maxWidth: .infinity).frame(height: 52).background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))

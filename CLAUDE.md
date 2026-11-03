@@ -40,6 +40,7 @@ iPhone Duo is Apple's foldable: a 5.4" outer display, a 7.6" inner display, and 
 - Design: Tesla-flat (black, `#141416` cards, title + chevron rows). No hand-drawn glass; the system tab bar is the only glass.
 - iPhone Duo rules above apply: layouts are stacks and grids that adapt to width, never fixed to a device size.
 - `ios-native/RevynWidgets/` is the widget extension (Live Activity for the visit). `ServiceActivityAttributes.swift` exists in both targets and must stay identical.
+- On iPad the same app is the technician app (`RevynApp.isTechDevice` → `Views/Tech/*`, `Core/TechModel.swift`): staff sign-in, pick a name, today's jobs in a split view, clock, inspection with photos, approved jobs with per-job clocks. It mirrors `src/surfaces/tech/TechLive.jsx`; keep the two in step. `revyn.techMode` in UserDefaults forces it on a phone.
 
 ## Shop management (Tekmetric parity)
 
