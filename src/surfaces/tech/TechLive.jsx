@@ -14,8 +14,8 @@ const BTN = 'padding:14px 20px;border-radius:14px;background:#fff;color:#000;fon
 const GHOST = 'padding:14px 20px;border-radius:14px;background:#2a2a2e;color:#fff;font-size:15px;font-weight:500;cursor:pointer;text-align:center;white-space:nowrap';
 const GRN = '#30d158', YEL = '#ffd60a', RED = '#e0312b';
 
-export function TechLiveRoute() {
-  return <LogicHost Logic={ShopLogic}>{(vm) => <TechLive t={vm.tech} />}</LogicHost>;
+export function TechLiveRoute({ userId }) {
+  return <LogicHost Logic={ShopLogic} options={{ userId: userId || '' }}>{(vm) => <TechLive t={vm.tech} />}</LogicHost>;
 }
 
 function TechLive({ t }) {

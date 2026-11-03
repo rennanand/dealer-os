@@ -145,7 +145,8 @@ export function CustomerRoute() {
 /** Technician app: fills the iPad. */
 export function TechRoute() {
   const fit = useFit(1060, 1000); // iPad portrait and smaller: scaled landscape layout
-  if (LAUNCH) return <Lazy><TechLiveRoute /></Lazy>; // live: real jobs, inspections and the clock; the prototype stays at /tech?demo
+  const auth = useAuth();
+  if (LAUNCH) return <Lazy><TechLiveRoute userId={auth.session ? auth.session.user.id : ''} /></Lazy>; // live: real jobs, inspections and the clock; the prototype stays at /tech?demo
   return (
     <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'pad' }}>
       {(vm) => (

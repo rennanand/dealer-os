@@ -52,6 +52,51 @@ export function ShopSettingsLive() {
           <div onClick={save} style={css('padding:12px 18px;border-radius:10px;background:#fff;color:#000;font-size:13px;font-weight:600;cursor:pointer')}>Save</div>
         </div>
       </div>
+      <Intervals />
+    </div>
+  );
+}
+
+/** Service intervals drive the reminders customers see and the Due-for-service list. */
+function Intervals() {
+  const [rows, setRows] = React.useState(null);
+  const [msg, setMsg] = React.useState('');
+  const load = () => supabase && supabase.from('service_intervals').select('*').eq('shop_id', SHOP_ID).order('sort').then(({ data }) => setRows(data || []));
+  React.useEffect(() => { if (!supabase) setRows([]); else load(); }, []);
+  if (!rows) return null;
+  const upd = (id, p) => setRows(rows.map((r) => (r.id === id ? { ...r, ...p, dirty: true } : r)));
+  const save = async (r) => {
+    const body = { label: r.label, miles: r.miles === '' || r.miles == null ? null : Number(r.miles), months: r.months === '' || r.months == null ? null : Number(r.months), pattern: r.pattern || r.key, active: r.active !== false };
+    const { error } = await supabase.from('service_intervals').update(body).eq('id', r.id);
+    setMsg(error ? error.message : 'Saved'); if (!error) load();
+  };
+  const add = async () => {
+    const key = 'custom' + Date.now();
+    const { error } = await supabase.from('service_intervals').insert({ shop_id: SHOP_ID, key, label: 'New service', miles: null, months: 12, pattern: 'new service', sort: 900 });
+    setMsg(error ? error.message : ''); if (!error) load();
+  };
+  const remove = async (r) => { const { error } = await supabase.from('service_intervals').delete().eq('id', r.id); setMsg(error ? error.message : ''); if (!error) load(); };
+  return (
+    <div style={css(CARD + ';margin-top:22px')}>
+      <div style={css('display:flex;justify-content:space-between;align-items:baseline')}>
+        <div>
+          <div style={css('font-size:16px;font-weight:600')}>Service intervals</div>
+          <div style={css('font-size:12.5px;color:rgba(235,235,245,.5);margin-top:4px;line-height:1.5')}>Reminders are counted from the last visit that matched the keywords. Leave miles or months blank to skip that rule.</div>
+        </div>
+        <div onClick={add} style={css('font-size:12.5px;color:rgba(235,235,245,.7);cursor:pointer')}>Add</div>
+      </div>
+      <div style={css('display:grid;grid-template-columns:1.4fr .7fr .7fr 1.6fr auto auto;gap:8px;align-items:center;margin-top:14px;' + LBL)}><div>Service</div><div>Miles</div><div>Months</div><div>Keywords (regex)</div><div /><div /></div>
+      {rows.map((r) => (
+        <div key={r.id} style={css('display:grid;grid-template-columns:1.4fr .7fr .7fr 1.6fr auto auto;gap:8px;align-items:center;margin-top:8px;' + (r.active === false ? 'opacity:.45' : ''))}>
+          <input value={r.label} onChange={(e) => upd(r.id, { label: e.target.value })} style={css(INPUT)} />
+          <input value={r.miles == null ? '' : r.miles} inputMode="numeric" placeholder="—" onChange={(e) => upd(r.id, { miles: e.target.value.replace(/\D/g, '') })} style={css(INPUT)} />
+          <input value={r.months == null ? '' : r.months} inputMode="numeric" placeholder="—" onChange={(e) => upd(r.id, { months: e.target.value.replace(/\D/g, '') })} style={css(INPUT)} />
+          <input value={r.pattern} onChange={(e) => upd(r.id, { pattern: e.target.value })} style={css(INPUT + ';font-family:var(--data-font,inherit);font-size:12px')} />
+          <div onClick={() => (r.dirty ? save(r) : save({ ...r, active: r.active === false }))} style={css('font-size:12px;cursor:pointer;color:' + (r.dirty ? '#fff' : 'rgba(235,235,245,.5)') + ';font-weight:600;white-space:nowrap')}>{r.dirty ? 'Save' : r.active === false ? 'Enable' : 'Pause'}</div>
+          <div onClick={() => remove(r)} style={css('font-size:12px;cursor:pointer;color:rgba(235,235,245,.35)')}>Remove</div>
+        </div>
+      ))}
+      {msg ? <div style={css('font-size:12.5px;color:' + (msg === 'Saved' ? '#30d158' : '#e0312b') + ';margin-top:12px')}>{msg}</div> : null}
     </div>
   );
 }

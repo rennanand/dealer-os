@@ -26,6 +26,12 @@ export function TechniciansLive({ vm }) {
           <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
             <input value={f.name} placeholder="Name" onChange={(e) => t.setForm({ name: e.target.value })} style={css(INPUT)} autoFocus />
             <input value={f.role} placeholder="Role (Master tech, Tech, QC)" onChange={(e) => t.setForm({ role: e.target.value })} style={css(INPUT)} />
+            {t.logins && t.logins.length ? (
+              <select value={f.user_id || ''} onChange={(e) => t.setForm({ user_id: e.target.value || null })} style={css(INPUT)}>
+                <option value="">Login · not linked (the iPad asks who is on it)</option>
+                {t.logins.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+              </select>
+            ) : null}
           </div>
           <div>
             <div style={css(LBL + ';margin-bottom:6px')}>Bays</div>

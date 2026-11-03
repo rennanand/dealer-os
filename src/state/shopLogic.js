@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -59,7 +59,7 @@ export class ShopLogic extends DCLogic {
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -267,7 +267,7 @@ export class ShopLogic extends DCLogic {
     this.setState({ photos: this.state.photos.concat(data) });
   }
   async saveTech(d) {
-    const row = { name: (d.name || '').trim(), role: (d.role || 'Technician').trim() || 'Technician', bays: (d.bays || []).map(Number).filter(Boolean), active: d.active !== false };
+    const row = { name: (d.name || '').trim(), role: (d.role || 'Technician').trim() || 'Technician', bays: (d.bays || []).map(Number).filter(Boolean), active: d.active !== false, user_id: d.user_id || null };
     if (!row.name) return;
     if (!supabase) { this.setState({ techs: d.id ? this.state.techs.map((t) => (t.id === d.id ? { ...t, ...row } : t)) : this.state.techs.concat({ id: 't' + Date.now(), created_at: new Date().toISOString(), ...row }), newTech: null, editTech: null }); return; }
     const q = d.id ? supabase.from('technicians').update(row).eq('id', d.id).select().single() : supabase.from('technicians').insert({ ...row, shop_id: SHOP_ID }).select().single();
@@ -352,7 +352,14 @@ export class ShopLogic extends DCLogic {
     const loanerRows = openRentals.slice(0, 4).map((r) => ({ id: r.id, who: r.customer_name, car: lvName(r.vehicle_id) + ' · ' + r.number, state: r.status === 'out' ? (r.end_date && r.end_date <= today() ? 'Due back' : 'Out · back ' + fmtDay(r.end_date + 'T12:00:00')) : r.status === 'signed' ? 'Signed · keys at the desk' : 'Awaiting signature', color: r.status === 'out' ? (r.end_date && r.end_date <= today() ? YEL : ACC) : r.status === 'signed' ? GRN : YEL }));
     const overview = {
       sub: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + todays.length + (todays.length === 1 ? ' appointment' : ' appointments') + ' · ' + out.length + (out.length === 1 ? ' loaner out' : ' loaners out'),
-      stats: [{ n: String(todays.length), l: 'Appointments today' }, { n: String(todays.filter((a) => a.status === 'arrived' || a.status === 'in_progress').length), l: 'In the shop now' }, { n: String(todays.filter((a) => a.status === 'done').length), l: 'Complete' }, { n: String(out.length), l: 'Loaners out' }, { n: String(dueBack.length), l: 'Loaners due back' }],
+      stats: (() => {
+        const paidToday = (s.ros || []).filter((r) => r.status === 'paid' && r.paid_at && iso(new Date(r.paid_at)) === today());
+        const sales = paidToday.reduce((t, r) => t + this.roTotals(r.id).total, 0) / 100;
+        const openInv = (s.ros || []).filter((r) => r.status === 'invoiced').length;
+        const waiting = s.findings.filter((f) => f.status === 'pending' && todays.some((a) => a.id === f.appointment_id)).length;
+        const due = (s.reminders || []).length;
+        return [{ n: String(todays.length), l: 'Appointments today' }, { n: String(todays.filter((a) => a.status === 'arrived' || a.status === 'in_progress').length), l: 'In the shop now' }, { n: '$' + Math.round(sales).toLocaleString('en-US'), l: 'Paid today' + (openInv ? ' · ' + openInv + ' open' : '') }, { n: String(waiting), l: 'Estimates waiting' }, { n: String(out.length), l: 'Loaners out' }, { n: String(due), l: 'Due for service' }];
+      })(),
       baysNow: floor.filter((b) => !b.open).length + ' of 5', floor, upNext, loanerRows,
       noUpNext: !s.loading && !upNext.length, noLoaners: !s.loading && !loanerRows.length,
     };
@@ -399,6 +406,7 @@ export class ShopLogic extends DCLogic {
     const technicians = { techs, sub: techsSub, none: !s.loading && !techs.length, form: techForm, isNew: !!s.newTech && !s.editTech,
       openNew: () => set({ newTech: { name: '', role: 'Technician', bays: [] }, editTech: null }), setForm: (p) => set(s.editTech ? { editTech: { ...s.editTech, ...p } } : { newTech: { ...s.newTech, ...p } }), cancel: () => set({ newTech: null, editTech: null }),
       toggleBay: (b) => { const f = techForm; const bays = (f.bays || []).includes(b) ? f.bays.filter((x) => x !== b) : (f.bays || []).concat(b).sort(); set(s.editTech ? { editTech: { ...f, bays } } : { newTech: { ...f, bays } }); },
+      logins: (s.team || []).filter((m) => m.role !== 'customer').map((m) => ({ id: m.user_id, label: (m.name || m.email || '') + (m.email && m.name ? ' · ' + m.email : '') })),
       save: () => techForm && this.saveTech(techForm), retire: s.editTech ? () => this.saveTech({ ...s.editTech, active: false }) : null };
 
     // Lobby board rows: today's bays, first name + initial, no prices
@@ -407,9 +415,10 @@ export class ShopLogic extends DCLogic {
       const a = todays.find((x) => x.bay === bay && (x.status === 'arrived' || x.status === 'in_progress')) || todays.find((x) => x.bay === bay && x.status === 'done');
       if (!a) return { bay: 'Bay 0' + bay, who: 'Open', car: '', status: '', c: 'rgba(235,235,245,.3)', pctLabel: '', ruler: RULER(0, '#fff', 14), eta: '', etaSub: '', etaColor: DIM, bayPill: PILL_L('rgba(235,235,245,.3)') };
       const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), pend = s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending');
-      const st = pend ? ['Waiting for approval', YEL] : STATUS[a.status], pct = pend ? 35 : LPCT[a.status] || 0, t = s.techs.find((x) => x.id === a.tech_id);
+      const openTe = (s.timeEntries || []).find((te) => te.appointment_id === a.id && !te.ended_at);
+      const st = pend ? ['Waiting for approval', YEL] : STATUS[a.status], pct = pend ? 35 : LPCT[a.status] || 0, t = s.techs.find((x) => x.id === (openTe ? openTe.tech_id : a.tech_id)), hrs = this.hoursOn(a.id);
       const who = c ? c.name.split(' ')[0] + (c.name.split(' ')[1] ? ' ' + c.name.split(' ')[1][0] + '.' : '') : 'Walk-in';
-      return { bay: 'Bay 0' + bay, who, car: v ? [v.make, v.model].filter(Boolean).join(' ') : 'Vehicle', status: st[0], c: st[1], pctLabel: pct + '%', ruler: RULER(pct, st[1], 14), eta: a.status === 'done' ? (a.pickup === 'here' ? 'Here' : 'Ready') : '—', etaSub: a.status === 'done' ? (a.pickup === 'here' ? 'Guest is at the desk' : a.pickup === 'on_way' ? 'Guest on the way' : 'Pick up at the desk') : t ? t.name.split(' ')[0] + ' on it' : (a.job || 'Service'), etaColor: a.status === 'done' ? GRN : '#fff', bayPill: PILL_L(st[1]) };
+      return { bay: 'Bay 0' + bay, who, car: v ? [v.make, v.model].filter(Boolean).join(' ') : 'Vehicle', status: st[0], c: st[1], pctLabel: pct + '%', ruler: RULER(pct, st[1], 14), eta: a.status === 'done' ? (a.pickup === 'here' ? 'Here' : 'Ready') : hrs ? hrs.toFixed(1) + ' h' : '—', etaSub: a.status === 'done' ? (a.pickup === 'here' ? 'Guest is at the desk' : a.pickup === 'on_way' ? 'Guest on the way' : 'Pick up at the desk') : t ? t.name.split(' ')[0] + (openTe ? ' on it now' : ' assigned') : (a.job || 'Service'), etaColor: a.status === 'done' ? GRN : '#fff', bayPill: PILL_L(st[1]) };
     });
     const live = todays.find((x) => x.status === 'in_progress' && x.bay) || null;
     const liveC = live && this.custOf(live.customer_id);
@@ -576,7 +585,8 @@ export class ShopLogic extends DCLogic {
     // ---- technician iPad (live) ----
     const tech = (() => {
       let meId = s.techMe; try { if (!meId) meId = localStorage.getItem('revyn.techMe') || ''; } catch (e) {}
-      const me = s.techs.find((t) => t.id === meId) || null;
+      const uid = this.props && this.props.userId; const byLogin = uid ? s.techs.find((t) => t.user_id === uid) : null;
+      const me = s.techs.find((t) => t.id === meId) || byLogin || null;
       const pick = (id) => { try { localStorage.setItem('revyn.techMe', id); } catch (e) {} set({ techMe: id }); };
       const live = s.appointments.filter((a) => iso(new Date(a.starts_at)) === today() && ['booked', 'arrived', 'in_progress'].includes(a.status)).sort((x, y) => (x.bay || 9) - (y.bay || 9) || (x.starts_at < y.starts_at ? -1 : 1));
       const jobRow = (a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id); return { id: a.id, who: (c && c.name) || a.customer_name || 'Customer', car: v ? vehName(v) : a.vehicle || 'Vehicle', job: a.job || 'Service', bay: a.bay ? 'Bay 0' + a.bay : '', time: new Date(a.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), status: STATUS[a.status][0], color: STATUS[a.status][1], mine: !!(me && a.tech_id === me.id), open: () => set({ techSel: a.id }), selected: s.techSel === a.id, clocked: !!(s.timeEntries || []).find((t) => t.appointment_id === a.id && !t.ended_at) }; };
