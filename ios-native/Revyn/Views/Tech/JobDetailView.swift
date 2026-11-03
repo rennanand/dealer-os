@@ -174,13 +174,13 @@ private struct JobsSection: View {
         if !jobs.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("SENT TO THE CUSTOMER").font(.system(size: 10.5, weight: .medium, design: .monospaced)).tracking(1.2).foregroundStyle(Theme.dimmer)
-                ForEach(jobs) { f in JobLine(a: a, f: f) }
+                ForEach(jobs) { f in JobRowView(a: a, f: f) }
             }
         }
     }
 }
 
-private struct JobLine: View {
+private struct JobRowView: View {
     @EnvironmentObject var tech: TechModel
     var a: TechAppointment
     var f: TechFinding
