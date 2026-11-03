@@ -27,7 +27,7 @@ enum Theme {
             ("orange", Color(hex: 0xe0561a)), ("yellow", Color(hex: 0xe3bd1f)), ("brown", Color(hex: 0x5a4030)), ("bronze", Color(hex: 0x8a6a3a)),
             ("teal", Color(hex: 0x2f8a96)), ("purple", Color(hex: 0x5a2a7a)),
         ]
-        return table.first(where: { t.contains($0.0) })?.1 ?? Color(hex: 0xb9bdc3)
+        return table.first(where: { t.contains($0.0) })?.1 ?? Color(hex: 0x868a93)
     }
 }
 

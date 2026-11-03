@@ -65,7 +65,7 @@ struct CarView: UIViewRepresentable {
         private func build() {
             scene.background.contents = UIColor.clear
             scene.lightingEnvironment.contents = Coordinator.studioEnvironment()
-            scene.lightingEnvironment.intensity = 1.6
+            scene.lightingEnvironment.intensity = 0.9
 
             guard let url = Bundle.main.url(forResource: "hardtop", withExtension: "obj") else { return }
             let asset = MDLAsset(url: url)
@@ -89,16 +89,16 @@ struct CarView: UIViewRepresentable {
             let floorNode = SCNNode(geometry: floor); floorNode.position.y = 0.005
             scene.rootNode.addChildNode(floorNode)
 
-            let key = SCNLight(); key.type = .directional; key.intensity = 900; key.castsShadow = true; key.shadowRadius = 8; key.shadowSampleCount = 8; key.shadowColor = UIColor(white: 0, alpha: 0.6); key.shadowMode = .deferred
+            let key = SCNLight(); key.type = .directional; key.intensity = 450; key.castsShadow = true; key.shadowRadius = 8; key.shadowSampleCount = 8; key.shadowColor = UIColor(white: 0, alpha: 0.6); key.shadowMode = .deferred
             let keyNode = SCNNode(); keyNode.light = key; keyNode.eulerAngles = SCNVector3(-1.05, 0.6, 0)
             scene.rootNode.addChildNode(keyNode)
-            let rim = SCNLight(); rim.type = .directional; rim.intensity = 500; rim.color = UIColor(red: 0.87, green: 0.91, blue: 1, alpha: 1)
+            let rim = SCNLight(); rim.type = .directional; rim.intensity = 260; rim.color = UIColor(red: 0.87, green: 0.91, blue: 1, alpha: 1)
             let rimNode = SCNNode(); rimNode.light = rim; rimNode.eulerAngles = SCNVector3(-0.7, 2.6, 0)
             scene.rootNode.addChildNode(rimNode)
-            let amb = SCNLight(); amb.type = .ambient; amb.intensity = 120
+            let amb = SCNLight(); amb.type = .ambient; amb.intensity = 60
             let ambNode = SCNNode(); ambNode.light = amb; scene.rootNode.addChildNode(ambNode)
 
-            let cam = SCNCamera(); cam.fieldOfView = 26; cam.wantsHDR = true; cam.exposureOffset = -0.2; cam.averageGray = 0.18; cam.whitePoint = 1.0; cam.bloomIntensity = 0.35; cam.bloomThreshold = 0.9; cam.bloomBlurRadius = 12
+            let cam = SCNCamera(); cam.fieldOfView = 26; cam.wantsHDR = true; cam.wantsExposureAdaptation = false; cam.exposureOffset = -1.6; cam.averageGray = 0.18; cam.whitePoint = 1.0; cam.bloomIntensity = 0.25; cam.bloomThreshold = 0.95; cam.bloomBlurRadius = 10
             cameraNode.camera = cam
             scene.rootNode.addChildNode(cameraNode)
         }
@@ -117,7 +117,7 @@ struct CarView: UIViewRepresentable {
             if name.contains("glass") {
                 m.diffuse.contents = UIColor(red: 0.09, green: 0.13, blue: 0.17, alpha: 1); m.metalness.contents = 0.9; m.roughness.contents = 0.08; m.transparency = 0.9
             } else if name.contains("chrome") {
-                m.diffuse.contents = UIColor(white: 0.95, alpha: 1); m.metalness.contents = 1.0; m.roughness.contents = 0.1
+                m.diffuse.contents = UIColor(white: 0.85, alpha: 1); m.metalness.contents = 1.0; m.roughness.contents = 0.12
             } else if name.contains("rubber") {
                 m.diffuse.contents = UIColor(white: 0.08, alpha: 1); m.metalness.contents = 0; m.roughness.contents = 0.95
             } else if name.contains("satin") {
@@ -133,7 +133,7 @@ struct CarView: UIViewRepresentable {
             } else if name.contains("amber") {
                 m.diffuse.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.intensity = 0.5
             } else {
-                m.diffuse.contents = lastPaint ?? UIColor(red: 0.73, green: 0.74, blue: 0.76, alpha: 1); m.metalness.contents = 0.85; m.roughness.contents = 0.12; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.05
+                m.diffuse.contents = lastPaint ?? UIColor(red: 0.52, green: 0.54, blue: 0.58, alpha: 1); m.metalness.contents = 0.8; m.roughness.contents = 0.18; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.05
                 paintMats.append(m)
             }
             return m
@@ -146,10 +146,10 @@ struct CarView: UIViewRepresentable {
             return r.image { ctx in
                 UIColor(white: 0.07, alpha: 1).setFill(); ctx.fill(CGRect(origin: .zero, size: size))
                 // Ceiling softbox band + two side panels; brighter above the horizon.
-                UIColor(white: 0.95, alpha: 1).setFill(); ctx.fill(CGRect(x: 0, y: 20, width: 512, height: 36))
-                UIColor(white: 0.5, alpha: 1).setFill(); ctx.fill(CGRect(x: 60, y: 90, width: 120, height: 50)); ctx.fill(CGRect(x: 330, y: 90, width: 120, height: 50))
+                UIColor(white: 0.8, alpha: 1).setFill(); ctx.fill(CGRect(x: 60, y: 24, width: 392, height: 30))
+                UIColor(white: 0.3, alpha: 1).setFill(); ctx.fill(CGRect(x: 60, y: 90, width: 120, height: 40)); ctx.fill(CGRect(x: 330, y: 90, width: 120, height: 40))
                 UIColor(white: 0.12, alpha: 1).setFill(); ctx.fill(CGRect(x: 0, y: 128, width: 512, height: 128))
-                UIColor(white: 0.3, alpha: 1).setFill(); ctx.fill(CGRect(x: 0, y: 150, width: 512, height: 10))
+                UIColor(white: 0.18, alpha: 1).setFill(); ctx.fill(CGRect(x: 0, y: 150, width: 512, height: 8))
             }
         }
 
