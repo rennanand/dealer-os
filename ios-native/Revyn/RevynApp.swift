@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct RevynApp: App {
+    @UIApplicationDelegateAdaptor(PushDelegate.self) private var pushDelegate
     @StateObject private var model = AppModel()
     @Environment(\.scenePhase) private var phase
 
@@ -11,7 +12,7 @@ struct RevynApp: App {
                 .environmentObject(model)
                 .preferredColorScheme(.dark)
                 .tint(.white)
-                .onAppear { model.start() }
+                .onAppear { PushDelegate.model = model; model.start() }
                 .onChange(of: phase) { _, p in if p == .active { Task { await model.refresh() } } }
         }
     }

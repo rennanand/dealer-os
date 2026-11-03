@@ -25,6 +25,16 @@ final class AppModel: ObservableObject {
     enum Tab: Hashable { case home, vehicles, service, shop, history }
 
     private let client = Supa.client
+    private struct Snapshot: Codable { var vehicles: [Vehicle]; var appointments: [Appointment]; var messages: [Message]; var shops: [Shop] }
+    private var cacheKey: String? { session.map { "revyn.cache." + $0.user.id.uuidString } }
+    private func loadCache() {
+        guard let k = cacheKey, let d = UserDefaults.standard.data(forKey: k), let snap = try? Supa.cacheDecoder.decode(Snapshot.self, from: d) else { return }
+        if vehicles.isEmpty { vehicles = snap.vehicles; appointments = snap.appointments; messages = snap.messages; shops = snap.shops }
+    }
+    private func saveCache() {
+        guard let k = cacheKey, let d = try? Supa.cacheEncoder.encode(Snapshot(vehicles: vehicles, appointments: appointments, messages: messages, shops: shops)) else { return }
+        UserDefaults.standard.set(d, forKey: k)
+    }
     private var pollTask: Task<Void, Never>?
     private var authTask: Task<Void, Never>?
 
@@ -58,10 +68,14 @@ final class AppModel: ObservableObject {
 
     func loadProfile() async {
         guard let uid = session?.user.id else { return }
+        if profile == nil, let d = UserDefaults.standard.data(forKey: "revyn.profile." + uid.uuidString), let p = try? JSONDecoder().decode(CustomerProfile.self, from: d), !p.phone.isEmpty {
+            profile = p; loadCache(); gate = .ready; PushDelegate.requestIfNeeded(); startPolling(); Task { await refresh() }
+        }
         do {
             let rows: [CustomerProfile] = try await client.from("customer_profiles").select().eq("user_id", value: uid.uuidString).limit(1).execute().value
             profile = rows.first
-            if let p = profile, !p.phone.isEmpty { gate = .ready; await refresh(); startPolling() } else { gate = .needsPhone }
+            if let p = profile, let d = try? JSONEncoder().encode(p) { UserDefaults.standard.set(d, forKey: "revyn.profile." + uid.uuidString) }
+            if let p = profile, !p.phone.isEmpty { loadCache(); gate = .ready; PushDelegate.requestIfNeeded(); await refresh(); startPolling() } else { gate = .needsPhone }
         } catch { self.error = error.localizedDescription; gate = profile == nil ? .needsPhone : .ready }
     }
 
@@ -71,7 +85,7 @@ final class AppModel: ObservableObject {
         let row = CustomerProfile(user_id: uid, phone: digits, name: session?.user.userMetadata["name"]?.stringValue ?? "", shop_id: Secrets.shopId)
         do {
             try await client.from("customer_profiles").upsert(row).execute()
-            profile = row; gate = .ready; await refresh(); startPolling()
+            profile = row; gate = .ready; PushDelegate.requestIfNeeded(); await refresh(); startPolling()
         } catch { self.error = error.localizedDescription }
     }
 
@@ -85,6 +99,8 @@ final class AppModel: ObservableObject {
             let (vv, aa, mm, ss) = try await (v, a, m, s)
             vehicles = vv; appointments = aa; messages = mm; shops = ss
             if selectedVehicleIndex >= vehicles.count { selectedVehicleIndex = 0 }
+            saveCache()
+            await PushDelegate.store()
         } catch { self.error = friendly(error) }
     }
 

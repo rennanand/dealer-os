@@ -45,17 +45,35 @@ struct HomeView: View {
     var body: some View {
         let st = HomeStatus.make(model)
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    header(st)
-                    CarView(paint: Theme.paint(for: model.activeVehicle), angle: st.angle, autoRotate: true)
-                        .frame(height: 250).padding(.top, 2)
-                        .opacity(model.vehicles.isEmpty ? 0.35 : 1)
-                    shortcuts
-                    statusCard(st).padding(.horizontal, 16).padding(.top, 18)
-                    rows.padding(.horizontal, 22).padding(.top, 10)
-                    nextDue.padding(.horizontal, 22).padding(.top, 8)
-                    Spacer(minLength: 40)
+            GeometryReader { geo in
+                let wide = geo.size.width >= 700   // iPhone Duo unfolded, iPad, landscape: two columns
+                ScrollView {
+                    if wide {
+                        HStack(alignment: .top, spacing: 24) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                header(st)
+                                CarView(paint: Theme.paint(for: model.activeVehicle), angle: st.angle, autoRotate: true).frame(height: 320).padding(.top, 2).opacity(model.vehicles.isEmpty ? 0.35 : 1)
+                                shortcuts
+                            }.frame(maxWidth: .infinity)
+                            VStack(alignment: .leading, spacing: 0) {
+                                statusCard(st).padding(.top, 24)
+                                rows.padding(.horizontal, 6).padding(.top, 10)
+                                nextDue.padding(.horizontal, 6).padding(.top, 8)
+                            }.frame(maxWidth: 460).padding(.trailing, 22)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 0) {
+                            header(st)
+                            CarView(paint: Theme.paint(for: model.activeVehicle), angle: st.angle, autoRotate: true)
+                                .frame(height: 250).padding(.top, 2)
+                                .opacity(model.vehicles.isEmpty ? 0.35 : 1)
+                            shortcuts
+                            statusCard(st).padding(.horizontal, 16).padding(.top, 18)
+                            rows.padding(.horizontal, 22).padding(.top, 10)
+                            nextDue.padding(.horizontal, 22).padding(.top, 8)
+                            Spacer(minLength: 40)
+                        }
+                    }
                 }
             }
             .background(Theme.bg)
