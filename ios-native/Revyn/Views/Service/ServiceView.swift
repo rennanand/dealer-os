@@ -68,6 +68,9 @@ struct ServiceView: View {
                         } else {
                             HStack(spacing: 6) { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.green); Text("Confirmed").font(.system(size: 13.5, weight: .medium)).foregroundStyle(Theme.green) }.padding(.top, 6)
                         }
+                        if let u = a.visitURL {
+                            SecondaryButton(title: a.online_checkin_at == nil ? "Check in online · skip the counter" : "Checked in online · manage visit") { agreement = u }.padding(.top, 6)
+                        }
                         HStack(spacing: 10) {
                             SecondaryButton(title: "Directions") { if let s = model.shop, let u = ShopView.directionsURL(s) { UIApplication.shared.open(u) } }
                             Button(role: .destructive) { Task { await model.cancel(a) } } label: { Text("Cancel visit").font(.system(size: 15, weight: .medium)).frame(maxWidth: .infinity).frame(height: 52).background(Theme.card2, in: RoundedRectangle(cornerRadius: 14, style: .continuous)).foregroundStyle(Theme.red) }.buttonStyle(.plain)

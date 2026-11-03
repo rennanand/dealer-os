@@ -214,6 +214,7 @@ export function Service({ vm }) {
                         >
                           {T(c?.cta)}
                         </div>
+                        {c?.cta2 ? <div onClick={c?.go2} style={css('margin-top:10px;font-size:12px;color:rgba(235,235,245,.45);cursor:pointer')}>{T(c?.cta2)}</div> : null}
                       </>
                     ) : null}
                   </div>

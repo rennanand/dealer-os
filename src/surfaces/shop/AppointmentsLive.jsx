@@ -110,7 +110,18 @@ export function AppointmentsLive({ vm }) {
             <div>
               <KV k="Service" v={a.job} />
               <KV k="Vehicle" v={a.car + (a.plate ? ' · ' + a.plate : '')} />
+              {a.onlineCheckin ? <KV k="Online" v={<span style={css('color:#30d158')}>{a.onlineCheckin}</span>} /> : null}
+              {a.concern ? <div style={css('font-size:12.5px;color:rgba(235,235,245,.7);padding:10px 0;border-bottom:1px solid rgba(235,235,245,.07);line-height:1.45')}><span style={css('color:rgba(235,235,245,.45)')}>Customer: </span>“{a.concern}”</div> : null}
+              {a.signed.map((z, i) => <KV key={i} k={z.kind} v={z.who + ' · ' + z.when + (z.amount ? ' · ' + z.amount : '')} />)}
             </div>
+            {a.visitLink ? (
+              <div style={css('display:flex;gap:12px;align-items:center;font-size:12px;color:rgba(235,235,245,.5)')}>
+                <span>Visit link</span>
+                <span onClick={a.copyVisitLink} style={css('cursor:pointer;color:rgba(235,235,245,.8)')}>Copy</span>
+                {a.textVisitLink ? <span onClick={a.textVisitLink} style={css('cursor:pointer;color:rgba(235,235,245,.8)')}>Text it</span> : null}
+                <a href={a.visitLink} target="_blank" rel="noreferrer" style={css('color:rgba(235,235,245,.8);text-decoration:none')}>Open</a>
+              </div>
+            ) : null}
             {a.techOpts.length ? (
               <div>
                 <div style={css(LBL + ';margin-bottom:6px')}>Technician</div>

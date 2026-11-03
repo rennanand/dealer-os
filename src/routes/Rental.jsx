@@ -29,7 +29,7 @@ function useRental(token) {
   return { ...st, setR: (r) => set({ loading: false, r, err: '' }) };
 }
 
-function SignaturePad({ strokes, setStrokes }) {
+export function SignaturePad({ strokes, setStrokes }) {
   const ref = React.useRef(null), drawing = React.useRef(false);
   const pt = (e) => { const el = ref.current, b = el.getBoundingClientRect(); return [Math.round(((e.clientX - b.left) / b.width) * 3000) / 10, Math.round(((e.clientY - b.top) / b.height) * 1200) / 10]; };
   const down = (e) => { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {} drawing.current = true; setStrokes(strokes.concat([[pt(e)]])); };

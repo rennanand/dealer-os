@@ -132,6 +132,9 @@ struct Appointment: Codable, Identifiable, Hashable {
     var invoice: Invoice?
     var inspection: InspectionReport?
     var confirmed_at: Date?
+    var token: String?
+    var online_checkin_at: Date?
+    var visitURL: URL? { token.flatMap { URL(string: "https://dealer-os-rosy.vercel.app/visit/" + $0 + "?app=1") } }
 
     /// 0 booked · 1 arrived · 2 in progress · 8 done
     var stage: Int { switch status { case "arrived": 1; case "in_progress": 2; case "done": 8; default: 0 } }
