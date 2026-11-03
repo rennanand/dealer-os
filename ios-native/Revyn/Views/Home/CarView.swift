@@ -65,7 +65,7 @@ struct CarView: UIViewRepresentable {
         private func build() {
             scene.background.contents = UIColor.clear
             scene.lightingEnvironment.contents = Coordinator.studioEnvironment()
-            scene.lightingEnvironment.intensity = 0.9
+            scene.lightingEnvironment.intensity = 1.3
 
             guard let url = Bundle.main.url(forResource: "hardtop", withExtension: "obj") else { return }
             let asset = MDLAsset(url: url)
@@ -89,16 +89,16 @@ struct CarView: UIViewRepresentable {
             let floorNode = SCNNode(geometry: floor); floorNode.position.y = 0.005
             scene.rootNode.addChildNode(floorNode)
 
-            let key = SCNLight(); key.type = .directional; key.intensity = 450; key.castsShadow = true; key.shadowRadius = 8; key.shadowSampleCount = 8; key.shadowColor = UIColor(white: 0, alpha: 0.6); key.shadowMode = .deferred
+            let key = SCNLight(); key.type = .directional; key.intensity = 700; key.castsShadow = true; key.shadowRadius = 8; key.shadowSampleCount = 8; key.shadowColor = UIColor(white: 0, alpha: 0.6); key.shadowMode = .deferred
             let keyNode = SCNNode(); keyNode.light = key; keyNode.eulerAngles = SCNVector3(-1.05, 0.6, 0)
             scene.rootNode.addChildNode(keyNode)
-            let rim = SCNLight(); rim.type = .directional; rim.intensity = 260; rim.color = UIColor(red: 0.87, green: 0.91, blue: 1, alpha: 1)
+            let rim = SCNLight(); rim.type = .directional; rim.intensity = 320; rim.color = UIColor(red: 0.87, green: 0.91, blue: 1, alpha: 1)
             let rimNode = SCNNode(); rimNode.light = rim; rimNode.eulerAngles = SCNVector3(-0.7, 2.6, 0)
             scene.rootNode.addChildNode(rimNode)
-            let amb = SCNLight(); amb.type = .ambient; amb.intensity = 60
+            let amb = SCNLight(); amb.type = .ambient; amb.intensity = 90
             let ambNode = SCNNode(); ambNode.light = amb; scene.rootNode.addChildNode(ambNode)
 
-            let cam = SCNCamera(); cam.fieldOfView = 26; cam.wantsHDR = true; cam.wantsExposureAdaptation = false; cam.exposureOffset = -1.6; cam.averageGray = 0.18; cam.whitePoint = 1.0; cam.bloomIntensity = 0.25; cam.bloomThreshold = 0.95; cam.bloomBlurRadius = 10
+            let cam = SCNCamera(); cam.fieldOfView = 26; cam.wantsHDR = true; cam.wantsExposureAdaptation = false; cam.exposureOffset = -0.7; cam.averageGray = 0.18; cam.whitePoint = 1.0; cam.bloomIntensity = 0.25; cam.bloomThreshold = 0.95; cam.bloomBlurRadius = 10
             cameraNode.camera = cam
             scene.rootNode.addChildNode(cameraNode)
         }
@@ -134,7 +134,7 @@ struct CarView: UIViewRepresentable {
             } else if name.contains("amber") {
                 m.diffuse.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.intensity = 0.5
             } else {
-                m.diffuse.contents = lastPaint ?? UIColor(red: 0.52, green: 0.54, blue: 0.58, alpha: 1); m.metalness.contents = 0.8; m.roughness.contents = 0.18; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.05
+                m.diffuse.contents = lastPaint ?? UIColor(red: 0.52, green: 0.54, blue: 0.58, alpha: 1); m.metalness.contents = 0.25; m.roughness.contents = 0.32; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.06
                 paintMats.append(m)
             }
             return m
