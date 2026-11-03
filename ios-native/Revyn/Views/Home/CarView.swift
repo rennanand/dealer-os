@@ -114,6 +114,7 @@ struct CarView: UIViewRepresentable {
 
         private func material(named name: String) -> SCNMaterial {
             let m = SCNMaterial(); m.lightingModel = .physicallyBased
+            m.isDoubleSided = true   // panels are wound both ways in the export; draw both faces like the web renderer did
             if name.contains("glass") {
                 m.diffuse.contents = UIColor(red: 0.09, green: 0.13, blue: 0.17, alpha: 1); m.metalness.contents = 0.9; m.roughness.contents = 0.08; m.transparency = 0.9
             } else if name.contains("chrome") {
