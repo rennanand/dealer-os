@@ -71,8 +71,8 @@ export class CustomerLive extends AppLogic {
 
   async loadLive() {
     if (!supabase) return;
-    const [v, a, r, sh, m] = await Promise.all([supabase.rpc('my_vehicles'), supabase.rpc('my_appointments'), supabase.rpc('my_rentals'), supabase.rpc('shops_public'), supabase.rpc('my_messages')]);
-    const live = { ...this.state.live, vehicles: v.data || [], appointments: a.data || [], rentals: r.data || [], shops: Array.isArray(sh.data) && sh.data.length ? sh.data : [DEMO_SHOP], messages: m.data || [], loaded: true };
+    const [v, a, r, sh, m, rm] = await Promise.all([supabase.rpc('my_vehicles'), supabase.rpc('my_appointments'), supabase.rpc('my_rentals'), supabase.rpc('shops_public'), supabase.rpc('my_messages'), supabase.rpc('my_reminders')]);
+    const live = { ...this.state.live, vehicles: v.data || [], appointments: a.data || [], rentals: r.data || [], shops: Array.isArray(sh.data) && sh.data.length ? sh.data : [DEMO_SHOP], messages: m.data || [], reminders: (rm && rm.data) || {}, loaded: true };
     const act = this.active(live.appointments);
     try { localStorage.setItem('revyn.live.' + (this.props.userId || 'demo'), JSON.stringify({ vehicles: live.vehicles, appointments: live.appointments, rentals: live.rentals, shops: live.shops, messages: live.messages })); } catch (e) {}
     this.setState({ live, stage: act ? STAGE_OF[act.status] || 0 : 0, noVehicle: !live.vehicles.length });
@@ -168,6 +168,15 @@ export class CustomerLive extends AppLogic {
     const nextDue = [];
     if (lastOil) { const m = monthsSince(lastOil.done_at || lastOil.starts_at), pct = Math.min(100, (m / 6) * 100); nextDue.push({ name: 'Oil change', due: pct >= 100 ? 'Due now · estimated' : 'In about ' + Math.max(1, Math.round(6 - m)) + ' months · estimated', c: pct >= 100 ? YEL : DIM, bar: bar(pct, pct >= 100 ? YEL : '#fff'), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, need: 'Maintenance', err: '' } }) }); }
     if (lastTire) { const m = monthsSince(lastTire.done_at || lastTire.starts_at), pct = Math.min(100, (m / 6) * 100); nextDue.push({ name: 'Tire rotation', due: pct >= 100 ? 'Due now · estimated' : 'In about ' + Math.max(1, Math.round(6 - m)) + ' months · estimated', c: pct >= 100 ? YEL : DIM, bar: bar(pct, pct >= 100 ? YEL : '#fff'), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, need: 'Tires', err: '' } }) }); }
+    const remV = ((live.reminders || {})[(live.vehicles[Math.min(s.vIdx || 0, Math.max(0, live.vehicles.length - 1))] || {}).id] || []).filter((r) => r.last_at);
+    if (remV.length) {
+      nextDue.length = 0;
+      remV.sort((x, y) => (x.due_at || '9') < (y.due_at || '9') ? -1 : 1).slice(0, 4).forEach((r) => {
+        const d = r.due_at ? new Date(r.due_at + 'T12:00:00') : null, days = d ? Math.round((d - new Date()) / 864e5) : null;
+        const pct = r.months && r.last_at ? Math.min(100, Math.max(0, (monthsSince(r.last_at + 'T12:00:00') / r.months) * 100)) : 0;
+        nextDue.push({ name: r.label, due: days === null ? 'No schedule' : days < 0 ? 'Due now · estimated' : days <= 30 ? 'Due in ' + days + ' days · estimated' : 'In about ' + Math.max(1, Math.round(days / 30)) + ' months · estimated', c: r.status === 'due' ? YEL : r.status === 'soon' ? YEL : DIM, bar: bar(pct, r.status === 'due' ? YEL : r.status === 'soon' ? YEL : GRN), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, err: '', need: r.key === 'oil' ? 'Maintenance' : r.key === 'rotation' ? 'Tires' : r.key === 'brakes' ? 'Brakes' : 'Maintenance' } }) });
+      });
+    }
     if (!nextDue.length) nextDue.push({ name: 'Reminders', due: 'After your first visit', c: DIM, bar: bar(0, '#fff'), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, err: '' } }) });
 
     // ---- vehicles and the 3D hero

@@ -183,16 +183,17 @@ struct HomeView: View {
                 SectionLabel(text: "Next due")
                 Button { odo = model.vehicle?.odometer.map(String.init) ?? ""; showOdo = true } label: { Text((model.vehicle?.odometer.map { $0.formatted() + " mi" } ?? "Add mileage") + " · Update").font(.system(size: 13)).foregroundStyle(Theme.blue) }
             }.padding(.vertical, 10)
-            if model.history.isEmpty, let lk = model.vehicle?.lastKnown {
+            if !model.vehicleReminders.isEmpty {
+                ForEach(model.vehicleReminders.prefix(4)) { r in
+                    Button { showBook = true } label: { DueRow(name: r.label ?? "", due: r.dueText, pct: r.progress, color: r.status == "due" || r.status == "soon" ? Theme.yellow : Theme.green) }.buttonStyle(.plain).foregroundStyle(.white)
+                }
+                Text("Estimated from your visits and the shop's records. Not read from the car.").font(.system(size: 11.5)).foregroundStyle(Theme.dimmer).padding(.top, 8)
+            } else if model.history.isEmpty, let lk = model.vehicle?.lastKnown {
                 HStack { Text("From the shop's records").font(.system(size: 15, weight: .medium)); Spacer(); Text(lk).font(.system(size: 13.5)).foregroundStyle(Theme.dim).lineLimit(1) }
                     .padding(.vertical, 14).overlay(alignment: .top) { Divider().overlay(Theme.line) }
-            } else if model.history.isEmpty {
+            } else {
                 HStack { Text("Reminders").font(.system(size: 15, weight: .medium)); Spacer(); Text("After your first visit").font(.system(size: 13.5)).foregroundStyle(Theme.dim) }
                     .padding(.vertical, 14).overlay(alignment: .top) { Divider().overlay(Theme.line) }
-            } else {
-                DueRow(name: "Oil & filter", due: "Est. every 5,000 mi", pct: 0.4, color: Theme.green)
-                DueRow(name: "Tire rotation", due: "Est. every 6,000 mi", pct: 0.55, color: Theme.yellow)
-                Text("Estimated from your last visit and the mileage you entered. Not read from the car.").font(.system(size: 11.5)).foregroundStyle(Theme.dimmer).padding(.top, 8)
             }
         }
     }

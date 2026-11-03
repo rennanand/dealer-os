@@ -216,3 +216,25 @@ struct Rental: Codable, Identifiable, Hashable {
     var agreementURL: URL? { token.flatMap { URL(string: "https://dealer-os-rosy.vercel.app/rental/" + $0 + "?app=1") } }
     var statusLabel: String { switch status { case "out": "Keys in hand"; case "reserved": "Reserved for you"; case "returned": "Returned"; default: (status ?? "").capitalized } }
 }
+
+struct Reminder: Codable, Identifiable, Hashable {
+    var id: String { key ?? label ?? UUID().uuidString }
+    var key: String?
+    var label: String?
+    var miles: Int?
+    var months: Int?
+    var last_at: Date?
+    var due_at: Date?
+    var status: String?      // ok | soon | due | unknown
+    var daysLeft: Int? { due_at.map { Int(($0.timeIntervalSinceNow / 86400).rounded(.down)) } }
+    var dueText: String {
+        guard let d = daysLeft else { return "No schedule" }
+        if d < 0 { return "Due now · estimated" }
+        if d <= 30 { return "Due in \(d) days · estimated" }
+        return "In about \(max(1, Int((Double(d) / 30).rounded()))) months · estimated"
+    }
+    var progress: Double {
+        guard let l = last_at, let m = months, m > 0 else { return 0 }
+        return min(1, max(0, Date().timeIntervalSince(l) / (Double(m) * 30.4 * 86400)))
+    }
+}

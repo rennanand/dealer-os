@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -59,7 +59,7 @@ export class ShopLogic extends DCLogic {
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -242,9 +242,10 @@ export class ShopLogic extends DCLogic {
     const cents = (l) => Math.round(Number(l.qty) * l.unit_cents), signed = (l) => (l.kind === 'discount' ? -cents(l) : cents(l));
     const ap = lines.filter((l) => l.approved !== false);
     const sum = (ls) => ls.reduce((t, l) => t + signed(l), 0);
-    const subtotal = sum(ap), taxable = sum(ap.filter((l) => l.taxable !== false)), tax = Math.round(taxable * ((r && r.tax_rate_bp) || 725) / 10000);
+    const supplies = Math.round(sum(ap.filter((l) => l.kind === 'labor')) * ((this.state.shop && this.state.shop.shop_supplies_bp) || 0) / 10000);
+    const subtotal = sum(ap) + supplies, taxable = sum(ap.filter((l) => l.taxable !== false)) + supplies, tax = Math.round(taxable * ((r && r.tax_rate_bp) || 725) / 10000);
     const partsCost = ap.filter((l) => l.kind === 'part').reduce((t, l) => t + Math.round(Number(l.qty) * (l.cost_cents || 0)), 0), laborHours = ap.filter((l) => l.kind === 'labor').reduce((t, l) => t + Number(l.qty), 0);
-    return { partsCost, partsMargin: sum(ap.filter((l) => l.kind === 'part')) - partsCost, laborHours, labor: sum(ap.filter((l) => l.kind === 'labor')), parts: sum(ap.filter((l) => l.kind === 'part')), fees: sum(ap.filter((l) => l.kind === 'fee')), discount: -sum(ap.filter((l) => l.kind === 'discount')), subtotal, tax, total: subtotal + tax, pending: lines.filter((l) => l.approved === false).reduce((t, l) => t + cents(l), 0) };
+    return { supplies, partsCost, partsMargin: sum(ap.filter((l) => l.kind === 'part')) - partsCost, laborHours, labor: sum(ap.filter((l) => l.kind === 'labor')), parts: sum(ap.filter((l) => l.kind === 'part')), fees: sum(ap.filter((l) => l.kind === 'fee')) + supplies, discount: -sum(ap.filter((l) => l.kind === 'discount')), subtotal, tax, total: subtotal + tax, pending: lines.filter((l) => l.approved === false).reduce((t, l) => t + cents(l), 0) };
   }
 
   async setFinding(id, p) {
@@ -467,6 +468,7 @@ export class ShopLogic extends DCLogic {
     const fuOpen = fuRowsAll.filter((r) => r.stt === 'open');
     const chipF = (on) => 'padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;' + (on ? 'background:#fff;color:#000' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7)');
     const followups = {
+      dueSoon: (s.reminders || []).map((r) => { const d = r.due_at ? new Date(r.due_at + 'T12:00:00') : null; const days = d ? Math.round((d - new Date()) / 864e5) : null; return { customer: r.customer, vehicle: r.vehicle, label: r.label, last: r.last_at ? 'Last ' + new Date(r.last_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '', due: days === null ? '' : days < 0 ? Math.abs(days) + ' days overdue' : days === 0 ? 'Due today' : 'Due in ' + days + ' days', color: r.status === 'due' ? '#e0312b' : '#ffd60a', inApp: !!r.joined, sms: r.phone ? 'sms:' + r.phone + '?&body=' + encodeURIComponent('Hi ' + (r.customer || '').split(' ')[0] + ', this is ' + ((s.shop && s.shop.name) || 'the shop') + '. Your ' + r.vehicle + ' is due for ' + (r.label || '').toLowerCase() + '. Book in the app or reply here and we will set a time.') : '', book: () => set({ custId: r.customer_id, newAppt: { customer_id: r.customer_id, vehicle_id: r.vehicle_id, name: '', phone: '', year: '', make: '', model: '', plate: '', job: r.label, day: s.day, time: '09:00', visit: 'dropoff' } }) }; }),
       count: fuOpen.length,
       fuTabs: ['Open', 'Reminded', 'All'].map((x) => ({ label: x, pick: () => set({ fuTab: x }), style: chipF(fuTab === x) })),
       fuStats: [{ n: String(fuOpen.length), l: 'Open', c: '#fff' }, { n: fmtC(fuOpen.reduce((t, r) => t + r.value, 0)), l: 'Declined value, open', c: '#fff' }, { n: String(fuRowsAll.filter((r) => r.stt === 'reminded').length), l: 'Reminded', c: fuRowsAll.some((r) => r.stt === 'reminded') ? YEL : '#fff' }],
@@ -659,7 +661,7 @@ export class ShopLogic extends DCLogic {
             lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id) })) : [],
             margin: t && t.parts ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
             hours: (() => { const actual = this.hoursOn(sel.id), billed = t ? t.laborHours : 0; return actual || billed ? 'Labor billed ' + billed.toFixed(1) + ' h · on the clock ' + actual.toFixed(1) + ' h' + (billed && actual ? ' · ' + Math.round((billed / Math.max(0.05, actual)) * 100) + '% efficiency' : '') : ''; })(),
-            rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.fees ? ['Fees', $(t.fees)] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
+            rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.supplies ? ['Shop supplies', $(t.supplies)] : null, t.fees - (t.supplies || 0) ? ['Fees', $(t.fees - (t.supplies || 0))] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
             total: t ? $(t.total) : '$0.00', pending: t && t.pending ? $(t.pending) + ' waiting on customer' : '',
             paid: ro && ro.status === 'paid' ? 'Paid ' + (ro.paid_method || '') + (ro.paid_at ? ' · ' + new Date(ro.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') : '',
             start: !ro ? () => this.ensureRO(sel.id) : null,

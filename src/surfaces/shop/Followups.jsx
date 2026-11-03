@@ -131,6 +131,28 @@ export function Followups({ vm }) {
           ) : null}
         </div>
         <div style={css('margin-top:14px;font-size:12px;line-height:1.5;color:rgba(235,235,245,.45)')}>{T(vm.fuNote)}</div>
+        {vm.dueSoon && vm.dueSoon.length ? (
+          <div style={css('margin-top:36px')}>
+            <div style={css('display:flex;justify-content:space-between;align-items:baseline')}>
+              <div style={css('font-size:20px;font-weight:600;letter-spacing:-.4px')}>Due for service</div>
+              <div style={css('font-size:12.5px;color:rgba(235,235,245,.5)')}>{vm.dueSoon.length} reminders · from visit history and intervals</div>
+            </div>
+            <div style={css('margin-top:10px;border-top:1px solid rgba(235,235,245,.09)')}>
+              {L(vm.dueSoon).map((r, i) => (
+                <div key={i} style={css('display:grid;grid-template-columns:1.3fr 1.2fr 1fr auto;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(235,235,245,.07);font-size:13px')}>
+                  <div><div style={css('font-weight:500')}>{T(r?.customer)}</div><div style={css('font-size:12px;color:rgba(235,235,245,.5);margin-top:2px')}>{T(r?.vehicle)}</div></div>
+                  <div>{T(r?.label)}<div style={css('font-size:12px;color:rgba(235,235,245,.5);margin-top:2px')}>{T(r?.last)}</div></div>
+                  <div style={css('font-weight:500;color:' + (r?.color || '#fff'))}>{T(r?.due)}</div>
+                  <div style={css('display:flex;gap:8px')}>
+                    {r?.inApp ? <span style={css('font-size:11.5px;color:#30d158;align-self:center')}>In the app</span> : null}
+                    {r?.sms ? <a href={r.sms} style={css('padding:9px 12px;border-radius:9px;background:rgba(235,235,245,.1);font-size:12.5px;font-weight:500;color:#fff;text-decoration:none;white-space:nowrap')}>Text</a> : null}
+                    <div onClick={r?.book} style={css('padding:9px 12px;border-radius:9px;background:#fff;color:#000;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap')}>Book</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );

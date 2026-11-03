@@ -21,7 +21,7 @@ export function ShopHost({ page, goAppointments, goCheckin, goLoaners, goInbox }
 function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox }) {
   const wantInbox = vm.inbox.goInboxFlag;
   React.useEffect(() => { if (wantInbox) { vm.inbox.clearGoInbox(); if (goInbox) goInbox(); } }, [wantInbox]);
-  const booking = page === 'customers' && !!vm.newAppt;
+  const booking = (page === 'customers' || page === 'followups') && !!vm.newAppt;
   React.useEffect(() => { if (booking && goAppointments) goAppointments(); }, [booking]);
   if (page === 'schedule') return <ScheduleLive vm={vm} />;
   if (page === 'technicians') return <TechniciansLive vm={vm} />;

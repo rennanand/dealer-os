@@ -17,6 +17,7 @@ final class AppModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var shops: [Shop] = []
     @Published var rentals: [Rental] = []
+    @Published var reminders: [String: [Reminder]] = [:]
     @Published var selectedVehicleIndex = 0
     @Published var busy = false
     @Published var error: String?
@@ -49,6 +50,7 @@ final class AppModel: ObservableObject {
         return live.first(where: { $0.status == "in_progress" }) ?? live.first(where: { $0.status == "arrived" }) ?? live.first(where: { $0.status == "done" }) ?? live.min(by: { ($0.starts_at ?? .distantFuture) < ($1.starts_at ?? .distantFuture) })
     }
     var activeVehicle: Vehicle? { guard let a = active else { return vehicle }; return vehicles.first(where: { $0.id == a.vehicle_id }) ?? vehicle }
+    var vehicleReminders: [Reminder] { guard let v = vehicle else { return [] }; return (reminders[v.id.uuidString.lowercased()] ?? reminders[v.id.uuidString] ?? []).filter { $0.last_at != nil }.sorted { ($0.due_at ?? .distantFuture) < ($1.due_at ?? .distantFuture) } }
     var history: [Appointment] { appointments.filter { $0.status == "done" || $0.status == "cancelled" } }
     var openRental: Rental? { rentals.first(where: { !["returned", "closed", "cancelled"].contains($0.status ?? "") }) }
     var unread: Int { messages.filter { $0.sender == "shop" && $0.read != true }.count }
@@ -98,9 +100,10 @@ final class AppModel: ObservableObject {
         async let m: [Message] = try client.rpc("my_messages").execute().value
         async let s: [Shop] = try client.rpc("shops_public").execute().value
         async let r: [Rental] = try client.rpc("my_rentals").execute().value
+        async let rm: [String: [Reminder]] = try client.rpc("my_reminders").execute().value
         do {
-            let (vv, aa, mm, ss, rr) = try await (v, a, m, s, r)
-            vehicles = vv; appointments = aa; messages = mm; shops = ss; rentals = rr
+            let (vv, aa, mm, ss, rr, rmm) = try await (v, a, m, s, r, rm)
+            vehicles = vv; appointments = aa; messages = mm; shops = ss; rentals = rr; reminders = rmm
             if selectedVehicleIndex >= vehicles.count { selectedVehicleIndex = 0 }
             saveCache()
             LiveActivity.sync(self)

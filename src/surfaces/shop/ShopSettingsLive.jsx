@@ -19,7 +19,9 @@ export function ShopSettingsLive() {
   const set = (k) => (e) => { setShop({ ...shop, [k]: e.target.value }); setSaved(''); };
   const save = async () => {
     setErr('');
-    const body = { name: shop.name.trim(), address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), default_rate_cents: Math.round(Number(String(shop.default_rate_cents).replace(/[^\d.]/g, '')) || 0) };
+    const num = (v) => Number(String(v == null ? '' : v).replace(/[^\d.]/g, '')) || 0;
+    const body = { name: shop.name.trim(), address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), default_rate_cents: Math.round(num(shop.default_rate_cents)),
+      tax_rate_bp: Math.round(num(shop.tax_rate_pct != null ? shop.tax_rate_pct : (shop.tax_rate_bp || 725) / 100) * 100), labor_rate_cents: Math.round(num(shop.labor_rate != null ? shop.labor_rate : (shop.labor_rate_cents || 12500) / 100) * 100), shop_supplies_bp: Math.round(num(shop.supplies_pct != null ? shop.supplies_pct : (shop.shop_supplies_bp || 0) / 100) * 100) };
     if (!supabase) return setSaved('Saved');
     const { error } = await supabase.from('shops').update(body).eq('shop_id', SHOP_ID);
     if (error) return setErr(error.message === 'new row violates row-level security policy for table "shops"' ? 'Only the owner can change shop details.' : error.message);
@@ -37,6 +39,13 @@ export function ShopSettingsLive() {
           <div><div style={css(LBL)}>Loaner rate · $ per day</div><input inputMode="decimal" value={typeof shop.default_rate_cents === 'number' ? (shop.default_rate_cents / 100).toString() : shop.default_rate_cents} onChange={(e) => { setShop({ ...shop, default_rate_cents: e.target.value }); setSaved(''); }} onBlur={() => setShop({ ...shop, default_rate_cents: Math.round(Number(String(shop.default_rate_cents).replace(/[^\d.]/g, '')) * 100) || 0 })} style={css(INPUT + ';font-family:var(--data-font,inherit)')} /></div>
           <div style={css('grid-column:1 / -1')}><div style={css(LBL)}>Hours</div><input placeholder="Mon–Fri 8–6, Sat 9–2" value={shop.hours} onChange={set('hours')} style={css(INPUT)} /></div>
         </div>
+        <div style={css(LBL + ';margin-top:22px')}>Billing · used on every repair order</div>
+        <div style={css('display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:10px')}>
+          <div><div style={css(LBL)}>Sales tax · %</div><input inputMode="decimal" value={shop.tax_rate_pct != null ? shop.tax_rate_pct : ((shop.tax_rate_bp || 725) / 100).toString()} onChange={(e) => { setShop({ ...shop, tax_rate_pct: e.target.value }); setSaved(''); }} style={css(INPUT)} /></div>
+          <div><div style={css(LBL)}>Labor rate · $ per hour</div><input inputMode="decimal" value={shop.labor_rate != null ? shop.labor_rate : ((shop.labor_rate_cents || 12500) / 100).toString()} onChange={(e) => { setShop({ ...shop, labor_rate: e.target.value }); setSaved(''); }} style={css(INPUT)} /></div>
+          <div><div style={css(LBL)}>Shop supplies · % of labor</div><input inputMode="decimal" value={shop.supplies_pct != null ? shop.supplies_pct : ((shop.shop_supplies_bp || 0) / 100).toString()} onChange={(e) => { setShop({ ...shop, supplies_pct: e.target.value }); setSaved(''); }} style={css(INPUT)} /></div>
+        </div>
+        <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:8px;line-height:1.5')}>Tax applies to taxable lines (everything but discounts). Labor rate pre-fills labor lines. Supplies, if set, are added as a fee line when an RO is started.</div>
         {err ? <div style={css('font-size:12.5px;color:#e0312b;margin-top:14px')}>{err}</div> : null}
         <div style={css('display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:18px')}>
           <div style={css('font-size:12.5px;color:#30d158')}>{saved}</div>
