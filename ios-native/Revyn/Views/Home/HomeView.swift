@@ -5,7 +5,7 @@ struct HomeStatus {
     var kicker: String; var color: Color; var title: String; var sub: String; var cta: String?; var live = false; var progress: Double = 0
     var angle: CarView.Angle = .orbit; var destination: AppModel.Tab = .service
 
-    static func make(_ m: AppModel) -> HomeStatus {
+    @MainActor static func make(_ m: AppModel) -> HomeStatus {
         guard let a = m.active else {
             return m.vehicles.isEmpty
                 ? HomeStatus(kicker: "Your car", color: Theme.green, title: "Add your vehicle.", sub: "Then book a visit and follow it here, from check-in to pickup.", cta: "Add a vehicle", destination: .vehicles)
