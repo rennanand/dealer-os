@@ -112,6 +112,7 @@ struct Appointment: Codable, Identifiable, Hashable {
     var photos: [VisitPhoto]?
     var tire_quote: TireQuote?
     var invoice: Invoice?
+    var inspection: InspectionReport?
 
     /// 0 booked · 1 arrived · 2 in progress · 8 done
     var stage: Int { switch status { case "arrived": 1; case "in_progress": 2; case "done": 8; default: 0 } }
@@ -144,6 +145,18 @@ struct Invoice: Codable, Identifiable, Hashable {
     var lines: [InvoiceLine]?
     var total: Int { totals?.total ?? 0 }
     var statusLabel: String { switch status { case "paid": "Paid"; case "invoiced": "Invoice ready"; default: "Running total" } }
+}
+
+struct InspectionItem: Codable, Identifiable, Hashable {
+    var id: String { key ?? label ?? UUID().uuidString }
+    var key: String?; var label: String?; var status: String?; var meas: String?; var meas_label: String?; var note: String?
+}
+struct InspectionReport: Codable, Hashable {
+    var sent_at: Date?
+    var tech: String?
+    var items: [InspectionItem]?
+    var good: Int { (items ?? []).filter { $0.status == "good" }.count }
+    var flagged: Int { (items ?? []).filter { $0.status == "monitor" || $0.status == "now" }.count }
 }
 
 struct Message: Codable, Identifiable, Hashable {

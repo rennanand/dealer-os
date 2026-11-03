@@ -91,6 +91,10 @@ struct ServiceView: View {
                     NavigationLink { FindingsView(appointment: a) } label: {
                         ServiceCard(icon: "doc.text.magnifyingglass", color: Theme.yellow, kicker: "Estimate ready", title: "We found \(a.pendingFindings.count == 1 ? "one thing" : "\(a.pendingFindings.count) things") to review.", sub: "Your approval is needed before extra work starts. Nothing is done without it.", action: "Review estimate")
                     }
+                } else if let rep = a.inspection, let items = rep.items, !items.isEmpty {
+                    NavigationLink { InspectionReportView(appointment: a, report: rep) } label: {
+                        ServiceCard(icon: "checkmark.seal", color: Theme.green, kicker: "Inspection report", title: "\(rep.good) checked good" + (rep.flagged > 0 ? ", \(rep.flagged) flagged." : "."), sub: (rep.tech.map { !$0.isEmpty ? "Inspected by \($0)" : "Inspected" } ?? "Inspected") + (rep.sent_at.map { " · " + $0.clock } ?? "") + ". Every item, with what was measured.", action: "See report")
+                    }
                 } else if a.started {
                     let approved = (a.findings ?? []).filter { $0.status == "approved" }
                     ServiceCard(icon: "checkmark.seal", color: Theme.green, kicker: "Inspection", title: approved.isEmpty ? (cur >= 8 ? "Nothing extra was needed." : "Inspection in progress.") : "\(approved.count) item\(approved.count == 1 ? "" : "s") approved.", sub: approved.isEmpty ? "Your technician checks tires, brakes, fluids and filters at every visit." : approved.map { $0.name ?? "" }.joined(separator: " · "), action: nil)
@@ -258,4 +262,41 @@ struct InvoiceView: View {
 struct TotalRow: View {
     var k: String; var v: String
     var body: some View { HStack { Text(k).font(.system(size: 13.5)).foregroundStyle(Theme.dim); Spacer(); Text(v).font(.system(size: 13.5, design: .monospaced)).foregroundStyle(Theme.dim) }.padding(.top, 8) }
+}
+
+/// The whole checklist, green to red, with the technician's measurements.
+struct InspectionReportView: View {
+    var appointment: Appointment
+    var report: InspectionReport
+    private func color(_ st: String?) -> Color { st == "now" ? Theme.red : st == "monitor" ? Theme.yellow : Theme.green }
+    private func word(_ st: String?) -> String { st == "now" ? "Needs attention" : st == "monitor" ? "Monitor" : "Good" }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(report.good) of \((report.items ?? []).count) checked good.").font(.system(size: 26, weight: .semibold)).tracking(-0.6)
+                    Text([report.tech.map { $0.isEmpty ? nil : "Inspected by \($0)" } ?? nil, report.sent_at?.formatted(date: .abbreviated, time: .shortened)].compactMap { $0 }.joined(separator: " · ")).font(.system(size: 13.5)).foregroundStyle(Theme.dim)
+                }.padding(.horizontal, 4)
+                Card(padding: 0) {
+                    VStack(spacing: 0) {
+                        ForEach(report.items ?? []) { it in
+                            HStack(alignment: .top, spacing: 14) {
+                                Image(systemName: it.status == "good" ? "checkmark.circle.fill" : "exclamationmark.circle.fill").font(.system(size: 20)).foregroundStyle(color(it.status)).padding(.top, 1)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack { Text(it.label ?? "").font(.system(size: 16, weight: .medium)); Spacer(); Text(word(it.status)).font(.system(size: 13, weight: .medium)).foregroundStyle(color(it.status)) }
+                                    if let m = it.meas, !m.isEmpty { Text((it.meas_label.map { $0 + " " } ?? "") + m).font(.system(size: 13, design: .monospaced)).foregroundStyle(Theme.dim) }
+                                    if let n = it.note, !n.isEmpty { Text(n).font(.system(size: 13.5)).foregroundStyle(Theme.dim) }
+                                }
+                            }.padding(.horizontal, 18).padding(.vertical, 14)
+                            Divider().overlay(Theme.line).padding(.leading, 52)
+                        }
+                    }
+                }
+                Text("Measured by the technician at this visit. Flagged items were sent to you as an estimate; nothing is done without your approval.").font(.system(size: 12)).foregroundStyle(Theme.dimmer).padding(.horizontal, 4)
+            }.padding(16)
+        }
+        .background(Theme.bg)
+        .navigationTitle("Inspection")
+        .toolbarTitleDisplayMode(.inline)
+    }
 }
