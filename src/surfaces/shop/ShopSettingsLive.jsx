@@ -20,7 +20,7 @@ export function ShopSettingsLive() {
   const save = async () => {
     setErr('');
     const num = (v) => Number(String(v == null ? '' : v).replace(/[^\d.]/g, '')) || 0;
-    const body = { name: shop.name.trim(), address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), default_rate_cents: Math.round(num(shop.default_rate_cents)),
+    const body = { name: shop.name.trim(), address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), review_url: (shop.review_url || '').trim(), default_rate_cents: Math.round(num(shop.default_rate_cents)),
       tax_rate_bp: Math.round(num(shop.tax_rate_pct != null ? shop.tax_rate_pct : (shop.tax_rate_bp || 725) / 100) * 100), labor_rate_cents: Math.round(num(shop.labor_rate != null ? shop.labor_rate : (shop.labor_rate_cents || 12500) / 100) * 100), shop_supplies_bp: Math.round(num(shop.supplies_pct != null ? shop.supplies_pct : (shop.shop_supplies_bp || 0) / 100) * 100) };
     if (!supabase) return setSaved('Saved');
     const { error } = await supabase.from('shops').update(body).eq('shop_id', SHOP_ID);
@@ -38,6 +38,7 @@ export function ShopSettingsLive() {
           <div><div style={css(LBL)}>Phone</div><input placeholder="(435) 555-0100" value={shop.phone} onChange={set('phone')} style={css(INPUT)} /></div>
           <div><div style={css(LBL)}>Loaner rate · $ per day</div><input inputMode="decimal" value={typeof shop.default_rate_cents === 'number' ? (shop.default_rate_cents / 100).toString() : shop.default_rate_cents} onChange={(e) => { setShop({ ...shop, default_rate_cents: e.target.value }); setSaved(''); }} onBlur={() => setShop({ ...shop, default_rate_cents: Math.round(Number(String(shop.default_rate_cents).replace(/[^\d.]/g, '')) * 100) || 0 })} style={css(INPUT + ';font-family:var(--data-font,inherit)')} /></div>
           <div style={css('grid-column:1 / -1')}><div style={css(LBL)}>Hours</div><input placeholder="Mon–Fri 8–6, Sat 9–2" value={shop.hours} onChange={set('hours')} style={css(INPUT)} /></div>
+          <div style={css('grid-column:1 / -1')}><div style={css(LBL)}>Google review link · sent in the thank-you text</div><input placeholder="https://g.page/r/…/review" value={shop.review_url || ''} onChange={set('review_url')} style={css(INPUT)} /></div>
         </div>
         <div style={css(LBL + ';margin-top:22px')}>Billing · used on every repair order</div>
         <div style={css('display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:10px')}>

@@ -5,6 +5,7 @@ const LBL = 'font-family:var(--data-font,inherit);font-size:10.5px;font-weight:5
 const INPUT = "width:100%;background:rgba(255,255,255,.06);border:0;outline:0;border-radius:10px;padding:11px 12px;font-size:13px;color:#fff;font-family:var(--ui-font,'Geist'),'Helvetica Neue',Helvetica,Arial,sans-serif";
 const BTN = 'padding:11px 16px;border-radius:10px;background:#fff;color:#000;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap';
 const GHOST = 'padding:11px 16px;border-radius:10px;background:#1c1c1e;color:rgba(235,235,245,.85);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap';
+const SELECT = INPUT + ';appearance:none;-webkit-appearance:none;cursor:pointer';
 const Field = ({ label, children }) => (<div><div style={css(LBL + ';margin-bottom:6px')}>{label}</div>{children}</div>);
 const Row = ({ t, d }) => (<div style={css('display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(235,235,245,.07)')}><div style={css('font-size:13px')}>{t}</div><div style={css('font-size:12px;color:rgba(235,235,245,.5);white-space:nowrap')}>{d}</div></div>);
 
@@ -133,6 +134,7 @@ export function CustomersLive({ vm }) {
                 {L(c.loaners).map((v, i) => <Row key={i} t={v.t} d={v.d} />)}
               </div>
             ) : null}
+            <Account c={c} />
             <div>
               <div style={css(LBL + ';margin-bottom:6px')}>Notes</div>
               <textarea key={c.id} defaultValue={c.notes} onBlur={(e) => e.target.value !== c.notes && c.setNotes(e.target.value)} placeholder="Preferences, how they like to be contacted, anything the next advisor should know." rows={3} style={css(INPUT + ';resize:vertical;line-height:1.5')} />
@@ -180,6 +182,40 @@ function ImportPanel({ p, vm }) {
           <div onClick={vm.closeImport} style={css(GHOST)}>{r ? 'Done' : 'Cancel'}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+const TAGS = ['VIP', 'Fleet', 'Family', 'Price sensitive', 'Needs loaner', 'Warranty'];
+/** Account: charge account & terms, store credit, texting consent, tags. */
+function Account({ c }) {
+  const a = c.account; const ce = c.creditEdit;
+  const [limit, setLimit] = React.useState(a.limit); const [terms, setTerms] = React.useState(a.terms);
+  React.useEffect(() => { setLimit(a.limit); setTerms(a.terms); }, [c.id]);
+  const Toggle = ({ on, set, label }) => (<div onClick={() => set(!on)} style={css('display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(235,235,245,.07);cursor:pointer;font-size:13px')}><div>{label}</div><div style={css('width:34px;height:20px;border-radius:10px;background:' + (on ? '#30d158' : 'rgba(235,235,245,.15)') + ';position:relative;flex:0 0 auto')}><div style={css('position:absolute;top:2px;left:' + (on ? '16px' : '2px') + ';width:16px;height:16px;border-radius:8px;background:#fff;transition:left .18s ease')} /></div></div>);
+  return (
+    <div>
+      <div style={css(LBL)}>Account{a.source ? ' · ' + a.source : ''}</div>
+      {a.owed ? <div style={css('font-size:12.5px;color:#ffd60a;padding:8px 0 0')}>{a.owed}</div> : null}
+      {a.creditLabel ? <div style={css('font-size:12.5px;color:#30d158;padding:6px 0 0')}>{a.creditLabel}</div> : null}
+      <Toggle on={a.charge} set={(v) => a.setCharge(v, limit, terms)} label="Charge account · may leave with a balance" />
+      {a.charge ? (
+        <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0')}>
+          <input value={limit} inputMode="decimal" placeholder="Credit limit · $" onChange={(e) => setLimit(e.target.value)} onBlur={() => a.setCharge(true, limit, terms)} style={css(INPUT + ';padding:9px 10px;font-family:var(--data-font,inherit)')} />
+          <input value={terms} inputMode="numeric" placeholder="Terms · days" onChange={(e) => setTerms(e.target.value)} onBlur={() => a.setCharge(true, limit, terms)} style={css(INPUT + ';padding:9px 10px;font-family:var(--data-font,inherit)')} />
+        </div>
+      ) : null}
+      <Toggle on={a.optOut} set={a.setOptOut} label="Opted out of texts" />
+      <Toggle on={a.noMarket} set={a.setNoMarket} label="Do not market · reminders and follow-ups only on request" />
+      <div style={css('display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 0')}>{TAGS.map((t) => { const on = a.tags.includes(t); return <div key={t} onClick={() => a.setTags(on ? a.tags.filter((x) => x !== t) : a.tags.concat(t))} style={css('padding:5px 10px;border-radius:999px;font-size:11.5px;cursor:pointer;' + (on ? 'background:#fff;color:#000;font-weight:500' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.6)'))}>{t}</div>; })}</div>
+      {ce ? (
+        <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 0')}>
+          <input value={ce.amount} inputMode="decimal" placeholder="$ amount" autoFocus onChange={(e) => ce.set({ amount: e.target.value })} style={css(INPUT + ';padding:9px 10px;font-family:var(--data-font,inherit)')} />
+          <select value={ce.kind} onChange={(e) => ce.set({ kind: e.target.value })} style={css(SELECT + ';padding:9px 10px')}><option value="store_credit">Store credit</option><option value="goodwill">Goodwill</option><option value="trade">Trade credit</option></select>
+          <input value={ce.note} placeholder="Why" onChange={(e) => ce.set({ note: e.target.value })} style={css(INPUT + ';padding:9px 10px;grid-column:1 / -1')} />
+          <div onClick={ce.save} style={css(BTN + ';padding:9px 0;text-align:center')}>Issue</div><div onClick={ce.cancel} style={css(GHOST + ';padding:9px 0;text-align:center')}>Cancel</div>
+        </div>
+      ) : <div onClick={a.issueCredit} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer;padding:10px 0 0')}>Issue store credit</div>}
     </div>
   );
 }
