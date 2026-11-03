@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -59,7 +59,7 @@ export class ShopLogic extends DCLogic {
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -171,6 +171,52 @@ export class ShopLogic extends DCLogic {
     this.setState({ roLines: (this.state.roLines || []).filter((l) => l.id !== id) });
     if (supabase) await supabase.from('ro_lines').delete().eq('id', id);
   }
+  // ---- inspections (the tech's checklist) ----
+  static CHECKLIST = [
+    ['tires', 'Tires', 'Tread 32nds', 'Inspect tread depth, wear pattern, sidewalls, pressure'],
+    ['brakes', 'Brakes', 'Pad mm', 'Pads, rotors, lines, fluid'],
+    ['battery', 'Battery', 'Volts / CCA', 'Terminals, hold-down, load test'],
+    ['fluids', 'Fluids', 'Level', 'Oil, coolant, brake, power steering, washer'],
+    ['filters', 'Filters', 'Condition', 'Engine air, cabin air'],
+    ['belts', 'Belts & hoses', 'Condition', 'Cracks, glazing, leaks'],
+    ['lights', 'Lights & wipers', 'Condition', 'All exterior lights, wiper blades'],
+    ['suspension', 'Steering & suspension', 'Condition', 'Shocks, struts, tie rods, bushings'],
+    ['exhaust', 'Exhaust & underbody', 'Condition', 'Leaks, hangers, rust'],
+  ];
+  inspectionFor(apptId) {
+    const have = (this.state.inspections || []).find((i) => i.appointment_id === apptId);
+    if (have) return have;
+    return { appointment_id: apptId, status: 'open', items: ShopLogic.CHECKLIST.map(([key, label, measLabel]) => ({ key, label, measLabel, status: '', meas: '', note: '', price: '', sent: false })) };
+  }
+  async saveInspection(apptId, patch) {
+    const cur = this.inspectionFor(apptId); const next = { ...cur, ...patch, updated_at: new Date().toISOString() };
+    const list = (this.state.inspections || []).filter((i) => i.appointment_id !== apptId).concat(next);
+    this.setState({ inspections: list });
+    if (!supabase) return next;
+    const row = { shop_id: SHOP_ID, appointment_id: apptId, tech_id: next.tech_id || null, items: next.items, status: next.status || 'open', sent_at: next.sent_at || null, updated_at: next.updated_at };
+    const { data, error } = await supabase.from('inspections').upsert(row, { onConflict: 'appointment_id' }).select().single();
+    if (error) { this.setState({ err: error.message }); return next; }
+    this.setState({ inspections: this.state.inspections.map((i) => (i.appointment_id === apptId ? data : i)) });
+    return data;
+  }
+  setInspectionItem(apptId, key, patch) {
+    const cur = this.inspectionFor(apptId);
+    const items = cur.items.map((it) => (it.key === key ? { ...it, ...patch } : it));
+    clearTimeout(this._inspT); const list = (this.state.inspections || []).filter((i) => i.appointment_id !== apptId).concat({ ...cur, items });
+    this.setState({ inspections: list });
+    this._inspT = setTimeout(() => this.saveInspection(apptId, { items }), 600);  // debounce typing
+  }
+  async sendInspection(apptId, techId) {
+    const cur = this.inspectionFor(apptId); const items = [];
+    for (const it of cur.items) {
+      if ((it.status === 'now' || it.status === 'monitor') && !it.sent) {
+        await this.addFinding(apptId, { tier: it.status === 'now' ? 'now' : 'monitor', name: it.name || it.label, plain: it.note || '', tech: it.note || '', meas: it.meas || '', meas_label: it.meas ? it.measLabel : '', urgency: it.status === 'now' ? 'Recommended before you drive far.' : 'No rush. Worth watching.', price: it.price || '' });
+        items.push({ ...it, sent: true });
+      } else items.push(it);
+    }
+    await this.saveInspection(apptId, { items, status: 'sent', sent_at: new Date().toISOString(), tech_id: techId || cur.tech_id || null });
+  }
+
   async clockOn(apptId, techId) {
     if (!techId) return;
     if (!supabase) { const now = new Date().toISOString(); this.setState({ timeEntries: (this.state.timeEntries || []).map((t) => (t.tech_id === techId && !t.ended_at ? { ...t, ended_at: now } : t)).concat({ id: 't' + Date.now(), appointment_id: apptId, tech_id: techId, started_at: now, ended_at: null }) }); return; }
@@ -525,8 +571,41 @@ export class ShopLogic extends DCLogic {
       setMinutes: (id, m) => this.setAppt(id, { minutes: m }),
     };
 
+    // ---- technician iPad (live) ----
+    const tech = (() => {
+      let meId = s.techMe; try { if (!meId) meId = localStorage.getItem('revyn.techMe') || ''; } catch (e) {}
+      const me = s.techs.find((t) => t.id === meId) || null;
+      const pick = (id) => { try { localStorage.setItem('revyn.techMe', id); } catch (e) {} set({ techMe: id }); };
+      const live = s.appointments.filter((a) => iso(new Date(a.starts_at)) === today() && ['booked', 'arrived', 'in_progress'].includes(a.status)).sort((x, y) => (x.bay || 9) - (y.bay || 9) || (x.starts_at < y.starts_at ? -1 : 1));
+      const jobRow = (a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id); return { id: a.id, who: (c && c.name) || a.customer_name || 'Customer', car: v ? vehName(v) : a.vehicle || 'Vehicle', job: a.job || 'Service', bay: a.bay ? 'Bay 0' + a.bay : '', time: new Date(a.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), status: STATUS[a.status][0], color: STATUS[a.status][1], mine: !!(me && a.tech_id === me.id), open: () => set({ techSel: a.id }), selected: s.techSel === a.id, clocked: !!(s.timeEntries || []).find((t) => t.appointment_id === a.id && !t.ended_at) }; };
+      const sel = live.find((a) => a.id === s.techSel) || null;
+      let job = null;
+      if (sel) {
+        const c = this.custOf(sel.customer_id), v = this.vehOf(sel.vehicle_id), insp = this.inspectionFor(sel.id);
+        const open = (s.timeEntries || []).find((t) => t.appointment_id === sel.id && !t.ended_at);
+        const fs = s.findings.filter((f) => f.appointment_id === sel.id);
+        const photosOf = (key) => s.photos.filter((p) => p.appointment_id === sel.id && p.caption === key).map((p) => this.photoUrl(p));
+        const flagged = insp.items.filter((it) => it.status === 'now' || it.status === 'monitor');
+        job = {
+          id: sel.id, who: (c && c.name) || 'Customer', phone: c ? fmtPhone(c.phone) : '', car: v ? vehName(v) : sel.vehicle || 'Vehicle', specs: v ? [v.trim, v.engine, v.drive, v.color, v.plate, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : ''].filter(Boolean).join(' · ') : '', vin: v && v.vin ? v.vin : '',
+          job: sel.job || 'Service', notes: sel.notes || '', bay: sel.bay ? 'Bay 0' + sel.bay : 'No bay', status: STATUS[sel.status][0], color: STATUS[sel.status][1], statusKey: sel.status,
+          clockOn: !!open, clockSince: open ? new Date(open.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '', hours: this.hoursOn(sel.id) ? this.hoursOn(sel.id).toFixed(1) + ' h' : '',
+          start: me ? () => this.clockOn(sel.id, me.id) : null, stop: open ? () => this.clockOff(open.tech_id) : null,
+          arrive: sel.status === 'booked' ? () => this.setAppt(sel.id, { status: 'arrived' }) : null,
+          finish: sel.status !== 'done' ? async () => { if (open) await this.clockOff(open.tech_id); await this.setAppt(sel.id, { status: 'done' }); set({ techSel: null }); } : null,
+          inspStatus: insp.status, sentAt: insp.sent_at ? new Date(insp.sent_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
+          items: insp.items.map((it) => ({ ...it, photos: photosOf(it.key), setStatus: (st) => this.setInspectionItem(sel.id, it.key, { status: it.status === st ? '' : st }), setMeas: (m) => this.setInspectionItem(sel.id, it.key, { meas: m }), setNote: (n) => this.setInspectionItem(sel.id, it.key, { note: n }), setName: (n) => this.setInspectionItem(sel.id, it.key, { name: n }), setPrice: (pr) => this.setInspectionItem(sel.id, it.key, { price: pr }), addPhoto: (file) => this.addVisitPhoto(sel.id, file, it.key, null) })),
+          flaggedCount: flagged.filter((it) => !it.sent).length, goodCount: insp.items.filter((it) => it.status === 'good').length, total: insp.items.length,
+          send: flagged.some((it) => !it.sent) ? () => this.sendInspection(sel.id, me && me.id) : null,
+          findings: fs.map((f) => ({ id: f.id, name: f.name, status: { pending: 'Waiting on customer', approved: 'Approved — go ahead', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '', markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null })),
+          back: () => set({ techSel: null }),
+        };
+      }
+      return { me, meName: me ? me.name : '', pick, techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, name: t.name })), jobs: live.map(jobRow), mine: live.filter((a) => me && a.tech_id === me.id).length, job, date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }), loading: s.loading, err: s.err, dismissErr: () => set({ err: '' }) };
+    })();
+
     return {
-      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires,
+      loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires, tech,
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + s.customers.filter((c) => c.joined_at).length + ' in the app · ' + activeToday.size + ' active today',
       importPreview: s.importPreview, previewImport: (f) => this.previewImport(f), runImport: () => this.runImport(), closeImport: () => set({ importPreview: null }),

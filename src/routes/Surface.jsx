@@ -39,6 +39,7 @@ class Boundary extends React.Component {
 }
 const Demo = lazyOf(() => import('../surfaces/Demo.jsx'), 'Demo');
 const TechApp = lazyOf(() => import('../surfaces/tech/TechApp.jsx'), 'TechApp');
+const TechLiveRoute = lazyOf(() => import('../surfaces/tech/TechLive.jsx'), 'TechLiveRoute');
 const ShopApp = lazyOf(() => import('../surfaces/shop/ShopApp.jsx'), 'ShopApp');
 const LobbyBoard = lazyOf(() => import('../surfaces/lobby/LobbyBoard.jsx'), 'LobbyBoard');
 const LobbyIdle = lazyOf(() => import('../surfaces/lobby/LobbyIdle.jsx'), 'LobbyIdle');
@@ -144,6 +145,7 @@ export function CustomerRoute() {
 /** Technician app: fills the iPad. */
 export function TechRoute() {
   const fit = useFit(1060, 1000); // iPad portrait and smaller: scaled landscape layout
+  if (LAUNCH) return <Lazy><TechLiveRoute /></Lazy>; // live: real jobs, inspections and the clock; the prototype stays at /tech?demo
   return (
     <AppHost options={{ ...DEFAULT_OPTIONS, defaultDevice: 'pad' }}>
       {(vm) => (
