@@ -136,6 +136,7 @@ export class CustomerLive extends AppLogic {
     if (error) return this.setState({ addVeh: { ...d, err: error.message } });
     this.setState({ addVeh: null, view: 'home' });
     await this.loadLive();
+    if (d.color) { const v = (this.state.live.vehicles || []).slice(-1)[0]; if (v) { await supabase.rpc('update_my_vehicle', { p_vehicle: v.id, p_year: v.year, p_make: v.make, p_model: v.model, p_plate: v.plate || '', p_color: d.color, p_nickname: v.nickname || '' }); await this.loadLive(); } }
   }
 
   renderVals() {

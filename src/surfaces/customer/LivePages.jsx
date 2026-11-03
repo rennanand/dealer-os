@@ -29,6 +29,7 @@ export function AddVehicle({ vm }) {
           <input value={d.make || ''} placeholder="Make" onChange={(e) => vm.setAddVeh({ make: e.target.value })} style={css(INPUT)} />
         </div>
         <input value={d.model || ''} placeholder="Model" onChange={(e) => vm.setAddVeh({ model: e.target.value })} style={css(INPUT + ';margin-top:10px')} />
+        <input value={d.color || ''} placeholder="Color · Red, Silver, Black…" onChange={(e) => vm.setAddVeh({ color: e.target.value })} style={css(INPUT + ';margin-top:10px')} />
         <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px')}>
           <input value={d.plate || ''} placeholder="Plate (optional)" onChange={(e) => vm.setAddVeh({ plate: e.target.value.toUpperCase() })} style={css(INPUT)} />
           <input value={d.odometer || ''} inputMode="numeric" placeholder="Mileage" onChange={(e) => vm.setAddVeh({ odometer: e.target.value.replace(/\D/g, '').slice(0, 7) })} style={css(INPUT)} />
