@@ -55,9 +55,27 @@ struct Finding: Codable, Identifiable, Hashable {
     var price_cents: Int?
     var status: String?      // pending | approved | declined
     var created_at: Date?
+    var source: String?      // tech | writer | canned | booked
+    var lines: [JobLine]?    // what the job includes (labor, parts, fees)
 
     var price: String { ((Double(price_cents ?? 0)) / 100).formatted(.currency(code: "USD").precision(.fractionLength(0))) }
     var tierLabel: String { switch tier { case "now": "Recommended now"; case "soon": "Recommended soon"; default: "Monitor" } }
+    var included: String {
+        var parts: [String] = []
+        for l in lines ?? [] {
+            guard let d = l.description, !d.isEmpty else { continue }
+            let q = l.qty ?? 1
+            var t = d
+            if q != 1 { t += " × " + q.formatted(); if l.kind == "labor" { t += " h" } }
+            parts.append(t)
+        }
+        return parts.joined(separator: ", ")
+    }
+}
+
+struct JobLine: Codable, Hashable {
+    var kind: String?; var description: String?; var qty: Double?; var unit_cents: Int?; var part_number: String?
+    var cents: Int { Int(((qty ?? 1) * Double(unit_cents ?? 0)).rounded()) }
 }
 
 struct VisitPhoto: Codable, Identifiable, Hashable {
@@ -113,6 +131,7 @@ struct Appointment: Codable, Identifiable, Hashable {
     var tire_quote: TireQuote?
     var invoice: Invoice?
     var inspection: InspectionReport?
+    var confirmed_at: Date?
 
     /// 0 booked · 1 arrived · 2 in progress · 8 done
     var stage: Int { switch status { case "arrived": 1; case "in_progress": 2; case "done": 8; default: 0 } }
@@ -143,7 +162,12 @@ struct Invoice: Codable, Identifiable, Hashable {
     var paid_method: String?
     var totals: InvoiceTotals?
     var lines: [InvoiceLine]?
+    var paid_cents: Int?
+    var pay_token: String?
     var total: Int { totals?.total ?? 0 }
+    var paid: Int { paid_cents ?? 0 }
+    var due: Int { max(0, total - paid) }
+    var payURL: URL? { pay_token.flatMap { URL(string: "https://dealer-os-rosy.vercel.app/pay/" + $0 + "?app=1") } }
     var statusLabel: String { switch status { case "paid": "Paid"; case "invoiced": "Invoice ready"; default: "Running total" } }
 }
 

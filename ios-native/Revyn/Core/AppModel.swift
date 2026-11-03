@@ -158,6 +158,7 @@ final class AppModel: ObservableObject {
         } catch { self.error = friendly(error); return false }
     }
     struct CancelParams: Encodable { let p_id: UUID }
+    func confirm(_ a: Appointment) async { do { try await client.rpc("confirm_my_appointment", params: CancelParams(p_id: a.id)).execute(); Haptic.success(); await refresh() } catch { self.error = friendly(error) } }
     func cancel(_ a: Appointment) async { do { try await client.rpc("cancel_my_appointment", params: CancelParams(p_id: a.id)).execute(); await refresh() } catch { self.error = friendly(error) } }
 
     struct VehicleParams: Encodable { let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_odometer: Int?; let p_vin: String; let p_color: String; let p_trim: String; let p_engine: String; let p_body: String; let p_drive: String; let p_fuel: String }

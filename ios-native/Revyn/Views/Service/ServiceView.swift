@@ -63,6 +63,11 @@ struct ServiceView: View {
                         Text(a.job ?? "Service").font(.system(size: 19, weight: .semibold))
                         Text((a.starts_at?.dayAndTime ?? "") + " · " + a.visitLabel).font(.system(size: 14)).foregroundStyle(Theme.dim)
                         if let n = a.notes, !n.isEmpty { Text(n).font(.system(size: 13.5)).foregroundStyle(Theme.dimmer).padding(.top, 2) }
+                        if a.confirmed_at == nil {
+                            PrimaryButton(title: "Confirm this visit") { Task { await model.confirm(a) } }.padding(.top, 10)
+                        } else {
+                            HStack(spacing: 6) { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.green); Text("Confirmed").font(.system(size: 13.5, weight: .medium)).foregroundStyle(Theme.green) }.padding(.top, 6)
+                        }
                         HStack(spacing: 10) {
                             SecondaryButton(title: "Directions") { if let s = model.shop, let u = ShopView.directionsURL(s) { UIApplication.shared.open(u) } }
                             Button(role: .destructive) { Task { await model.cancel(a) } } label: { Text("Cancel visit").font(.system(size: 15, weight: .medium)).frame(maxWidth: .infinity).frame(height: 52).background(Theme.card2, in: RoundedRectangle(cornerRadius: 14, style: .continuous)).foregroundStyle(Theme.red) }.buttonStyle(.plain)
@@ -217,6 +222,7 @@ struct InvoiceView: View {
     @EnvironmentObject var model: AppModel
     var appointment: Appointment
     var invoice: Invoice
+    @State private var payURL: URL?
     var body: some View {
         let inv = model.appointments.first(where: { $0.id == appointment.id })?.invoice ?? invoice
         ScrollView {
@@ -241,12 +247,20 @@ struct InvoiceView: View {
                         HStack { Text("Total").font(.system(size: 15, weight: .medium)); Spacer(); Text(money(inv.total)).font(.system(size: 26, weight: .semibold, design: .monospaced)) }.padding(.top, 12)
                     }
                 }
-                Card {
-                    HStack(spacing: 14) {
-                        Image(systemName: inv.status == "paid" ? "checkmark.circle.fill" : "building.2").font(.system(size: 20)).foregroundStyle(inv.status == "paid" ? Theme.green : .white)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(inv.status == "paid" ? "Paid " + (inv.paid_method ?? "") + (inv.paid_at.map { " · " + $0.formatted(date: .abbreviated, time: .shortened) } ?? "") : "Pay at the counter").font(.system(size: 15, weight: .medium))
-                            Text(inv.status == "paid" ? "This receipt stays in History." : "Card or cash when you pick up. Nothing is charged in the app.").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
+                if inv.paid > 0 && inv.status != "paid" {
+                    Card { HStack { Text("Paid so far").font(.system(size: 14)).foregroundStyle(Theme.dim); Spacer(); Text(money(inv.paid)).font(.system(size: 14, design: .monospaced)).foregroundStyle(Theme.green) }; HStack { Text("Still due").font(.system(size: 15, weight: .medium)); Spacer(); Text(money(inv.due)).font(.system(size: 18, weight: .semibold, design: .monospaced)) } }
+                }
+                if inv.status != "paid", let u = inv.payURL, inv.due > 0 {
+                    PrimaryButton(title: "Pay " + money(inv.due) + " online") { payURL = u }
+                    Text("Secure checkout, or pay at the counter when you pick up.").font(.system(size: 12.5)).foregroundStyle(Theme.dim).frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                } else {
+                    Card {
+                        HStack(spacing: 14) {
+                            Image(systemName: inv.status == "paid" ? "checkmark.circle.fill" : "building.2").font(.system(size: 20)).foregroundStyle(inv.status == "paid" ? Theme.green : .white)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(inv.status == "paid" ? "Paid " + (inv.paid_method ?? "") + (inv.paid_at.map { " · " + $0.formatted(date: .abbreviated, time: .shortened) } ?? "") : "Pay at the counter").font(.system(size: 15, weight: .medium))
+                                Text(inv.status == "paid" ? "This receipt stays in History." : "Card, cash or check when you pick up.").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
+                            }
                         }
                     }
                 }
@@ -254,6 +268,8 @@ struct InvoiceView: View {
             }.padding(16)
         }
         .background(Theme.bg)
+        .sheet(item: $payURL) { u in SafariView(url: u).ignoresSafeArea() }
+        .onChange(of: model.appointments) { _, _ in if payURL != nil, (model.appointments.first(where: { $0.id == appointment.id })?.invoice?.status == "paid") { payURL = nil } }
         .navigationTitle("Invoice")
         .toolbarTitleDisplayMode(.inline)
     }

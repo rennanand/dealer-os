@@ -33,6 +33,7 @@ struct FindingsView: View {
                                 HStack { Pill(text: f.tierLabel, color: color(f)); Spacer(); Text(f.price).font(.system(size: 17, weight: .semibold, design: .monospaced)).foregroundStyle(off ? Theme.dimmer : .white) }
                                 Text(f.name ?? "").font(.system(size: 19, weight: .semibold)).tracking(-0.3).strikethrough(off, color: Theme.dim).foregroundStyle(off ? Theme.dim : .white)
                                 if let p = f.plain, !p.isEmpty { Text(p).font(.system(size: 14)).foregroundStyle(Theme.dim) }
+                                if !f.included.isEmpty { Text("Includes " + f.included + ".").font(.system(size: 12.5)).foregroundStyle(Theme.dimmer) }
                                 if f.meas != nil || f.urgency != nil {
                                     HStack(spacing: 18) {
                                         if let m = f.meas { VStack(alignment: .leading, spacing: 2) { Text((f.meas_label ?? "Measured").uppercased()).font(.system(size: 10, design: .monospaced)).tracking(1).foregroundStyle(Theme.dimmer); Text(m).font(.system(size: 15, weight: .medium, design: .monospaced)) } }
