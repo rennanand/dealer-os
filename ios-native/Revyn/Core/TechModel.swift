@@ -27,7 +27,10 @@ struct TimeEntry: Codable, Identifiable, Hashable { let id: UUID; var appointmen
 struct TechPhoto: Codable, Identifiable, Hashable { let id: UUID; var appointment_id: UUID; var finding_id: UUID?; var path: String; var caption: String?
     var url: URL? { URL(string: Secrets.supabaseURL + "/storage/v1/object/public/visit-photos/" + path) } }
 struct TemplateItem: Codable, Hashable { var key: String?; var label: String; var measLabel: String?; var hint: String?; var now_job: UUID?; var monitor_job: UUID? }
-struct InspectionTemplate: Codable, Identifiable, Hashable { let id: UUID; var name: String; var items: [TemplateItem]; var is_default: Bool?; var internal: Bool?; var sort: Int? }
+struct InspectionTemplate: Codable, Identifiable, Hashable {
+    let id: UUID; var name: String; var items: [TemplateItem]; var is_default: Bool?; var isInternal: Bool?; var sort: Int?
+    enum CodingKeys: String, CodingKey { case id, name, items, is_default, isInternal = "internal", sort }
+}
 struct CannedLine: Codable, Hashable { var kind: String?; var description: String?; var qty: Double?; var unit_cents: Int?; var cost_cents: Int?; var part_number: String?; var vendor: String? }
 struct CannedJob: Codable, Identifiable, Hashable { let id: UUID; var name: String; var plain: String?; var lines: [CannedLine]?; var hours: Double?; var package_cents: Int? }
 struct MatrixTier: Codable, Hashable { var upto_cents: Int?; var markup_pct: Double? }

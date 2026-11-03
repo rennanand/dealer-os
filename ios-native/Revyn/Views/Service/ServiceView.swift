@@ -215,7 +215,7 @@ struct SafariView: UIViewControllerRepresentable {
     var url: URL
     func makeUIViewController(context: Context) -> SFSafariViewController {
         let c = SFSafariViewController.Configuration(); c.barCollapsingEnabled = true
-        let v = SFSafariViewController(url: url, configuration: c); v.preferredBarTintColor = .black; v.preferredControlTintColor = .white; return v
+        let v = SFSafariViewController(url: url, configuration: c); return v
     }
     func updateUIViewController(_ v: SFSafariViewController, context: Context) {}
 }
