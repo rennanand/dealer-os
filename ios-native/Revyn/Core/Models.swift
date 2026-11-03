@@ -32,6 +32,7 @@ struct Vehicle: Codable, Identifiable, Hashable {
         var parts: [String] = []
         if let y = year { parts.append(String(y)) }
         if let t = trim, !t.isEmpty { parts.append(t) }
+        if let c = color, !c.isEmpty { parts.append(c.capitalizedWords) }
         if let o = odometer { parts.append(o.formatted() + " mi") } else { parts.append("Add your mileage") }
         if let p = plate, !p.isEmpty { parts.append(p) }
         return parts.joined(separator: " · ")

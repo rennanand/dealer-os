@@ -115,7 +115,10 @@ struct VehicleDetailView: View {
                     TextField("Make", text: $make).textInputAutocapitalization(.words).field()
                 }
                 TextField("Model", text: $vmodel).textInputAutocapitalization(.words).field()
-                TextField("Color · Red, Silver, Black…", text: $color).textInputAutocapitalization(.words).field()
+                HStack(spacing: 10) {
+                    TextField("Color · Red, Silver, Black…", text: $color).textInputAutocapitalization(.words).field()
+                    Circle().fill(Theme.paint(named: color)).frame(width: 28, height: 28).overlay(Circle().stroke(.white.opacity(0.2)))
+                }
                 TextField("Plate (optional)", text: $plate).textInputAutocapitalization(.characters).autocorrectionDisabled().field()
                 PrimaryButton(title: "Save", enabled: !make.trimmingCharacters(in: .whitespaces).isEmpty && !vmodel.trimmingCharacters(in: .whitespaces).isEmpty, busy: model.busy) {
                     Task { if await model.updateVehicle(live, year: Int(year), make: make.trimmingCharacters(in: .whitespaces), model: vmodel.trimmingCharacters(in: .whitespaces), plate: plate.trimmingCharacters(in: .whitespaces), color: color.trimmingCharacters(in: .whitespaces), nickname: nickname.trimmingCharacters(in: .whitespaces), vin: vin.isEmpty ? nil : vin, decoded: decoded) { dismiss() } }
