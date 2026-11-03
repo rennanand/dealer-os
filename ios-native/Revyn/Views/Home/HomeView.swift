@@ -55,7 +55,7 @@ struct HomeView: View {
                         HStack(alignment: .top, spacing: 24) {
                             VStack(alignment: .leading, spacing: 0) {
                                 header(st)
-                                CarView(paint: Theme.paint(for: model.activeVehicle), angle: st.angle, autoRotate: true).frame(height: 320).padding(.top, 2).opacity(model.vehicles.isEmpty ? 0.35 : 1)
+                                CarView(paint: Theme.paint(for: model.vehicle), angle: st.angle, autoRotate: true).frame(height: 320).padding(.top, 2).opacity(model.vehicles.isEmpty ? 0.35 : 1)
                                 shortcuts
                             }.frame(maxWidth: .infinity)
                             VStack(alignment: .leading, spacing: 0) {
@@ -67,7 +67,7 @@ struct HomeView: View {
                     } else {
                         VStack(alignment: .leading, spacing: 0) {
                             header(st)
-                            CarView(paint: Theme.paint(for: model.activeVehicle), angle: st.angle, autoRotate: true)
+                            CarView(paint: Theme.paint(for: model.vehicle), angle: st.angle, autoRotate: true)
                                 .frame(height: 250).padding(.top, 2)
                                 .opacity(model.vehicles.isEmpty ? 0.35 : 1)
                             shortcuts

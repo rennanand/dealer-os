@@ -16,18 +16,26 @@ enum Theme {
     static let line = Color.white.opacity(0.07)
     static let radius: CGFloat = 16
 
-    /// Hex paint for the 3D car from the color the customer typed. Default is titanium.
-    static func paint(for v: Vehicle?) -> Color {
-        let t = ((v?.color ?? "") + " " + (v?.model ?? "")).lowercased()
-        let table: [(String, Color)] = [
-            ("white", Color(hex: 0xeef0f2)), ("pearl", Color(hex: 0xeceff3)), ("black", Color(hex: 0x0f1013)), ("silver", Color(hex: 0xc3c8ce)),
-            ("gray", Color(hex: 0x8a8f95)), ("grey", Color(hex: 0x8a8f95)), ("charcoal", Color(hex: 0x3a3d42)), ("red", Color(hex: 0xc8101a)),
-            ("maroon", Color(hex: 0x6a0f1a)), ("burgundy", Color(hex: 0x6a0f1a)), ("blue", Color(hex: 0x1f4fa0)), ("navy", Color(hex: 0x15284f)),
-            ("green", Color(hex: 0x1f5a3a)), ("tan", Color(hex: 0xc2b08c)), ("beige", Color(hex: 0xc2b08c)), ("gold", Color(hex: 0xb8923a)),
-            ("orange", Color(hex: 0xe0561a)), ("yellow", Color(hex: 0xe3bd1f)), ("brown", Color(hex: 0x5a4030)), ("bronze", Color(hex: 0x8a6a3a)),
-            ("teal", Color(hex: 0x2f8a96)), ("purple", Color(hex: 0x5a2a7a)),
+    /// Paint for the 3D car from whatever the customer typed ("Red", "Midnight Silver Metallic", "dark grey").
+    /// The longest matching word wins, so "silver" beats "metallic" and "midnight" beats "blue" in "midnight blue".
+    static func paint(for v: Vehicle?) -> Color { paint(named: (v?.color ?? "") + " " + (v?.model ?? "")) }
+    static func paint(named raw: String) -> Color {
+        let t = raw.lowercased()
+        let table: [(String, UInt32)] = [
+            ("pearl", 0xeceff3), ("white", 0xeef0f2), ("ivory", 0xe9e4d4), ("cream", 0xe6dfc8), ("champagne", 0xd8c8a4),
+            ("black", 0x0f1013), ("onyx", 0x0f1013), ("jet", 0x0f1013), ("obsidian", 0x111216), ("midnight", 0x121622), ("ebony", 0x0f1013),
+            ("silver", 0xc3c8ce), ("titanium", 0x9ea3ab), ("platinum", 0xd2d5da), ("steel", 0x7b8189), ("gunmetal", 0x4a4f57), ("graphite", 0x3a3d42), ("charcoal", 0x3a3d42), ("slate", 0x5a6270), ("gray", 0x8a8f95), ("grey", 0x8a8f95), ("magnetic", 0x4f535a),
+            ("maroon", 0x6a0f1a), ("burgundy", 0x6a0f1a), ("wine", 0x5a1020), ("crimson", 0xb0101e), ("scarlet", 0xd0141c), ("cherry", 0xb8121f), ("ruby", 0xa81224), ("red", 0xc8101a), ("rapid", 0xc8101a), ("race", 0xc8101a),
+            ("navy", 0x15284f), ("cobalt", 0x1f3f9a), ("royal", 0x2449a8), ("sapphire", 0x1b3f8f), ("sky", 0x5f9ad8), ("teal", 0x2f8a96), ("turquoise", 0x3fb0b8), ("blue", 0x1f4fa0),
+            ("forest", 0x1f4a32), ("emerald", 0x1f6e4a), ("olive", 0x5e6a33), ("lime", 0x8fc43f), ("green", 0x1f5a3a),
+            ("tan", 0xc2b08c), ("beige", 0xc2b08c), ("sand", 0xcdb892), ("khaki", 0xb8a77a), ("gold", 0xb8923a), ("copper", 0xb0623a), ("bronze", 0x8a6a3a), ("mocha", 0x5b4334), ("chocolate", 0x4a3226), ("brown", 0x5a4030),
+            ("orange", 0xe0561a), ("yellow", 0xe3bd1f), ("pink", 0xd9789a), ("magenta", 0xb0307a), ("purple", 0x5a2a7a), ("violet", 0x6a3a9a), ("plum", 0x5a2a4a),
         ]
-        return table.first(where: { t.contains($0.0) })?.1 ?? Color(hex: 0x868a93)
+        var best: (Int, UInt32)? = nil
+        for (name, hex) in table where t.contains(name) {
+            if best == nil || name.count > best!.0 { best = (name.count, hex) }
+        }
+        return Color(hex: best?.1 ?? 0x868a93)
     }
 }
 
