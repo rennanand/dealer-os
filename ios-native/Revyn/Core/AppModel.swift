@@ -103,6 +103,7 @@ final class AppModel: ObservableObject {
             vehicles = vv; appointments = aa; messages = mm; shops = ss; rentals = rr
             if selectedVehicleIndex >= vehicles.count { selectedVehicleIndex = 0 }
             saveCache()
+            LiveActivity.sync(self)
             await PushDelegate.store()
         } catch { self.error = friendly(error) }
     }

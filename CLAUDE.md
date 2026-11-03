@@ -39,3 +39,4 @@ iPhone Duo is Apple's foldable: a 5.4" outer display, a 7.6" inner display, and 
 - Secrets live in `ios-native/Revyn/Core/Secrets.swift` (git-ignored); the template is `ios-native/Secrets.example.swift`.
 - Design: Tesla-flat (black, `#141416` cards, title + chevron rows). No hand-drawn glass; the system tab bar is the only glass.
 - iPhone Duo rules above apply: layouts are stacks and grids that adapt to width, never fixed to a device size.
+- `ios-native/RevynWidgets/` is the widget extension (Live Activity for the visit). `ServiceActivityAttributes.swift` exists in both targets and must stay identical.
