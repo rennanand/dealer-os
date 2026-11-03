@@ -130,13 +130,20 @@ export class CustomerLive extends AppLogic {
     clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast: '' }), 3400);
     this.loadLive();
   }
+  async decodeAddVin() {
+    const d = this.state.addVeh || {}; this.setState({ addVeh: { ...d, decoding: true, decodeErr: '' } });
+    try {
+      const { decodeVin } = await import('./vin.js'); const r = await decodeVin(d.vin);
+      if (!r) return this.setState({ addVeh: { ...this.state.addVeh, decoding: false, decodeErr: 'That VIN did not decode. Check it against the door jamb sticker.' } });
+      this.setState({ addVeh: { ...this.state.addVeh, decoding: false, year: String(r.year || ''), make: r.make, model: r.model, trim: r.trim, engine: r.engine, body: r.body, drive: r.drive, fuel: r.fuel, decoded: [r.year, r.make, r.model, r.trim].filter(Boolean).join(' ') + (r.engine ? ' · ' + r.engine : '') + (r.drive ? ' · ' + r.drive : '') } });
+    } catch (e) { this.setState({ addVeh: { ...this.state.addVeh, decoding: false, decodeErr: 'Could not reach the VIN service. Type the details instead.' } }); }
+  }
   async addVehicle(d) {
     if (!supabase) { const live = this.state.live; this.setState({ live: { ...live, vehicles: live.vehicles.concat({ id: 'v' + Date.now(), ...d }) }, noVehicle: false, addVeh: null, view: 'home' }); return; }
-    const { error } = await supabase.rpc('add_my_vehicle', { p_year: parseInt(d.year, 10) || null, p_make: d.make, p_model: d.model, p_plate: d.plate || '', p_odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null });
+    const { error } = await supabase.rpc('add_my_vehicle', { p_year: parseInt(d.year, 10) || null, p_make: d.make, p_model: d.model, p_plate: d.plate || '', p_odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null, p_vin: d.vin || '', p_color: d.color || '', p_trim: d.trim || '', p_engine: d.engine || '', p_body: d.body || '', p_drive: d.drive || '', p_fuel: d.fuel || '' });
     if (error) return this.setState({ addVeh: { ...d, err: error.message } });
     this.setState({ addVeh: null, view: 'home' });
     await this.loadLive();
-    if (d.color) { const v = (this.state.live.vehicles || []).slice(-1)[0]; if (v) { await supabase.rpc('update_my_vehicle', { p_vehicle: v.id, p_year: v.year, p_make: v.make, p_model: v.model, p_plate: v.plate || '', p_color: d.color, p_nickname: v.nickname || '' }); await this.loadLive(); } }
   }
 
   renderVals() {
@@ -164,7 +171,7 @@ export class CustomerLive extends AppLogic {
     if (!nextDue.length) nextDue.push({ name: 'Reminders', due: 'After your first visit', c: DIM, bar: bar(0, '#fff'), go: () => this.setState({ view: 'book', book: { ...s.book, step: 0, err: '' } }) });
 
     // ---- vehicles and the 3D hero
-    const cars = live.vehicles.map((v) => ({ id: v.id, name: vehTitle(v), sub: [v.year, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : 'Add your mileage', v.plate].filter(Boolean).join(' · '), paint: paintOf(v), ph: '' }));
+    const cars = live.vehicles.map((v) => ({ id: v.id, name: vehTitle(v), sub: [v.year, v.trim, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : 'Add your mileage', v.plate].filter(Boolean).join(' · '), paint: paintOf(v), ph: '' }));
     const vIdx = Math.min(s.vIdx || 0, Math.max(0, cars.length - 1)), car0 = cars[vIdx] || { name: 'Your car', sub: '', paint: '#b9bdc3' };
     Object.assign(V, {
       greeting: first ? (hour < 12 ? 'Good morning, ' : hour < 17 ? 'Good afternoon, ' : 'Good evening, ') + first + '.' : 'Welcome.',
@@ -175,6 +182,7 @@ export class CustomerLive extends AppLogic {
       goOdometer: () => { const v = live.vehicles[vIdx]; if (!v) return; const val = window.prompt('Current mileage for your ' + (v.model || 'car') + ':', v.odometer || ''); const n = parseInt(String(val || '').replace(/\D/g, ''), 10); if (n && supabase) supabase.rpc('update_my_odometer', { p_vehicle: v.id, p_odometer: n }).then(() => this.loadLive()); },
       nextDue: nextDue, showExtras: true, showPlans: false,
       shortcuts: [{ label: 'Book', d: I.plus, go: goBook }, { label: 'Service', d: I.wrench, go: goService }, { label: 'Call', d: I.phone, go: openUrl(tel) }, { label: 'Directions', d: I.car, go: openUrl(maps) }],
+      decodeAddVin: () => this.decodeAddVin(),
       goCare: null, goRewards: null, goShop: openUrl(maps), goUpdates: goService, goAccount: this.go('account'),
     });
 

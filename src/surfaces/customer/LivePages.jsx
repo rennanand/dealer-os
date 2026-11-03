@@ -24,7 +24,12 @@ export function AddVehicle({ vm }) {
       <div style={css('padding:26px 22px 0')}>
         <div style={css('font-size:22px;font-weight:600;letter-spacing:-.5px;line-height:1.2')}>Which car?</div>
         <div style={css('font-size:13.5px;line-height:1.5;color:rgba(235,235,245,.55);margin-top:8px')}>Year, make and model is plenty. Mileage is whatever the dash shows now; we never read it from the car.</div>
-        <div style={css('display:grid;grid-template-columns:90px 1fr;gap:10px;margin-top:22px')}>
+        <div style={css('display:flex;gap:8px;margin-top:22px')}>
+          <input value={d.vin || ''} placeholder="VIN · 17 characters, on the door jamb or dash" autoCapitalize="characters" onChange={(e) => vm.setAddVeh({ vin: e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17), decoded: null })} style={css(INPUT + ';font-family:var(--data-font,inherit);letter-spacing:.06em')} />
+          <div onClick={(d.vin || '').length === 17 && !d.decoding ? vm.decodeAddVin : null} style={css('flex:0 0 auto;padding:0 16px;border-radius:12px;background:' + ((d.vin || '').length === 17 ? '#fff;color:#000' : 'rgba(255,255,255,.08);color:rgba(235,235,245,.4)') + ';font-size:13px;font-weight:600;display:flex;align-items:center;cursor:pointer')}>{d.decoding ? '…' : 'Decode'}</div>
+        </div>
+        {d.decoded ? <div style={css('font-size:12.5px;color:#30d158;margin-top:8px')}>{d.decoded}</div> : d.decodeErr ? <div style={css('font-size:12.5px;color:#ffd60a;margin-top:8px')}>{d.decodeErr}</div> : null}
+        <div style={css('display:grid;grid-template-columns:90px 1fr;gap:10px;margin-top:10px')}>
           <input value={d.year || ''} inputMode="numeric" placeholder="Year" onChange={(e) => vm.setAddVeh({ year: e.target.value.replace(/\D/g, '').slice(0, 4) })} style={css(INPUT)} autoFocus />
           <input value={d.make || ''} placeholder="Make" onChange={(e) => vm.setAddVeh({ make: e.target.value })} style={css(INPUT)} />
         </div>

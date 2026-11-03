@@ -79,7 +79,7 @@ export class ShopLogic extends DCLogic {
     return cust;
   }
   async addVehicle(customer_id, d) {
-    const row = { customer_id, year: parseInt(d.year, 10) || null, make: (d.make || '').trim(), model: (d.model || '').trim(), plate: (d.plate || '').trim().toUpperCase(), odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null };
+    const row = { customer_id, year: parseInt(d.year, 10) || null, make: (d.make || '').trim(), model: (d.model || '').trim(), plate: (d.plate || '').trim().toUpperCase(), odometer: parseInt(String(d.odometer || '').replace(/\D/g, ''), 10) || null, vin: (d.vin || '').trim().toUpperCase(), color: (d.color || '').trim(), trim: d.trim || '', engine: d.engine || '', body: d.body || '', drive: d.drive || '', fuel: d.fuel || '' };
     if (!supabase) { this.setState({ vehicles: [...this.state.vehicles, { id: 'v' + Date.now(), ...row }], editVeh: null }); return; }
     const { data, error } = await supabase.from('customer_vehicles').insert({ ...row, shop_id: SHOP_ID }).select().single();
     if (error) return this.setState({ err: error.message });
@@ -507,7 +507,7 @@ export class ShopLogic extends DCLogic {
       customers: custRows.map((c) => ({ id: c.id, initials: initials(c.name), name: c.name, vehicles: String(s.vehicles.filter((v) => v.customer_id === c.id).length), visits: String(apptsOf(c.id).filter((a) => a.status === 'done').length), last: lastVisit(c), ltv: c.joined_at ? 'In the app' : c.invited_at ? 'Invited' : rentalsOf(c).length + (rentalsOf(c).length === 1 ? ' loaner' : ' loaners'), joined: !!c.joined_at, open: () => set({ custId: c.id, newCust: null }), style: 'display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;align-items:center;padding:14px 12px;margin:0 -12px;border-bottom:1px solid rgba(235,235,245,.07);font-size:13.5px;cursor:pointer;border-radius:10px;' + (c.id === custId ? 'background:rgba(235,235,245,.06)' : '') })),
       noCustomers: !s.loading && !s.customers.length, noMatches: !!q && !custRows.length && !!s.customers.length,
       cust: cust ? { id: cust.id, initials: initials(cust.name), name: cust.name, meta: [fmtPhone(cust.phone), cust.city, 'Since ' + new Date(cust.created_at).getFullYear()].filter(Boolean).join(' · '), phone: cust.phone, email: cust.email, city: cust.city, notes: cust.notes || '',
-        cars: custCars.map((v) => ({ id: v.id, n: vehName(v) || 'Vehicle', s: [v.plate, v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : ''].filter(Boolean).join(' · ') })),
+        cars: custCars.map((v) => ({ id: v.id, n: vehName(v) || 'Vehicle', s: [v.trim, v.engine, v.drive, v.color, v.plate, v.vin ? 'VIN ' + v.vin : '', v.odometer ? v.odometer.toLocaleString('en-US') + ' mi' : ''].filter(Boolean).join(' · ') })),
         visitsList: custAppts.slice(0, 6).map((a) => ({ t: (a.job || 'Service') + (a.status === 'done' ? '' : ' · ' + STATUS[a.status][0]), d: relDay(a.starts_at) })),
         loaners: custRentals.slice(0, 4).map((r) => ({ t: r.number + ' · ' + ({ draft: 'Draft', sent: 'Sent', signed: 'Signed', out: 'Out', returned: 'Returned', cancelled: 'Cancelled' }[r.status] || r.status), d: relDay(r.created_at) })),
         smsHref: cust.phone ? 'sms:' + cust.phone : '', telHref: cust.phone ? 'tel:' + cust.phone : '',
@@ -518,6 +518,7 @@ export class ShopLogic extends DCLogic {
         setNotes: (v) => this.updateCustomer(cust.id, { notes: v }), message: () => set({ threadId: cust.id, goInbox: true }),
       } : null,
       editVeh: s.editVeh, setEditVeh: (v) => set({ editVeh: v }), saveVeh: () => cust && s.editVeh && this.addVehicle(cust.id, s.editVeh),
+      decodeVeh: async () => { const ev = s.editVeh || {}; set({ editVeh: { ...ev, decoding: true, decodeErr: '' } }); try { const { decodeVin } = await import('./vin.js'); const r = await decodeVin(ev.vin); if (!r) return set({ editVeh: { ...this.state.editVeh, decoding: false, decodeErr: 'VIN did not decode.' } }); set({ editVeh: { ...this.state.editVeh, decoding: false, year: String(r.year || ''), make: r.make, model: r.model, trim: r.trim, engine: r.engine, body: r.body, drive: r.drive, fuel: r.fuel, decoded: [r.year, r.make, r.model, r.trim].filter(Boolean).join(' ') + (r.engine ? ' · ' + r.engine : '') } }); } catch (e) { set({ editVeh: { ...this.state.editVeh, decoding: false, decodeErr: 'VIN service unreachable.' } }); } },
       newCust: nc, openNewCust: () => set({ newCust: { name: '', phone: '', email: '', city: '', year: '', make: '', model: '', plate: '' } }), setNewCust: (p) => set({ newCust: { ...nc, ...p } }), cancelNewCust: () => set({ newCust: null }),
       saveNewCust: async () => { const c = await this.addCustomer(nc); if (c) set({ newCust: null, custId: c.id }); },
       // Appointments page

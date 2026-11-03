@@ -285,6 +285,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Revyn;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Revyn reads your car's VIN from the door jamb sticker or dash plate.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Revyn shows how far you are from the shop.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -319,6 +320,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Revyn;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Revyn reads your car's VIN from the door jamb sticker or dash plate.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Revyn shows how far you are from the shop.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

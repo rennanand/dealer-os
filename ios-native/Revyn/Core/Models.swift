@@ -16,6 +16,12 @@ struct Vehicle: Codable, Identifiable, Hashable {
     var nickname: String?
     var last_visit_at: Date?
     var last_service: String?
+    var vin: String?
+    var trim: String?
+    var engine: String?
+    var body: String?
+    var drive: String?
+    var fuel: String?
 
     var title: String {
         if let n = nickname, !n.isEmpty { return n.capitalizedWords }
@@ -25,11 +31,13 @@ struct Vehicle: Codable, Identifiable, Hashable {
     var subtitle: String {
         var parts: [String] = []
         if let y = year { parts.append(String(y)) }
+        if let t = trim, !t.isEmpty { parts.append(t) }
         if let o = odometer { parts.append(o.formatted() + " mi") } else { parts.append("Add your mileage") }
         if let p = plate, !p.isEmpty { parts.append(p) }
         return parts.joined(separator: " · ")
     }
     var lastKnown: String? { guard let d = last_visit_at else { return nil }; return "Last visit " + d.formatted(.dateTime.month(.abbreviated).year()) + (last_service.map { $0.isEmpty ? "" : " · " + $0 } ?? "") }
+    var specs: String { [engine, drive, body, fuel].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
     var fullName: String { [year.map(String.init), make?.capitalizedWords, model?.capitalizedWords].compactMap { $0 }.joined(separator: " ") }
 }
 

@@ -157,16 +157,16 @@ final class AppModel: ObservableObject {
     struct CancelParams: Encodable { let p_id: UUID }
     func cancel(_ a: Appointment) async { do { try await client.rpc("cancel_my_appointment", params: CancelParams(p_id: a.id)).execute(); await refresh() } catch { self.error = friendly(error) } }
 
-    struct VehicleParams: Encodable { let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_odometer: Int? }
-    func addVehicle(year: Int?, make: String, model: String, plate: String, odometer: Int?) async -> Bool {
+    struct VehicleParams: Encodable { let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_odometer: Int?; let p_vin: String; let p_color: String; let p_trim: String; let p_engine: String; let p_body: String; let p_drive: String; let p_fuel: String }
+    func addVehicle(year: Int?, make: String, model: String, plate: String, odometer: Int?, vin: String = "", color: String = "", decoded: DecodedVIN? = nil) async -> Bool {
         busy = true; defer { busy = false }
-        do { try await client.rpc("add_my_vehicle", params: VehicleParams(p_year: year, p_make: make, p_model: model, p_plate: plate, p_odometer: odometer)).execute(); await refresh(); selectedVehicleIndex = max(0, vehicles.count - 1); return true }
+        do { try await client.rpc("add_my_vehicle", params: VehicleParams(p_year: year, p_make: make, p_model: model, p_plate: plate, p_odometer: odometer, p_vin: vin, p_color: color, p_trim: decoded?.trim ?? "", p_engine: decoded?.engine ?? "", p_body: decoded?.body ?? "", p_drive: decoded?.drive ?? "", p_fuel: decoded?.fuel ?? "")).execute(); await refresh(); selectedVehicleIndex = max(0, vehicles.count - 1); Haptic.success(); return true }
         catch { self.error = friendly(error); return false }
     }
-    struct EditVehicleParams: Encodable { let p_vehicle: UUID; let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_color: String; let p_nickname: String }
-    func updateVehicle(_ v: Vehicle, year: Int?, make: String, model: String, plate: String, color: String, nickname: String) async -> Bool {
+    struct EditVehicleParams: Encodable { let p_vehicle: UUID; let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_color: String; let p_nickname: String; let p_vin: String?; let p_trim: String?; let p_engine: String?; let p_body: String?; let p_drive: String?; let p_fuel: String? }
+    func updateVehicle(_ v: Vehicle, year: Int?, make: String, model: String, plate: String, color: String, nickname: String, vin: String? = nil, decoded: DecodedVIN? = nil) async -> Bool {
         busy = true; defer { busy = false }
-        do { try await client.rpc("update_my_vehicle", params: EditVehicleParams(p_vehicle: v.id, p_year: year, p_make: make, p_model: model, p_plate: plate, p_color: color, p_nickname: nickname)).execute(); await refresh(); return true }
+        do { try await client.rpc("update_my_vehicle", params: EditVehicleParams(p_vehicle: v.id, p_year: year, p_make: make, p_model: model, p_plate: plate, p_color: color, p_nickname: nickname, p_vin: vin, p_trim: decoded?.trim, p_engine: decoded?.engine, p_body: decoded?.body, p_drive: decoded?.drive, p_fuel: decoded?.fuel)).execute(); await refresh(); return true }
         catch { self.error = friendly(error); return false }
     }
     struct RemoveVehicleParams: Encodable { let p_vehicle: UUID }

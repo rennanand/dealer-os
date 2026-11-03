@@ -90,14 +90,20 @@ export function CustomersLive({ vm }) {
               {!c.cars.length && !ev ? <div style={css('font-size:12.5px;color:rgba(235,235,245,.4);padding:11px 0')}>No vehicle on file.</div> : null}
               {ev ? (
                 <div style={css('margin-top:10px;display:flex;flex-direction:column;gap:8px')}>
+                  <div style={css('display:flex;gap:6px')}>
+                    <input value={ev.vin || ''} placeholder="VIN" onChange={(e) => vm.setEditVeh({ ...ev, vin: e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17), decoded: null })} style={css(INPUT + ';font-family:var(--data-font,inherit)')} autoFocus />
+                    <div onClick={(ev.vin || '').length === 17 && !ev.decoding ? vm.decodeVeh : null} style={css(((ev.vin || '').length === 17 ? BTN : GHOST) + ';padding:9px 12px')}>{ev.decoding ? '…' : 'Decode'}</div>
+                  </div>
+                  {ev.decoded ? <div style={css('font-size:12px;color:#30d158')}>{ev.decoded}</div> : ev.decodeErr ? <div style={css('font-size:12px;color:#ffd60a')}>{ev.decodeErr}</div> : null}
                   <div style={css('display:grid;grid-template-columns:70px 1fr 1fr;gap:8px')}>
-                    <input value={ev.year} inputMode="numeric" placeholder="Year" onChange={(e) => vm.setEditVeh({ ...ev, year: e.target.value })} style={css(INPUT)} autoFocus />
+                    <input value={ev.year} inputMode="numeric" placeholder="Year" onChange={(e) => vm.setEditVeh({ ...ev, year: e.target.value })} style={css(INPUT)} />
                     <input value={ev.make} placeholder="Make" onChange={(e) => vm.setEditVeh({ ...ev, make: e.target.value })} style={css(INPUT)} />
                     <input value={ev.model} placeholder="Model" onChange={(e) => vm.setEditVeh({ ...ev, model: e.target.value })} style={css(INPUT)} />
                   </div>
                   <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px')}>
                     <input value={ev.plate} placeholder="Plate" onChange={(e) => vm.setEditVeh({ ...ev, plate: e.target.value })} style={css(INPUT)} />
                     <input value={ev.odometer} inputMode="numeric" placeholder="Odometer" onChange={(e) => vm.setEditVeh({ ...ev, odometer: e.target.value })} style={css(INPUT)} />
+                    <input value={ev.color || ''} placeholder="Color" onChange={(e) => vm.setEditVeh({ ...ev, color: e.target.value })} style={css(INPUT)} />
                   </div>
                   <div style={css('display:flex;gap:8px')}>
                     <div onClick={ev.make || ev.model ? vm.saveVeh : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (ev.make || ev.model ? '' : 'opacity:.4;cursor:default'))}>Save vehicle</div>
