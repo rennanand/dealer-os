@@ -114,6 +114,13 @@ export function AppointmentsLive({ vm }) {
                   <option value="">Not assigned</option>
                   {a.techOpts.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
+                <div style={css('display:flex;align-items:center;gap:10px;margin-top:8px')}>
+                  {a.clock.on
+                    ? <div onClick={a.clock.stop} style={css(GHOST + ';padding:8px 12px;font-size:12px')}>Clock off · {a.clock.who} since {a.clock.since}</div>
+                    : <div onClick={a.techId ? () => a.clock.start(a.techId) : null} style={css(GHOST + ';padding:8px 12px;font-size:12px;' + (a.techId ? '' : 'opacity:.4;cursor:default'))}>Clock on</div>}
+                  <div style={css('font-size:12px;color:rgba(235,235,245,.5)')}>{a.clock.hours}</div>
+                </div>
+                {a.clock.entries.length ? <div style={css('font-size:11.5px;color:rgba(235,235,245,.35);margin-top:6px;line-height:1.6')}>{a.clock.entries.join('  ·  ')}</div> : null}
               </div>
             ) : null}
             <div>
@@ -234,6 +241,7 @@ function Invoice({ inv }) {
             <span style={css('font-family:var(--data-font,inherit);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(235,235,245,.4);margin-right:8px')}>{l.kind}</span>
             {l.description}
             {l.qty ? <span style={css('color:rgba(235,235,245,.45);margin-left:8px;font-size:12px')}>{l.qty}</span> : null}
+            {l.meta ? <div style={css('font-size:11.5px;color:rgba(235,235,245,.4);margin-top:2px')}>{l.meta}</div> : null}
             {l.pending ? <span style={css('color:#ffd60a;margin-left:8px;font-size:11px')}>waiting</span> : null}
           </div>
           <div style={css('font-family:var(--data-font,inherit);white-space:nowrap')}>{l.total}</div>
@@ -244,9 +252,16 @@ function Invoice({ inv }) {
         <div style={css('margin-top:10px;display:flex;flex-direction:column;gap:8px')}>
           <div style={css('display:flex;gap:6px')}>{KINDS.map(([k, l]) => <div key={k} onClick={() => inv.setNewLine({ kind: k })} style={css('flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:12px;cursor:pointer;' + (nl.kind === k ? 'background:#fff;color:#000;font-weight:600' : 'background:rgba(255,255,255,.06)'))}>{l}</div>)}</div>
           <input value={nl.description} placeholder={nl.kind === 'part' ? 'Part · brand, number' : nl.kind === 'labor' ? 'Labor · what was done' : nl.kind === 'fee' ? 'Fee · shop supplies, disposal' : 'Discount · reason'} onChange={(e) => inv.setNewLine({ description: e.target.value })} style={css(INPUT)} autoFocus />
-          <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px')}>
+          {nl.kind === 'part' ? (
+            <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px')}>
+              <input value={nl.part_number || ''} placeholder="Part #" onChange={(e) => inv.setNewLine({ part_number: e.target.value })} style={css(INPUT)} />
+              <input value={nl.vendor || ''} placeholder="Vendor · NAPA, O'Reilly, dealer" onChange={(e) => inv.setNewLine({ vendor: e.target.value })} style={css(INPUT)} />
+            </div>
+          ) : null}
+          <div style={css('display:grid;grid-template-columns:' + (nl.kind === 'part' ? '1fr 1fr 1fr' : '1fr 1fr') + ';gap:8px')}>
             <input value={nl.qty} inputMode="decimal" placeholder={nl.kind === 'labor' ? 'Hours' : 'Qty'} onChange={(e) => inv.setNewLine({ qty: e.target.value })} style={css(INPUT)} />
-            <input value={nl.unit} inputMode="decimal" placeholder={nl.kind === 'labor' ? '$ per hour' : '$ each'} onChange={(e) => inv.setNewLine({ unit: e.target.value })} style={css(INPUT)} />
+            {nl.kind === 'part' ? <input value={nl.cost || ''} inputMode="decimal" placeholder="$ cost each" onChange={(e) => inv.setNewLine({ cost: e.target.value })} style={css(INPUT)} /> : null}
+            <input value={nl.unit} inputMode="decimal" placeholder={nl.kind === 'labor' ? '$ per hour' : '$ retail each'} onChange={(e) => inv.setNewLine({ unit: e.target.value })} style={css(INPUT)} />
           </div>
           <div style={css('display:flex;gap:8px')}>
             <div onClick={nl.description.trim() ? inv.saveNewLine : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (nl.description.trim() ? '' : 'opacity:.4;cursor:default'))}>Add to invoice</div>
@@ -259,6 +274,8 @@ function Invoice({ inv }) {
           {inv.rows.map(([k, v]) => <div key={k} style={css('display:flex;justify-content:space-between;font-size:12.5px;color:rgba(235,235,245,.55);padding:3px 0')}><span>{k}</span><span style={css('font-family:var(--data-font,inherit)')}>{v}</span></div>)}
           <div style={css('display:flex;justify-content:space-between;font-size:16px;font-weight:600;padding:8px 0 0;margin-top:4px;border-top:1px solid rgba(235,235,245,.12)')}><span>Total</span><span style={css('font-family:var(--data-font,inherit)')}>{inv.total}</span></div>
           {inv.pending ? <div style={css('font-size:12px;color:#ffd60a;margin-top:4px')}>{inv.pending}</div> : null}
+          {inv.margin ? <div style={css('font-size:12px;color:rgba(235,235,245,.5);margin-top:8px')}>{inv.margin}</div> : null}
+          {inv.hours ? <div style={css('font-size:12px;color:rgba(235,235,245,.5);margin-top:3px')}>{inv.hours}</div> : null}
           {inv.paid ? <div style={css('font-size:12.5px;color:#30d158;margin-top:8px;font-weight:500')}>{inv.paid}</div> : null}
           <div style={css('display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap')}>
             {inv.sendInvoice ? <div onClick={inv.sendInvoice} style={css(BTN + ';padding:9px 14px')}>Send invoice</div> : null}

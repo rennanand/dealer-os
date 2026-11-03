@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -59,7 +59,7 @@ export class ShopLogic extends DCLogic {
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -160,7 +160,7 @@ export class ShopLogic extends DCLogic {
   }
   async addLine(apptId, d) {
     const roId = await this.ensureRO(apptId); if (!roId) return;
-    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300 };
+    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), cost_cents: d.kind === 'part' ? Math.round((parseFloat(String(d.cost || '').replace(/[^0-9.]/g, '')) || 0) * 100) : 0, part_number: d.kind === 'part' ? (d.part_number || '').trim() : '', vendor: d.kind === 'part' ? (d.vendor || '').trim() : '', taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300 };
     if (!row.description) return;
     if (!supabase) { this.setState({ roLines: (this.state.roLines || []).concat({ id: 'l' + Date.now(), approved: true, created_at: new Date().toISOString(), ...row }), newLine: null }); return; }
     const { error } = await supabase.from('ro_lines').insert({ ...row, shop_id: SHOP_ID });
@@ -171,6 +171,20 @@ export class ShopLogic extends DCLogic {
     this.setState({ roLines: (this.state.roLines || []).filter((l) => l.id !== id) });
     if (supabase) await supabase.from('ro_lines').delete().eq('id', id);
   }
+  async clockOn(apptId, techId) {
+    if (!techId) return;
+    if (!supabase) { const now = new Date().toISOString(); this.setState({ timeEntries: (this.state.timeEntries || []).map((t) => (t.tech_id === techId && !t.ended_at ? { ...t, ended_at: now } : t)).concat({ id: 't' + Date.now(), appointment_id: apptId, tech_id: techId, started_at: now, ended_at: null }) }); return; }
+    const { error } = await supabase.rpc('clock_on', { p_appointment: apptId, p_tech: techId });
+    if (error) return this.setState({ err: error.message });
+    await this.reload();
+  }
+  async clockOff(techId) {
+    if (!supabase) { const now = new Date().toISOString(); this.setState({ timeEntries: (this.state.timeEntries || []).map((t) => (t.tech_id === techId && !t.ended_at ? { ...t, ended_at: now } : t)) }); return; }
+    const { error } = await supabase.rpc('clock_off', { p_tech: techId });
+    if (error) return this.setState({ err: error.message });
+    await this.reload();
+  }
+  hoursOn(apptId) { return ((this.state.timeEntries || []).filter((t) => t.appointment_id === apptId).reduce((h, t) => h + (new Date(t.ended_at || Date.now()) - new Date(t.started_at)) / 36e5, 0)); }
   async setROStatus(roId, status, method) {
     if (!supabase) { this.setState({ ros: this.state.ros.map((r) => (r.id === roId ? { ...r, status, paid_method: method || r.paid_method, paid_at: status === 'paid' ? new Date().toISOString() : r.paid_at, invoiced_at: status === 'invoiced' ? new Date().toISOString() : r.invoiced_at } : r)) }); return; }
     const { error } = await supabase.rpc('ro_set_status', { p_ro: roId, p_status: status, p_method: method || '' });
@@ -183,7 +197,8 @@ export class ShopLogic extends DCLogic {
     const ap = lines.filter((l) => l.approved !== false);
     const sum = (ls) => ls.reduce((t, l) => t + signed(l), 0);
     const subtotal = sum(ap), taxable = sum(ap.filter((l) => l.taxable !== false)), tax = Math.round(taxable * ((r && r.tax_rate_bp) || 725) / 10000);
-    return { labor: sum(ap.filter((l) => l.kind === 'labor')), parts: sum(ap.filter((l) => l.kind === 'part')), fees: sum(ap.filter((l) => l.kind === 'fee')), discount: -sum(ap.filter((l) => l.kind === 'discount')), subtotal, tax, total: subtotal + tax, pending: lines.filter((l) => l.approved === false).reduce((t, l) => t + cents(l), 0) };
+    const partsCost = ap.filter((l) => l.kind === 'part').reduce((t, l) => t + Math.round(Number(l.qty) * (l.cost_cents || 0)), 0), laborHours = ap.filter((l) => l.kind === 'labor').reduce((t, l) => t + Number(l.qty), 0);
+    return { partsCost, partsMargin: sum(ap.filter((l) => l.kind === 'part')) - partsCost, laborHours, labor: sum(ap.filter((l) => l.kind === 'labor')), parts: sum(ap.filter((l) => l.kind === 'part')), fees: sum(ap.filter((l) => l.kind === 'fee')), discount: -sum(ap.filter((l) => l.kind === 'discount')), subtotal, tax, total: subtotal + tax, pending: lines.filter((l) => l.approved === false).reduce((t, l) => t + cents(l), 0) };
   }
 
   async setFinding(id, p) {
@@ -422,7 +437,17 @@ export class ShopLogic extends DCLogic {
     const apptOf = (f) => s.appointments.find((a) => a.id === f.appointment_id);
     const decided = s.findings.filter((f) => f.status !== 'pending' && f.decided_at);
     const approvedAll = s.findings.filter((f) => f.status === 'approved' || f.status === 'done');
-    const repData = buckets.map((k) => approvedAll.filter((f) => keyOf(f.decided_at || f.created_at) === k).reduce((t, f) => t + f.price_cents, 0) / 100);
+    const rosLive = (s.ros || []).filter((r) => r.status === 'paid' || r.status === 'invoiced');
+    const roTotal = (r) => this.roTotals(r.id);
+    const useRO = rosLive.length > 0;
+    const repData = useRO
+      ? buckets.map((k) => rosLive.filter((r) => keyOf(r.paid_at || r.invoiced_at) === k).reduce((t, r) => t + roTotal(r).total, 0) / 100)
+      : buckets.map((k) => approvedAll.filter((f) => keyOf(f.decided_at || f.created_at) === k).reduce((t, f) => t + f.price_cents, 0) / 100);
+    const monthROs = rosLive.filter((r) => monthKey(r.paid_at || r.invoiced_at) === today().slice(0, 7));
+    const monthSales = monthROs.reduce((t, r) => t + roTotal(r).total, 0) / 100;
+    const monthParts = monthROs.reduce((t, r) => t + roTotal(r).parts, 0) / 100, monthPartsCost = monthROs.reduce((t, r) => t + roTotal(r).partsCost, 0) / 100;
+    const monthLaborH = monthROs.reduce((t, r) => t + roTotal(r).laborHours, 0);
+    const monthClockH = (s.timeEntries || []).filter((t) => monthKey(t.started_at) === today().slice(0, 7)).reduce((h, t) => h + (new Date(t.ended_at || Date.now()) - new Date(t.started_at)) / 36e5, 0);
     const doneVisits = s.appointments.filter((a) => a.status === 'done');
     const visitsIn = buckets.map((k) => doneVisits.filter((a) => keyOf(a.done_at || a.starts_at) === k).length);
     const repMax = Math.max(100, Math.max.apply(null, repData) * 1.1);
@@ -440,7 +465,7 @@ export class ShopLogic extends DCLogic {
     const ratedAll = doneVisits.filter((a) => a.rating);
     const reports = {
       repSub: (repRange === '12 months' ? new Date(buckets[0] + '-15').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : new Date(buckets[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })) + ' – ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' · no card payments are recorded in Revyn yet, so money figures are approved estimates',
-      repTitle: 'Approved work', repRanges: ['7 days', '31 days', '12 months'].map((r) => ({ label: r, pick: () => set({ repRange: r }), style: 'padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .18s ease;' + (repRange === r ? 'background:#fff;color:#000;' : 'background:#1c1c1e;color:rgba(235,235,245,.7);') })),
+      repTitle: useRO ? 'Sales' : 'Approved work', repRanges: ['7 days', '31 days', '12 months'].map((r) => ({ label: r, pick: () => set({ repRange: r }), style: 'padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .18s ease;' + (repRange === r ? 'background:#fff;color:#000;' : 'background:#1c1c1e;color:rgba(235,235,245,.7);') })),
       repRangeLabel: 'last ' + repRange, repTotal: fmt0(sum(repData)),
       repGrid: [0, 0.5, 1].map((f) => ({ v: f === 0 ? '0' : fmt0(Math.round((repMax * f) / 10) * 10), style: 'position:absolute;left:0;right:0;bottom:' + f * 100 + '%;height:1px;background:rgba(235,235,245,' + (f === 0 ? '.18' : '.07') + ')' + (f === 0.5 ? ';background-image:linear-gradient(90deg,rgba(235,235,245,.2) 50%,transparent 50%);background-size:6px 1px;background-color:transparent' : ''), lbl: 'position:absolute;right:0;bottom:' + f * 100 + '%;transform:translateY(50%);font-size:11px;color:rgba(235,235,245,.45)' })),
       repBars: repData.map((v, i) => ({ style: 'flex:1;border-radius:2px 2px 0 0;transition:height .5s ease;height:' + Math.max(v ? 2 : 0, Math.round((v / repMax) * 100)) + '%;background:' + (i === repData.length - 1 ? '#30d158' : 'rgba(48,209,88,.72)') })),
@@ -451,7 +476,10 @@ export class ShopLogic extends DCLogic {
       metrics: [
         { l: 'Visits today', n: String(todays.length), d: todays.filter((a) => a.status === 'done').length + ' complete', c: DIM },
         { l: 'Visits this month', n: String(monthDone.length), d: 'finished', c: DIM },
-        { l: 'Approved work this month', n: fmt0(approvedAll.filter((f) => monthKey(f.decided_at || f.created_at) === today().slice(0, 7)).reduce((t, f) => t + f.price_cents, 0) / 100), d: 'from estimates in the app', c: GRN },
+        useRO ? { l: 'Sales this month', n: fmt0(monthSales), d: monthROs.length + (monthROs.length === 1 ? ' invoice' : ' invoices') + ' · ARO ' + fmt0(monthSales / Math.max(1, monthROs.length)), c: GRN }
+              : { l: 'Approved work this month', n: fmt0(approvedAll.filter((f) => monthKey(f.decided_at || f.created_at) === today().slice(0, 7)).reduce((t, f) => t + f.price_cents, 0) / 100), d: 'from estimates in the app', c: GRN },
+        { l: 'Parts margin', n: monthParts ? Math.round(((monthParts - monthPartsCost) / monthParts) * 100) + '%' : '—', d: monthParts ? fmt0(monthParts - monthPartsCost) + ' on ' + fmt0(monthParts) + ' this month' : 'Add cost on part lines', c: monthParts ? GRN : DIM },
+        { l: 'Tech efficiency', n: monthClockH && monthLaborH ? Math.round((monthLaborH / monthClockH) * 100) + '%' : '—', d: monthClockH ? monthLaborH.toFixed(1) + ' h billed · ' + monthClockH.toFixed(1) + ' h on the clock' : 'Clock on from a visit', c: monthClockH && monthLaborH ? (monthLaborH / monthClockH >= 0.9 ? GRN : YEL) : DIM },
         { l: 'Approval rate', n: apprRate === null ? '—' : apprRate + '%', d: decided.length ? decided.length + ' decided' : 'No estimates decided yet', c: apprRate === null ? DIM : apprRate >= 70 ? GRN : YEL },
         { l: 'Average approval time', n: apprMins === null ? '—' : apprMins < 60 ? apprMins + ' min' : (apprMins / 60).toFixed(1) + ' h', d: 'from sent to tapped', c: DIM },
         { l: 'Declined value, open', n: fmt0(fuOpen.reduce((t, r) => t + r.value, 0) / 100), d: fuOpen.length + ' follow-ups', c: fuOpen.length ? YEL : DIM },
@@ -533,6 +561,7 @@ export class ShopLogic extends DCLogic {
         noShow: sel.status === 'booked' ? () => this.setAppt(sel.id, { status: 'no_show' }) : null,
         setBay: (b) => this.setAppt(sel.id, { bay: parseInt(b, 10) || null }), setNotes: (v) => this.setAppt(sel.id, { notes: v }),
         openCustomer: selCust ? () => set({ custId: selCust.id }) : null, smsHref: selCust && selCust.phone ? 'sms:' + selCust.phone : '',
+        clock: (() => { const open = (s.timeEntries || []).find((t) => t.appointment_id === sel.id && !t.ended_at); const tech = open && s.techs.find((t) => t.id === open.tech_id); const hrs = this.hoursOn(sel.id); return { on: !!open, who: tech ? tech.name.split(' ')[0] : '', since: open ? new Date(open.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '', hours: hrs ? hrs.toFixed(1) + ' h on the clock' : '', start: (techId) => this.clockOn(sel.id, techId || sel.tech_id), stop: () => open && this.clockOff(open.tech_id), entries: (s.timeEntries || []).filter((t) => t.appointment_id === sel.id).slice(-5).reverse().map((t) => { const te = s.techs.find((x) => x.id === t.tech_id); return (te ? te.name.split(' ')[0] : 'Tech') + ' · ' + new Date(t.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + (t.ended_at ? '–' + new Date(t.ended_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ' · now'); }) }; })(),
         rating: sel.rating ? '★'.repeat(sel.rating) + ' ' + (sel.rating_note || '') : '', ratingTags: (sel.rating_tags || []).join(' · '), techId: sel.tech_id || '', setTech: (id) => this.setAppt(sel.id, { tech_id: id || null }), techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, label: t.name + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : '') })),
         findings: s.findings.filter((f) => f.appointment_id === sel.id).map((f) => ({ id: f.id, name: f.name, tier: { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }[f.tier] || f.tier, price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'No charge', status: { pending: 'Waiting for approval', approved: 'Approved', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], plain: f.plain, meas: [f.meas_label, f.meas].filter(Boolean).join(' · '), remove: () => this.removeFinding(f.id), markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null, photos: s.photos.filter((p) => p.finding_id === f.id).map((p) => this.photoUrl(p)) })),
         photos: s.photos.filter((p) => p.appointment_id === sel.id).map((p) => ({ id: p.id, url: this.photoUrl(p), caption: p.caption })),
@@ -548,7 +577,9 @@ export class ShopLogic extends DCLogic {
           return {
             ro, number: ro ? 'RO ' + ro.number : null, status: ro ? { open: 'Open', invoiced: 'Invoiced', paid: 'Paid', void: 'Void' }[ro.status] : 'No RO yet',
             color: ro ? { open: '#fff', invoiced: YEL, paid: GRN, void: DIM }[ro.status] : DIM,
-            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + ' × ' + $(l.unit_cents), total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id) })) : [],
+            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id) })) : [],
+            margin: t && t.parts ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
+            hours: (() => { const actual = this.hoursOn(sel.id), billed = t ? t.laborHours : 0; return actual || billed ? 'Labor billed ' + billed.toFixed(1) + ' h · on the clock ' + actual.toFixed(1) + ' h' + (billed && actual ? ' · ' + Math.round((billed / Math.max(0.05, actual)) * 100) + '% efficiency' : '') : ''; })(),
             rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.fees ? ['Fees', $(t.fees)] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
             total: t ? $(t.total) : '$0.00', pending: t && t.pending ? $(t.pending) + ' waiting on customer' : '',
             paid: ro && ro.status === 'paid' ? 'Paid ' + (ro.paid_method || '') + (ro.paid_at ? ' · ' + new Date(ro.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') : '',
