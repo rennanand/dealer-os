@@ -116,6 +116,7 @@ struct VisitDetailView: View {
     @EnvironmentObject var model: AppModel
     var appointment: Appointment
     private func money(_ c: Int) -> String { (Double(c) / 100).formatted(.currency(code: "USD").precision(.fractionLength(0))) }
+    private func approvedTotal(_ fs: [Finding]) -> Int { var t = 0; for f in fs { t += f.price_cents ?? 0 }; return t }
     var body: some View {
         let a = appointment
         let approved = (a.findings ?? []).filter { $0.status == "approved" }
@@ -133,9 +134,13 @@ struct VisitDetailView: View {
                     Card {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Work done").font(.system(size: 15, weight: .medium))
-                            ForEach(approved) { f in HStack { Text(f.name ?? ""); Spacer(); Text(f.price).font(.system(design: .monospaced)) }.font(.system(size: 14.5)) }
+                            ForEach(approved) { f in WorkLine(name: f.name ?? "", price: f.price) }
                             Divider().overlay(Theme.line)
-                            HStack { Text("Approved total").foregroundStyle(Theme.dim); Spacer(); Text(money(approved.reduce(0) { $0 + ($1.price_cents ?? 0) })).font(.system(size: 17, weight: .semibold, design: .monospaced)) }
+                            HStack {
+                                Text("Approved total").foregroundStyle(Theme.dim)
+                                Spacer()
+                                Text(money(approvedTotal(approved))).font(.system(size: 17, weight: .semibold, design: .monospaced))
+                            }
                         }
                     }
                 }
@@ -150,5 +155,12 @@ struct VisitDetailView: View {
         .background(Theme.bg)
         .navigationTitle(a.done_at?.formatted(date: .abbreviated, time: .omitted) ?? "Visit")
         .toolbarTitleDisplayMode(.inline)
+    }
+}
+
+struct WorkLine: View {
+    var name: String; var price: String
+    var body: some View {
+        HStack { Text(name); Spacer(); Text(price).font(.system(size: 14.5, design: .monospaced)) }.font(.system(size: 14.5))
     }
 }

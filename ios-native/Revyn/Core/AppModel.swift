@@ -174,7 +174,7 @@ final class AppModel: ObservableObject {
         messages.append(Message(id: UUID(), sender: "customer", text: t, created_at: Date(), read: true))
         do { try await client.rpc("send_my_message", params: TextParams(p_text: t)).execute(); await refresh() } catch { self.error = friendly(error) }
     }
-    func markMessagesRead() async { guard unread > 0 else { return }; try? await client.rpc("mark_my_messages_read").execute(); messages = messages.map { var m = $0; if m.sender == "shop" { m.read = true }; return m } }
+    func markMessagesRead() async { guard unread > 0 else { return }; _ = try? await client.rpc("mark_my_messages_read").execute(); messages = messages.map { var m = $0; if m.sender == "shop" { m.read = true }; return m } }
 
     struct PickupParams: Encodable { let p_id: UUID; let p_state: String }
     func setPickup(_ a: Appointment, state: String) async { do { try await client.rpc("set_my_pickup", params: PickupParams(p_id: a.id, p_state: state)).execute(); await refresh() } catch { self.error = friendly(error) } }

@@ -41,8 +41,8 @@ struct FindingsView: View {
                                 }
                                 if let t = f.tech, !t.isEmpty { Text("Technician: " + t).font(.system(size: 12.5)).foregroundStyle(Theme.dimmer) }
                                 HStack(spacing: 8) {
-                                    Button { withAnimation { declined.remove(f.id) } } label: { Text("Approve").font(.system(size: 14, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 42).background(off ? Theme.control : Color.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous)).foregroundStyle(off ? .white : .black) }
-                                    Button { withAnimation { declined.insert(f.id) } } label: { Text(f.wait_text?.isEmpty == false ? f.wait_text! : "Not now").font(.system(size: 14, weight: .medium)).frame(maxWidth: .infinity).frame(height: 42).background(off ? Color.white.opacity(0.14) : Theme.control, in: RoundedRectangle(cornerRadius: 11, style: .continuous)).foregroundStyle(.white) }
+                                    Button { withAnimation { _ = declined.remove(f.id) } } label: { Text("Approve").font(.system(size: 14, weight: .semibold)).frame(maxWidth: .infinity).frame(height: 42).background(off ? Theme.control : Color.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous)).foregroundStyle(off ? .white : .black) }
+                                    Button { withAnimation { _ = declined.insert(f.id) } } label: { Text(f.wait_text?.isEmpty == false ? f.wait_text! : "Not now").font(.system(size: 14, weight: .medium)).frame(maxWidth: .infinity).frame(height: 42).background(off ? Color.white.opacity(0.14) : Theme.control, in: RoundedRectangle(cornerRadius: 11, style: .continuous)).foregroundStyle(.white) }
                                 }.buttonStyle(.plain).padding(.top, 6)
                             }
                         }.padding(.horizontal, 16)
