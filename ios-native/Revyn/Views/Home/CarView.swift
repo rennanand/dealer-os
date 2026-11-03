@@ -11,10 +11,10 @@ struct CarView: UIViewRepresentable {
     var angle: Angle = .orbit
     var autoRotate = true
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator.shared }
 
     func makeUIView(context: Context) -> SCNView {
-        let v = SCNView()
+        let v = CarSCNView()
         v.backgroundColor = .clear
         v.antialiasingMode = .multisampling2X
         v.preferredFramesPerSecond = 30
@@ -25,32 +25,36 @@ struct CarView: UIViewRepresentable {
         v.allowsCameraControl = false
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pan(_:)))
         v.addGestureRecognizer(pan)
-        context.coordinator.view = v
-        context.coordinator.apply(paint: UIColor(paint), angle: angle, animated: false)
+        context.coordinator.views.add(v)
+        let c = context.coordinator, p = UIColor(paint), a = angle, auto = autoRotate
+        v.onAttach = { c.autoRotate = auto; c.apply(paint: p, angle: a, animated: c.lastAngle != nil) }   // each time this screen comes back, the camera flies to its angle
+        context.coordinator.apply(paint: UIColor(paint), angle: angle, animated: context.coordinator.lastAngle != nil)
         context.coordinator.autoRotate = autoRotate
         context.coordinator.startSpin()
         return v
     }
 
     func updateUIView(_ v: SCNView, context: Context) {
-        context.coordinator.autoRotate = autoRotate
-        context.coordinator.apply(paint: UIColor(paint), angle: angle, animated: true)
+        let c = context.coordinator, p = UIColor(paint), a = angle, auto = autoRotate
+        (v as? CarSCNView)?.onAttach = { c.autoRotate = auto; c.apply(paint: p, angle: a, animated: true) }
+        if v.window != nil { c.autoRotate = auto; c.apply(paint: p, angle: a, animated: true) }
     }
 
-    static func dismantleUIView(_ v: SCNView, coordinator: Coordinator) { coordinator.stop() }
+    static func dismantleUIView(_ v: SCNView, coordinator: Coordinator) { coordinator.views.remove(v) }
 
     final class Coordinator: NSObject {
+        static let shared = Coordinator()
         let scene = SCNScene()
         let pivot = SCNNode()          // yaw
         let cameraNode = SCNNode()
-        weak var view: SCNView?
+        let views = NSHashTable<SCNView>.weakObjects()
         var autoRotate = true
         private var paintMats: [SCNMaterial] = []
         private var yaw: Float = 0.75, targetYaw: Float = 0.75
         private var dragging = false
         private var link: CADisplayLink?
         private var lastPaint: UIColor?
-        private var lastAngle: CarView.Angle?
+        var lastAngle: CarView.Angle?
         private var radius: Float = 3.0
 
         override init() {
@@ -167,15 +171,17 @@ struct CarView: UIViewRepresentable {
                 case .side: (1.57, fit * 0.2, fit * 0.95)
                 case .front: (0.25, fit * 0.22, fit * 0.92)
                 }
-                targetYaw = y
-                SCNTransaction.begin(); SCNTransaction.animationDuration = animated ? 0.9 : 0
-                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                targetYaw = y; if animated && abs(targetYaw - yaw) < 0.3 { targetYaw += 0.6 }
+                SCNTransaction.begin(); SCNTransaction.animationDuration = animated ? 1.1 : 0
+                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.2, 0.8, 0.2, 1)
                 cameraNode.position = SCNVector3(0, h, d)
                 cameraNode.look(at: SCNVector3(0, 0.62, 0))
                 SCNTransaction.commit()
             }
-            view?.setNeedsDisplay()
+            redraw()
         }
+
+        private func redraw() { for v in views.allObjects where v.window != nil { v.setNeedsDisplay() } }
 
         func startSpin() {
             link?.invalidate()
@@ -186,13 +192,13 @@ struct CarView: UIViewRepresentable {
         func stop() { link?.invalidate(); link = nil }
 
         @objc private func tick() {
-            guard let v = view, v.window != nil else { return }
+            guard views.allObjects.contains(where: { $0.window != nil }) else { return }
             if !dragging {
                 if autoRotate { targetYaw += 0.0025 }
                 yaw += (targetYaw - yaw) * 0.08
             }
             pivot.eulerAngles.y = yaw
-            v.setNeedsDisplay()
+            redraw()
         }
 
         @objc func pan(_ g: UIPanGestureRecognizer) {
@@ -205,4 +211,10 @@ struct CarView: UIViewRepresentable {
             }
         }
     }
+}
+
+/// An SCNView that tells the shared scene when it comes on screen.
+final class CarSCNView: SCNView {
+    var onAttach: (() -> Void)?
+    override func didMoveToWindow() { super.didMoveToWindow(); if window != nil { onAttach?() } }
 }
