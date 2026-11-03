@@ -99,6 +99,7 @@ struct Appointment: Codable, Identifiable, Hashable {
     var findings: [Finding]?
     var photos: [VisitPhoto]?
     var tire_quote: TireQuote?
+    var invoice: Invoice?
 
     /// 0 booked · 1 arrived · 2 in progress · 8 done
     var stage: Int { switch status { case "arrived": 1; case "in_progress": 2; case "done": 8; default: 0 } }
@@ -106,6 +107,31 @@ struct Appointment: Codable, Identifiable, Hashable {
     var pendingFindings: [Finding] { (findings ?? []).filter { $0.status == "pending" } }
     var started: Bool { stage >= 1 }
     var visitLabel: String { switch visit { case "wait": "Wait at the shop"; case "loaner": "Loaner"; default: "Drop off" } }
+}
+
+struct InvoiceLine: Codable, Identifiable, Hashable {
+    let id: UUID
+    var kind: String?
+    var description: String?
+    var qty: Double?
+    var unit_cents: Int?
+    var cents: Int?
+    var kindLabel: String { switch kind { case "part": "Part"; case "fee": "Fee"; case "discount": "Discount"; default: "Labor" } }
+}
+struct InvoiceTotals: Codable, Hashable {
+    var labor: Int?; var parts: Int?; var fees: Int?; var discount: Int?; var subtotal: Int?; var tax: Int?; var total: Int?; var pending: Int?
+}
+struct Invoice: Codable, Identifiable, Hashable {
+    let id: UUID
+    var number: Int?
+    var status: String?      // open | invoiced | paid
+    var invoiced_at: Date?
+    var paid_at: Date?
+    var paid_method: String?
+    var totals: InvoiceTotals?
+    var lines: [InvoiceLine]?
+    var total: Int { totals?.total ?? 0 }
+    var statusLabel: String { switch status { case "paid": "Paid"; case "invoiced": "Invoice ready"; default: "Running total" } }
 }
 
 struct Message: Codable, Identifiable, Hashable {
@@ -137,6 +163,8 @@ struct CustomerProfile: Codable {
     var name: String?
     var shop_id: String?
 }
+
+func money(_ cents: Int) -> String { (Double(cents) / 100).formatted(.currency(code: "USD").precision(.fractionLength(2))) }
 
 extension String {
     var capitalizedWords: String {

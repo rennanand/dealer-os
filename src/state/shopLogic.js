@@ -43,7 +43,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -59,7 +59,7 @@ export class ShopLogic extends DCLogic {
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -118,6 +118,47 @@ export class ShopLogic extends DCLogic {
     if (error) return this.setState({ err: error.message });
     this.setState({ findings: this.state.findings.concat(data), newFinding: null });
   }
+  // ---- repair orders (billing) ----
+  async ensureRO(apptId) {
+    const have = (this.state.ros || []).find((r) => r.appointment_id === apptId); if (have) return have.id;
+    if (!supabase) { const r = { id: 'ro' + Date.now(), appointment_id: apptId, number: (this.state.ros || []).length + 1001, status: 'open', tax_rate_bp: 725, created_at: new Date().toISOString() }; this.setState({ ros: (this.state.ros || []).concat(r) }); return r.id; }
+    const { data, error } = await supabase.rpc('ensure_ro', { p_appointment: apptId });
+    if (error) { this.setState({ err: error.message }); return null; }
+    await this.reloadRO(); return data;
+  }
+  async reloadRO() {
+    if (!supabase) return;
+    const [ro, rl] = await Promise.all([supabase.from('repair_orders').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)), supabase.from('ro_lines').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('sort').order('created_at')]);
+    this.setState({ ros: Array.isArray(ro.data) ? ro.data : this.state.ros, roLines: Array.isArray(rl.data) ? rl.data : this.state.roLines });
+  }
+  async addLine(apptId, d) {
+    const roId = await this.ensureRO(apptId); if (!roId) return;
+    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300 };
+    if (!row.description) return;
+    if (!supabase) { this.setState({ roLines: (this.state.roLines || []).concat({ id: 'l' + Date.now(), approved: true, created_at: new Date().toISOString(), ...row }), newLine: null }); return; }
+    const { error } = await supabase.from('ro_lines').insert({ ...row, shop_id: SHOP_ID });
+    if (error) return this.setState({ err: error.message });
+    this.setState({ newLine: null }); await this.reloadRO();
+  }
+  async removeLine(id) {
+    this.setState({ roLines: (this.state.roLines || []).filter((l) => l.id !== id) });
+    if (supabase) await supabase.from('ro_lines').delete().eq('id', id);
+  }
+  async setROStatus(roId, status, method) {
+    if (!supabase) { this.setState({ ros: this.state.ros.map((r) => (r.id === roId ? { ...r, status, paid_method: method || r.paid_method, paid_at: status === 'paid' ? new Date().toISOString() : r.paid_at, invoiced_at: status === 'invoiced' ? new Date().toISOString() : r.invoiced_at } : r)) }); return; }
+    const { error } = await supabase.rpc('ro_set_status', { p_ro: roId, p_status: status, p_method: method || '' });
+    if (error) return this.setState({ err: error.message });
+    await this.reloadRO();
+  }
+  roTotals(roId) {
+    const r = (this.state.ros || []).find((x) => x.id === roId); const lines = (this.state.roLines || []).filter((l) => l.ro_id === roId);
+    const cents = (l) => Math.round(Number(l.qty) * l.unit_cents), signed = (l) => (l.kind === 'discount' ? -cents(l) : cents(l));
+    const ap = lines.filter((l) => l.approved !== false);
+    const sum = (ls) => ls.reduce((t, l) => t + signed(l), 0);
+    const subtotal = sum(ap), taxable = sum(ap.filter((l) => l.taxable !== false)), tax = Math.round(taxable * ((r && r.tax_rate_bp) || 725) / 10000);
+    return { labor: sum(ap.filter((l) => l.kind === 'labor')), parts: sum(ap.filter((l) => l.kind === 'part')), fees: sum(ap.filter((l) => l.kind === 'fee')), discount: -sum(ap.filter((l) => l.kind === 'discount')), subtotal, tax, total: subtotal + tax, pending: lines.filter((l) => l.approved === false).reduce((t, l) => t + cents(l), 0) };
+  }
+
   async setFinding(id, p) {
     this.setState({ findings: this.state.findings.map((f) => (f.id === id ? { ...f, ...p } : f)) });
     if (supabase) { const { error } = await supabase.from('findings').update(p).eq('id', id); if (error) this.setState({ err: error.message }); }
@@ -465,6 +506,28 @@ export class ShopLogic extends DCLogic {
         addPhoto: (file, caption, findingId) => this.addVisitPhoto(sel.id, file, caption, findingId),
         newFinding: s.newFinding, openNewFinding: () => set({ newFinding: { tier: 'now', name: '', plain: '', meas: '', meas_label: '', urgency: '', price: '' } }), setNewFinding: (p) => set({ newFinding: { ...s.newFinding, ...p } }), cancelNewFinding: () => set({ newFinding: null }), saveNewFinding: () => s.newFinding && this.addFinding(sel.id, s.newFinding),
         pendingCount: s.findings.filter((f) => f.appointment_id === sel.id && f.status === 'pending').length,
+        invoice: (() => {
+          const ro = (s.ros || []).find((r) => r.appointment_id === sel.id);
+          const $ = (c) => (c < 0 ? '-' : '') + '$' + (Math.abs(c) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          const t = ro ? this.roTotals(ro.id) : null;
+          const nl = s.newLine;
+          const KIND = { labor: 'Labor', part: 'Part', fee: 'Fee', discount: 'Discount' };
+          return {
+            ro, number: ro ? 'RO ' + ro.number : null, status: ro ? { open: 'Open', invoiced: 'Invoiced', paid: 'Paid', void: 'Void' }[ro.status] : 'No RO yet',
+            color: ro ? { open: '#fff', invoiced: YEL, paid: GRN, void: DIM }[ro.status] : DIM,
+            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + ' × ' + $(l.unit_cents), total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id) })) : [],
+            rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.fees ? ['Fees', $(t.fees)] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
+            total: t ? $(t.total) : '$0.00', pending: t && t.pending ? $(t.pending) + ' waiting on customer' : '',
+            paid: ro && ro.status === 'paid' ? 'Paid ' + (ro.paid_method || '') + (ro.paid_at ? ' · ' + new Date(ro.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') : '',
+            start: !ro ? () => this.ensureRO(sel.id) : null,
+            newLine: nl, openNewLine: () => this.setState({ newLine: { kind: 'labor', description: '', qty: '1', unit: s.shop && s.shop.labor_rate_cents ? (s.shop.labor_rate_cents / 100).toFixed(2) : '' } }),
+            setNewLine: (p) => this.setState({ newLine: { ...(s.newLine || {}), ...p, ...(p.kind === 'labor' && s.shop && s.shop.labor_rate_cents && !(s.newLine && s.newLine.unit) ? { unit: (s.shop.labor_rate_cents / 100).toFixed(2) } : {}) } }),
+            saveNewLine: () => this.addLine(sel.id, s.newLine || {}), cancelNewLine: () => this.setState({ newLine: null }),
+            sendInvoice: ro && ro.status === 'open' ? () => this.setROStatus(ro.id, 'invoiced') : null,
+            markPaid: ro && ro.status !== 'paid' && ro.status !== 'void' ? (method) => this.setROStatus(ro.id, 'paid', method) : null,
+            reopen: ro && ro.status !== 'open' ? () => this.setROStatus(ro.id, 'open') : null,
+          };
+        })(),
       } : null,
       newAppt: na, openNewAppt: () => set({ newAppt: { customer_id: '', vehicle_id: '', name: '', phone: '', year: '', make: '', model: '', plate: '', day: s.day, time: '09:00', visit: 'dropoff', job: '' } }),
       setNewAppt: (p) => set({ newAppt: { ...na, ...p, ...(p.customer_id !== undefined && p.customer_id !== na.customer_id ? { vehicle_id: '' } : {}) } }), cancelNewAppt: () => set({ newAppt: null }),

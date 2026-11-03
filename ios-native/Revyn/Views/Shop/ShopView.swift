@@ -130,7 +130,18 @@ struct VisitDetailView: View {
                         if let t = a.tech { Text("Technician: " + t).font(.system(size: 13)).foregroundStyle(Theme.dimmer) }
                     }
                 }
-                if !approved.isEmpty {
+                if let inv = a.invoice, let lines = inv.lines, !lines.isEmpty {
+                    NavigationLink { InvoiceView(appointment: a, invoice: inv) } label: {
+                        Card {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) { Text(inv.status == "paid" ? "Receipt" : "Invoice").font(.system(size: 15, weight: .medium)); Text("\(lines.count) item\(lines.count == 1 ? "" : "s")" + (inv.paid_method.map { !$0.isEmpty ? " · paid \($0)" : "" } ?? "")).font(.system(size: 12.5)).foregroundStyle(Theme.dim) }
+                                Spacer()
+                                Text(money(inv.total)).font(.system(size: 20, weight: .semibold, design: .monospaced))
+                                Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.dimmer)
+                            }
+                        }
+                    }.buttonStyle(.plain).foregroundStyle(.white)
+                } else if !approved.isEmpty {
                     Card {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Work done").font(.system(size: 15, weight: .medium))

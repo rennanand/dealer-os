@@ -127,6 +127,7 @@ export function AppointmentsLive({ vm }) {
               <textarea key={a.id} defaultValue={a.notes} onBlur={(e) => e.target.value !== a.notes && a.setNotes(e.target.value)} placeholder="Concern as described, what the tech found, parts on order." rows={4} style={css(INPUT + ';resize:vertical;line-height:1.5')} />
             </div>
             <Findings a={a} />
+            <Invoice inv={a.invoice} />
             <div style={css('flex:1')} />
             {a.next ? <div onClick={a.next.go} style={css(BTN + ';text-align:center')}>{a.next.label}</div> : null}
             <div style={css('display:flex;gap:8px')}>
@@ -199,6 +200,73 @@ function Findings({ a }) {
           <div style={css('display:flex;gap:8px')}>
             <div onClick={nf.name.trim() ? a.saveNewFinding : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (nf.name.trim() ? '' : 'opacity:.4;cursor:default'))}>Send to customer</div>
             <div onClick={a.cancelNewFinding} style={css(GHOST + ';flex:1;text-align:center;padding:9px 0')}>Cancel</div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const KINDS = [['labor', 'Labor'], ['part', 'Part'], ['fee', 'Fee'], ['discount', 'Discount']];
+/** The repair order: approved findings arrive as lines on their own; parts, extra labor, fees and discounts are added here. */
+function Invoice({ inv }) {
+  const [method, setMethod] = React.useState('card');
+  if (!inv) return null;
+  const nl = inv.newLine;
+  return (
+    <div style={css('margin-top:22px')}>
+      <div style={css('display:flex;justify-content:space-between;align-items:center')}>
+        <div style={css(LBL)}>Invoice{inv.number ? ' · ' + inv.number : ''}</div>
+        <div style={css('display:flex;gap:12px;align-items:center')}>
+          <div style={css('font-size:12px;font-weight:500;color:' + inv.color)}>{inv.status}</div>
+          {inv.ro && !nl ? <div onClick={inv.openNewLine} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>Add line</div> : null}
+        </div>
+      </div>
+      {!inv.ro ? (
+        <div style={css('display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0')}>
+          <div style={css('font-size:12.5px;color:rgba(235,235,245,.4);line-height:1.5')}>Approved findings become lines here on their own. Start the RO to add parts, labor and fees.</div>
+          <div onClick={inv.start} style={css(GHOST + ';padding:8px 14px;white-space:nowrap')}>Start RO</div>
+        </div>
+      ) : null}
+      {inv.lines.map((l) => (
+        <div key={l.id} style={css('display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid rgba(235,235,245,.07);font-size:13px;' + (l.pending ? 'opacity:.5' : ''))}>
+          <div style={css('flex:1;min-width:0')}>
+            <span style={css('font-family:var(--data-font,inherit);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(235,235,245,.4);margin-right:8px')}>{l.kind}</span>
+            {l.description}
+            {l.qty ? <span style={css('color:rgba(235,235,245,.45);margin-left:8px;font-size:12px')}>{l.qty}</span> : null}
+            {l.pending ? <span style={css('color:#ffd60a;margin-left:8px;font-size:11px')}>waiting</span> : null}
+          </div>
+          <div style={css('font-family:var(--data-font,inherit);white-space:nowrap')}>{l.total}</div>
+          {l.remove ? <div onClick={l.remove} style={css('font-size:11px;color:rgba(235,235,245,.4);cursor:pointer')}>Remove</div> : <div style={css('width:38px')} />}
+        </div>
+      ))}
+      {nl ? (
+        <div style={css('margin-top:10px;display:flex;flex-direction:column;gap:8px')}>
+          <div style={css('display:flex;gap:6px')}>{KINDS.map(([k, l]) => <div key={k} onClick={() => inv.setNewLine({ kind: k })} style={css('flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:12px;cursor:pointer;' + (nl.kind === k ? 'background:#fff;color:#000;font-weight:600' : 'background:rgba(255,255,255,.06)'))}>{l}</div>)}</div>
+          <input value={nl.description} placeholder={nl.kind === 'part' ? 'Part · brand, number' : nl.kind === 'labor' ? 'Labor · what was done' : nl.kind === 'fee' ? 'Fee · shop supplies, disposal' : 'Discount · reason'} onChange={(e) => inv.setNewLine({ description: e.target.value })} style={css(INPUT)} autoFocus />
+          <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px')}>
+            <input value={nl.qty} inputMode="decimal" placeholder={nl.kind === 'labor' ? 'Hours' : 'Qty'} onChange={(e) => inv.setNewLine({ qty: e.target.value })} style={css(INPUT)} />
+            <input value={nl.unit} inputMode="decimal" placeholder={nl.kind === 'labor' ? '$ per hour' : '$ each'} onChange={(e) => inv.setNewLine({ unit: e.target.value })} style={css(INPUT)} />
+          </div>
+          <div style={css('display:flex;gap:8px')}>
+            <div onClick={nl.description.trim() ? inv.saveNewLine : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (nl.description.trim() ? '' : 'opacity:.4;cursor:default'))}>Add to invoice</div>
+            <div onClick={inv.cancelNewLine} style={css(GHOST + ';flex:1;text-align:center;padding:9px 0')}>Cancel</div>
+          </div>
+        </div>
+      ) : null}
+      {inv.ro ? (
+        <div style={css('margin-top:12px')}>
+          {inv.rows.map(([k, v]) => <div key={k} style={css('display:flex;justify-content:space-between;font-size:12.5px;color:rgba(235,235,245,.55);padding:3px 0')}><span>{k}</span><span style={css('font-family:var(--data-font,inherit)')}>{v}</span></div>)}
+          <div style={css('display:flex;justify-content:space-between;font-size:16px;font-weight:600;padding:8px 0 0;margin-top:4px;border-top:1px solid rgba(235,235,245,.12)')}><span>Total</span><span style={css('font-family:var(--data-font,inherit)')}>{inv.total}</span></div>
+          {inv.pending ? <div style={css('font-size:12px;color:#ffd60a;margin-top:4px')}>{inv.pending}</div> : null}
+          {inv.paid ? <div style={css('font-size:12.5px;color:#30d158;margin-top:8px;font-weight:500')}>{inv.paid}</div> : null}
+          <div style={css('display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap')}>
+            {inv.sendInvoice ? <div onClick={inv.sendInvoice} style={css(BTN + ';padding:9px 14px')}>Send invoice</div> : null}
+            {inv.markPaid ? (<>
+              <select value={method} onChange={(e) => setMethod(e.target.value)} style={css(INPUT + ';width:auto;padding:8px 10px')}><option value="card">Card</option><option value="cash">Cash</option><option value="check">Check</option><option value="other">Other</option></select>
+              <div onClick={() => inv.markPaid(method)} style={css(GHOST + ';padding:9px 14px')}>Mark paid</div>
+            </>) : null}
+            {inv.reopen ? <div onClick={inv.reopen} style={css('font-size:12px;color:rgba(235,235,245,.5);cursor:pointer;margin-left:auto')}>Reopen</div> : null}
           </div>
         </div>
       ) : null}

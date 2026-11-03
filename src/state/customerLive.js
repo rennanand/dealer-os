@@ -212,6 +212,19 @@ export class CustomerLive extends AppLogic {
     const photoUrl = (p) => p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path);
     const phStyle = (p) => (p ? 'background:#151517 url(' + photoUrl(p) + ') center/cover' : 'background:radial-gradient(ellipse at 50% 62%,#2b2b30 0%,#151517 58%,#0b0b0c 100%)');
     const fmtC = (c) => '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // ---- Invoice page (real RO when the shop has one)
+    if (act && act.invoice && act.invoice.totals) {
+      const inv = act.invoice, tot = inv.totals, KIND = { labor: 'Labor', part: 'Part', fee: 'Fee', discount: 'Discount' };
+      Object.assign(V, {
+        notPaid: true, paidNow: false, payErr: '',
+        payTitle: inv.status === 'paid' ? 'Paid. Thank you.' : inv.status === 'invoiced' ? 'Your invoice' : 'Running total',
+        paySub: (actVeh ? vehTitle(actVeh) + ' · ' : '') + (act.job || 'Service') + ' · ' + (inv.number ? 'RO ' + inv.number : '') + (inv.status === 'invoiced' ? ' · pay at the counter at pickup' : ''),
+        invoice: (inv.lines || []).map((l) => ({ k: KIND[l.kind] + ' · ' + l.description + (Number(l.qty) !== 1 ? ' × ' + Number(l.qty) : ''), v: (l.kind === 'discount' ? '-' : '') + fmtC(Math.abs(l.cents || 0)) })).concat([{ k: 'Subtotal', v: fmtC(tot.subtotal || 0) }, { k: 'Tax', v: fmtC(tot.tax || 0) }]),
+        invoiceTotal: fmtC(tot.total || 0),
+        payMethods: [{ name: inv.status === 'paid' ? 'Paid ' + (inv.paid_method || '') : 'At the counter', sub: inv.status === 'paid' ? 'Receipt kept in History' : 'Card or cash when you pick up', style: 'display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:#141416', radio: '', pick: null }],
+      });
+    }
+
     const TIER = { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }, TCOL = { now: RED, soon: YEL, monitor: GRN };
     const needsApproval = pending.length > 0;
     const sel = s.planSel || {};
@@ -227,7 +240,15 @@ export class CustomerLive extends AppLogic {
         : { d: I.doc, iconStyle: icon(started ? '#fff' : DIM, 'rgba(235,235,245,.12)'), k: 'Inspection', kColor: DIM, t: started ? 'Nothing extra so far.' : 'After check-in', sub: started ? 'If the technician finds anything beyond ' + (act.job || 'the booked service').toLowerCase() + ', it shows up here with a price for you to approve.' : 'A technician looks the car over at the start of the visit; anything extra shows up here with a price for you to approve.', cta: '', go: null },
       photos.length ? { d: I.camera, iconStyle: icon('#fff', 'rgba(235,235,245,.12)'), k: 'Photos', kColor: DIM, t: photos.length + (photos.length === 1 ? ' photo' : ' photos') + ' from your technician', sub: photos[photos.length - 1].caption || 'Taken at the visit.', cta: 'See photos', go: this.go('photos') }
         : { d: I.camera, iconStyle: icon(DIM, 'rgba(235,235,245,.1)'), k: 'Photos', kColor: DIM, t: 'Photos from your technician', sub: started ? 'Added by the shop during the visit when there is something to show you.' : 'Taken during the visit when there is something to show you.', cta: '', go: null },
-      { d: I.dollar, iconStyle: icon(cur >= 8 ? GRN : '#fff', cur >= 8 ? 'rgba(48,209,88,.14)' : 'rgba(235,235,245,.12)'), k: cur >= 8 ? 'Payment due' : 'Payment', kColor: cur >= 8 ? GRN : DIM, t: cur >= 8 ? 'Pay at the counter' : approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' approved' : 'Nothing charged yet', sub: cur >= 8 ? (approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' in approved work, plus the booked service. ' : '') + 'Card or cash at pickup.' : approved.length ? 'Plus the booked service. Pay at the counter at pickup.' : 'You approve any work beyond the booked service before it starts. Pay at the counter at pickup.', cta: '', go: null },
+      (() => {
+        const inv = act && act.invoice; const tot = inv && inv.totals ? inv.totals : null;
+        if (inv && tot && (inv.lines || []).length) {
+          const paid = inv.status === 'paid', sent = inv.status === 'invoiced';
+          return { d: I.dollar, iconStyle: icon(paid ? GRN : sent ? YEL : '#fff', paid ? 'rgba(48,209,88,.14)' : sent ? 'rgba(255,214,10,.14)' : 'rgba(235,235,245,.12)'), k: paid ? 'Paid' : sent ? 'Invoice ready' : 'Running total', kColor: paid ? GRN : sent ? YEL : DIM,
+            t: fmtC(tot.total || 0) + (paid ? ' paid' : sent ? ' due at pickup' : ' so far'), sub: paid ? 'Thanks. Your receipt is in History.' : (inv.lines.length + (inv.lines.length === 1 ? ' item' : ' items') + ' · tax included. ' + (sent ? 'Pay at the counter when you pick up.' : 'Updates as the shop adds work you approved.')), cta: 'See invoice', go: this.go('pay') };
+        }
+        return { d: I.dollar, iconStyle: icon(cur >= 8 ? GRN : '#fff', cur >= 8 ? 'rgba(48,209,88,.14)' : 'rgba(235,235,245,.12)'), k: cur >= 8 ? 'Payment due' : 'Payment', kColor: cur >= 8 ? GRN : DIM, t: cur >= 8 ? 'Pay at the counter' : approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' approved' : 'Nothing charged yet', sub: cur >= 8 ? (approved.length ? fmtC(approved.reduce((a, f) => a + f.price_cents, 0)) + ' in approved work, plus the booked service. ' : '') + 'Card or cash at pickup.' : approved.length ? 'Plus the booked service. Pay at the counter at pickup.' : 'You approve any work beyond the booked service before it starts. Pay at the counter at pickup.', cta: '', go: null };
+      })(),
       tq ? { d: I.tire, iconStyle: icon(tq.status === 'accepted' ? GRN : YEL, tq.status === 'accepted' ? 'rgba(48,209,88,.14)' : 'rgba(255,214,10,.14)'), k: 'Tires', kColor: tq.status === 'accepted' ? GRN : YEL, t: tq.status === 'accepted' ? '4\u00d7 ' + ((tq.options || []).find((o) => o.tier === tq.accepted_tier) || {}).name : 'Tire quote ready', sub: tq.status === 'accepted' ? 'Added to this visit · ' + fmtC(tq.total_cents || 0) + ' installed, settled at the counter.' : (tq.options || []).length + ' options' + (tq.size ? ' · ' + tq.size : '') + '. Pick the set you want.', cta: tq.status === 'accepted' ? 'View' : 'See quote', go: this.go('tires') } : null,
       loanerCard,
       { txt: shop.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), iconStyle: icon('#fff', 'rgba(235,235,245,.12)').replace('font-size:20px', 'font-size:14px;letter-spacing:.4px'), k: 'Shop', kColor: DIM, t: shop.name, sub: shop.address + (shop.hours ? ' · ' + shop.hours : ''), cta: 'Text the shop', go: openUrl(shop.phone ? 'sms:' + shop.phone : '') },

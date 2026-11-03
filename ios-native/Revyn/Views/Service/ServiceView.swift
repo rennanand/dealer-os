@@ -100,6 +100,11 @@ struct ServiceView: View {
                         ServiceCard(icon: "circle.circle", color: q.status == "accepted" ? Theme.green : Theme.yellow, kicker: q.status == "accepted" ? "Tires chosen" : "Tire quote", title: q.status == "accepted" ? (q.options?.first(where: { $0.tier == q.accepted_tier })?.name ?? "Tires") + " going on." : "Three options for your tires.", sub: q.status == "accepted" ? "Installed during this visit." : "Good, better, best — pick one and it becomes approved work.", action: q.status == "accepted" ? nil : "Choose tires")
                     }
                 }
+                if let inv = a.invoice, let lines = inv.lines, !lines.isEmpty {
+                    NavigationLink { InvoiceView(appointment: a, invoice: inv) } label: {
+                        ServiceCard(icon: "dollarsign.circle", color: inv.status == "paid" ? Theme.green : inv.status == "invoiced" ? Theme.yellow : .white, kicker: inv.statusLabel, title: money(inv.total) + (inv.status == "paid" ? " paid" : inv.status == "invoiced" ? " due at pickup" : " so far"), sub: inv.status == "paid" ? "Thanks. Your receipt is in History." : "\(lines.count) item\(lines.count == 1 ? "" : "s") · tax included. " + (inv.status == "invoiced" ? "Pay at the counter when you pick up." : "Updates as the shop adds work you approved."), action: "See invoice")
+                    }
+                }
                 if let photos = a.photos, !photos.isEmpty {
                     NavigationLink { PhotosView(photos: photos) } label: {
                         ServiceCard(icon: "camera", color: .white, kicker: "Photos", title: "\(photos.count) photo\(photos.count == 1 ? "" : "s") from your technician.", sub: photos.last?.caption ?? "Taken at your visit.", action: "See photos")
@@ -201,4 +206,56 @@ struct SafariView: UIViewControllerRepresentable {
         let v = SFSafariViewController(url: url, configuration: c); v.preferredBarTintColor = .black; v.preferredControlTintColor = .white; return v
     }
     func updateUIViewController(_ v: SFSafariViewController, context: Context) {}
+}
+
+/// The invoice, line by line, with totals. Paid at the counter for now; card payment in-app comes later.
+struct InvoiceView: View {
+    @EnvironmentObject var model: AppModel
+    var appointment: Appointment
+    var invoice: Invoice
+    var body: some View {
+        let inv = model.appointments.first(where: { $0.id == appointment.id })?.invoice ?? invoice
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(inv.status == "paid" ? "Paid. Thank you." : inv.status == "invoiced" ? "Your invoice" : "Running total").font(.system(size: 28, weight: .semibold)).tracking(-0.6)
+                    Text([model.activeVehicle?.title ?? appointment.vehicle, appointment.job, inv.number.map { "RO \($0)" }].compactMap { $0 }.joined(separator: " · ")).font(.system(size: 13.5)).foregroundStyle(Theme.dim)
+                }.padding(.horizontal, 4)
+                Card {
+                    VStack(spacing: 0) {
+                        ForEach(inv.lines ?? []) { l in
+                            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                Text(l.kindLabel.uppercased()).font(.system(size: 10, design: .monospaced)).tracking(1).foregroundStyle(Theme.dimmer).frame(width: 64, alignment: .leading)
+                                Text((l.description ?? "") + ((l.qty ?? 1) != 1 ? " × \((l.qty ?? 1).formatted())" : "")).font(.system(size: 14.5))
+                                Spacer()
+                                Text((l.kind == "discount" ? "-" : "") + money(abs(l.cents ?? 0))).font(.system(size: 14.5, design: .monospaced))
+                            }.padding(.vertical, 11)
+                            Divider().overlay(Theme.line)
+                        }
+                        TotalRow(k: "Subtotal", v: money(inv.totals?.subtotal ?? 0))
+                        TotalRow(k: "Tax", v: money(inv.totals?.tax ?? 0))
+                        HStack { Text("Total").font(.system(size: 15, weight: .medium)); Spacer(); Text(money(inv.total)).font(.system(size: 26, weight: .semibold, design: .monospaced)) }.padding(.top, 12)
+                    }
+                }
+                Card {
+                    HStack(spacing: 14) {
+                        Image(systemName: inv.status == "paid" ? "checkmark.circle.fill" : "building.2").font(.system(size: 20)).foregroundStyle(inv.status == "paid" ? Theme.green : .white)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(inv.status == "paid" ? "Paid " + (inv.paid_method ?? "") + (inv.paid_at.map { " · " + $0.formatted(date: .abbreviated, time: .shortened) } ?? "") : "Pay at the counter").font(.system(size: 15, weight: .medium))
+                            Text(inv.status == "paid" ? "This receipt stays in History." : "Card or cash when you pick up. Nothing is charged in the app.").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
+                        }
+                    }
+                }
+                if let p = inv.totals?.pending, p > 0 { Text(money(p) + " in work is waiting on your approval and is not included.").font(.system(size: 12.5)).foregroundStyle(Theme.yellow).padding(.horizontal, 4) }
+            }.padding(16)
+        }
+        .background(Theme.bg)
+        .navigationTitle("Invoice")
+        .toolbarTitleDisplayMode(.inline)
+    }
+}
+
+struct TotalRow: View {
+    var k: String; var v: String
+    var body: some View { HStack { Text(k).font(.system(size: 13.5)).foregroundStyle(Theme.dim); Spacer(); Text(v).font(.system(size: 13.5, design: .monospaced)).foregroundStyle(Theme.dim) }.padding(.top, 8) }
 }
