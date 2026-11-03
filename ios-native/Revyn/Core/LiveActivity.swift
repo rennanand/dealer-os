@@ -5,7 +5,7 @@ import Foundation
 /// on every refresh, ends once the car is picked up. Updates happen while the app runs (foreground or
 /// recently backgrounded); push-driven updates can be added later with the activity's push token.
 enum LiveActivity {
-    static func sync(_ m: AppModel) {
+    @MainActor static func sync(_ m: AppModel) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let current = Activity<ServiceActivityAttributes>.activities.first
         guard let a = m.active, a.started, a.pickup != "picked_up" else {
