@@ -19,6 +19,9 @@ import { RentalRoute } from './routes/Rental.jsx';
 import { Landing } from './routes/Landing.jsx';
 import { Join } from './routes/Join.jsx';
 import { ResetRoute } from './routes/Reset.jsx';
+import { EstimateRoute } from './routes/Estimate.jsx';
+import { PayRoute } from './routes/Pay.jsx';
+import { BookRoute } from './routes/Book.jsx';
 import { LAUNCH, IS_APP } from './state/options.js';
 
 class RootBoundary extends React.Component {
@@ -48,6 +51,9 @@ createRoot(document.getElementById('root')).render(
       <Route path="/shop" element={<Require roles={STAFF} title="Welcome back."><ShopRoute /></Require>} />
       <Route path="/lobby" element={<Require roles={STAFF} title="Lobby board." note="Sign in once on the TV; it stays signed in."><LobbyRoute /></Require>} />
       <Route path="/rental/:token" element={<RentalRoute />} />
+      <Route path="/estimate/:token" element={<EstimateRoute />} />
+      <Route path="/pay/:token" element={<PayRoute />} />
+      <Route path="/book" element={<BookRoute />} />
       <Route path="/reset" element={<ResetRoute />} />
       <Route path="/demo" element={<DemoRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -96,7 +96,10 @@ function Job({ j }) {
 
       <div style={css('margin-top:26px;display:flex;justify-content:space-between;align-items:baseline')}>
         <div style={css('font-size:20px;font-weight:600;letter-spacing:-.4px')}>Inspection</div>
-        <div style={css('font-size:13px;color:rgba(235,235,245,.5)')}>{j.goodCount} good · {j.flaggedCount ? j.flaggedCount + ' to send' : j.inspStatus === 'sent' ? 'sent ' + j.sentAt : 'nothing flagged'}</div>
+        <div style={css('display:flex;align-items:center;gap:12px')}>
+          {j.templates.length > 1 && j.useTemplate ? <select value={j.templateId} onChange={(e) => j.useTemplate(e.target.value)} style={css(INPUT + ';width:auto;padding:8px 10px;font-size:13px;appearance:none;-webkit-appearance:none;cursor:pointer')}>{j.templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select> : null}
+          <div style={css('font-size:13px;color:rgba(235,235,245,.5)')}>{j.goodCount} good · {j.flaggedCount ? j.flaggedCount + ' to send' : j.inspStatus === 'sent' ? 'sent ' + j.sentAt : 'nothing flagged'}</div>
+        </div>
       </div>
       <div style={css('display:flex;flex-direction:column;gap:10px;margin-top:12px')}>
         {j.items.map((it) => <Item key={it.key} it={it} />)}
@@ -110,9 +113,10 @@ function Job({ j }) {
           <div style={css(LBL)}>Sent to the customer</div>
           {j.findings.map((f) => (
             <div key={f.id} style={css('display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)')}>
-              <div><div style={css('font-size:15px;font-weight:500')}>{f.name}</div><div style={css('font-size:12.5px;margin-top:2px;color:' + f.color)}>{f.status}</div></div>
+              <div><div style={css('font-size:15px;font-weight:500')}>{f.name}</div><div style={css('font-size:12.5px;margin-top:2px;color:' + f.color)}>{f.status}{f.jobHours ? ' · ' + f.jobHours + (f.onJob ? ' · on the clock' : '') : ''}</div>{f.included ? <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:2px')}>{f.included}</div> : null}</div>
               <div style={css('display:flex;align-items:center;gap:14px')}>
                 <div style={css('font-family:var(--data-font,inherit);font-size:14px')}>{f.price}</div>
+                {f.stopJob ? <div onClick={f.stopJob} style={css(GHOST + ';padding:9px 14px;font-size:13px')}>Clock off</div> : f.startJob ? <div onClick={f.startJob} style={css(BTN + ';padding:9px 14px;font-size:13px')}>Clock on</div> : null}
                 {f.markDone ? <div onClick={f.markDone} style={css(GHOST + ';padding:9px 14px;font-size:13px')}>Done</div> : null}
               </div>
             </div>

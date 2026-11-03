@@ -3,6 +3,12 @@
 import { DCLogic } from '../runtime/logic.js';
 import { supabase, SHOP_ID, SUPABASE_URL } from './supabase.js';
 import { RULER, PILL_L } from './appLogic.js';
+import { jobMethods, jobVals } from './shop/jobs.js';
+import { partMethods, partVals } from './shop/parts.js';
+import { moneyMethods, moneyVals, invoicePayVals } from './shop/money.js';
+import { commsMethods, commsVals } from './shop/comms.js';
+import { calendarMethods, calendarVals } from './shop/calendar.js';
+import { dviMethods, dviVals, reportVals } from './shop/dvi.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
@@ -28,6 +34,20 @@ const DEMO = {
   appointments: [{ id: 'a1', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T10:30:00', job: 'Tire replacement', visit: 'wait', status: 'in_progress', bay: 2 }, { id: 'a2', customer_id: 'c2', vehicle_id: 'v2', starts_at: today() + 'T08:00:00', job: 'Plugs + coils', visit: 'dropoff', status: 'done' }, { id: 'a3', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T15:00:00', job: 'Inspection', visit: 'dropoff', status: 'booked' }],
   findings: [{ id: 'f1', appointment_id: 'a1', tier: 'now', name: 'Front brake pads + rotors', plain: 'Pads are worn down.', price_cents: 48932, status: 'pending', created_at: new Date(Date.now() - 25 * 60000).toISOString() }, { id: 'f2', appointment_id: 'a2', tier: 'soon', name: 'Cabin air filter', plain: 'Getting dirty.', price_cents: 6500, status: 'declined', decided_at: new Date(Date.now() - 3 * 864e5).toISOString(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), fu_status: 'open' }],
   rentals: [{ id: 'r1', number: 'LN-3107', customer_id: 'c2', customer_name: 'Dale Christensen', status: 'out', start_date: today(), end_date: addDays(today(), 1), vehicle_id: 'lv1' }], loanerFleet: [{ id: 'lv1', year: 2027, make: 'Tesla', model: 'Model 3', status: 'out' }],
+  shop: { shop_id: 'ryguys', name: 'RyGuys Tire & Auto Sales', phone: '4355550100', tax_rate_bp: 725, labor_rate_cents: 12500, shop_supplies_bp: 0, labor_rates: [{ name: 'Standard', cents: 12500 }, { name: 'Diagnostic', cents: 14500 }], parts_matrix: [{ upto_cents: 500, markup_pct: 150 }, { upto_cents: 2500, markup_pct: 100 }, { upto_cents: 10000, markup_pct: 65 }, { upto_cents: 50000, markup_pct: 40 }, { upto_cents: 0, markup_pct: 25 }], estimate_note: 'Prices include labor and parts. Tax and shop supplies are added on the invoice.', open_days: [1, 2, 4, 5], open_from: '08:00', open_to: '17:30' },
+  cannedJobs: [
+    { id: 'cj1', name: 'Oil change · full synthetic', category: 'Maintenance', plain: 'Full synthetic oil and filter replaced, fluids topped off, tire pressure set.', hours: 0.5, sort: 11, uses: 48, lines: [{ kind: 'labor', description: 'Oil change · full synthetic', qty: 0.5, unit_cents: 12500 }, { kind: 'part', description: 'Engine oil · 5 qt full synthetic', qty: 1, unit_cents: 5495, cost_cents: 3400 }, { kind: 'part', description: 'Oil filter', qty: 1, unit_cents: 1295, cost_cents: 600 }] },
+    { id: 'cj2', name: 'Front brake pads & rotors', category: 'Brakes', plain: 'Front pads and rotors replaced, caliper slides serviced, brakes bedded in.', hours: 1.8, sort: 30, uses: 21, lines: [{ kind: 'labor', description: 'Front brake pads & rotors', qty: 1.8, unit_cents: 12500 }, { kind: 'part', description: 'Front brake pads · ceramic', qty: 1, unit_cents: 8995, cost_cents: 4500 }, { kind: 'part', description: 'Front rotors', qty: 2, unit_cents: 7995, cost_cents: 4200 }] },
+    { id: 'cj3', name: 'Tire rotation', category: 'Tires', plain: 'All four tires rotated and torqued, pressures set.', hours: 0.5, sort: 20, uses: 60, lines: [{ kind: 'labor', description: 'Tire rotation', qty: 0.5, unit_cents: 12500 }] },
+    { id: 'cj4', name: 'Battery replacement', category: 'Electrical', plain: 'Battery tested, replaced, terminals cleaned, charging system checked.', hours: 0.4, sort: 40, uses: 9, lines: [{ kind: 'labor', description: 'Battery replacement', qty: 0.4, unit_cents: 12500 }, { kind: 'part', description: 'Battery · group size to fit', qty: 1, unit_cents: 21995, cost_cents: 14500 }, { kind: 'fee', description: 'Core charge (refunded on return)', qty: 1, unit_cents: 2200 }] },
+    { id: 'cj5', name: 'Check engine light diagnosis', category: 'Diagnostic', plain: 'Codes read, freeze frame reviewed, cause pinpointed; repair quoted separately.', hours: 1, sort: 60, uses: 14, lines: [{ kind: 'labor', description: 'Check engine light diagnosis', qty: 1, unit_cents: 14500 }] },
+    { id: 'cj6', name: 'Wheel alignment · 4 wheel', category: 'Tires', plain: 'All four wheels aligned to factory specification; printout included.', hours: 1, sort: 23, uses: 17, lines: [{ kind: 'labor', description: 'Wheel alignment · 4 wheel', qty: 1, unit_cents: 12500 }] },
+  ],
+  parts: [{ id: 'p1', part_number: 'PH7317', name: 'Oil filter', brand: 'Fram', vendor: "O'Reilly", category: 'Filters', bin: 'A3', qty_on_hand: 14, qty_min: 6, cost_cents: 600, price_cents: 1295, taxable: true, is_tire: false, dots: [] }, { id: 'p2', part_number: '5W30-5Q', name: 'Full synthetic 5W-30 · 5 qt', brand: 'Valvoline', vendor: 'NAPA', category: 'Fluids', bin: 'Rack 1', qty_on_hand: 3, qty_min: 4, cost_cents: 3400, price_cents: 5495, taxable: true, is_tire: false, dots: [] }, { id: 'p3', part_number: '265/70R17', name: 'Defender LTX M/S', brand: 'Michelin', vendor: 'ATD', category: 'Tires', bin: 'Tire rack', qty_on_hand: 4, qty_min: 0, cost_cents: 18900, price_cents: 24900, taxable: true, is_tire: true, tire_size: '265/70R17', dots: ['2426', '2426', '2526', '2526'] }],
+  pos: [], poLines: [], returns: [], payments: [], drawers: [], credits: [], payLinks: [], sms: [], blocks: [],
+  smsTemplates: [{ id: 'tp1', key: 'confirmation', name: 'Booking confirmation', body: 'Hi {first}, this is {shop}. You are booked for {service} on {when}. Reply C to confirm or call {phone} to change it.', sort: 10 }, { id: 'tp2', key: 'reminder', name: 'Day-before reminder', body: 'Hi {first}, a reminder from {shop}: {vehicle} is booked for {service} tomorrow at {time}. Reply C to confirm.', sort: 20 }, { id: 'tp3', key: 'estimate', name: 'Estimate ready', body: 'Hi {first}, your estimate from {shop} is ready. Review and approve here: {link}', sort: 30 }, { id: 'tp4', key: 'ready', name: 'Vehicle ready', body: 'Hi {first}, your {vehicle} is ready at {shop}. Your total is {total}. Pay here or at the counter: {link}', sort: 40 }, { id: 'tp5', key: 'thank_you', name: 'Thank you', body: 'Thanks for visiting {shop}, {first}. If anything is not right, reply here and we will take care of it.', sort: 50 }, { id: 'tp6', key: 'pay', name: 'Text to pay', body: 'Hi {first}, your invoice from {shop} is {total}. Pay here: {link}', sort: 80 }],
+  inspTemplates: [{ id: 'it1', name: 'Multi-point inspection', is_default: true, sort: 10, items: [['tires', 'Tires', 'Tread 32nds', 'Inspect tread depth, wear pattern, sidewalls, pressure'], ['brakes', 'Brakes', 'Pad mm', 'Pads, rotors, lines, fluid'], ['battery', 'Battery', 'Volts / CCA', 'Terminals, hold-down, load test'], ['fluids', 'Fluids', 'Level', 'Oil, coolant, brake, power steering, washer'], ['filters', 'Filters', 'Condition', 'Engine air, cabin air'], ['belts', 'Belts & hoses', 'Condition', 'Cracks, glazing, leaks'], ['lights', 'Lights & wipers', 'Condition', 'All exterior lights, wiper blades'], ['suspension', 'Steering & suspension', 'Condition', 'Shocks, struts, tie rods, bushings'], ['exhaust', 'Exhaust & underbody', 'Condition', 'Leaks, hangers, rust']].map(([key, label, measLabel, hint]) => ({ key, label, measLabel, hint })) }, { id: 'it2', name: 'Tire & brake check', is_default: false, sort: 20, items: [['lf', 'Left front tire', '32nds'], ['rf', 'Right front tire', '32nds'], ['lr', 'Left rear tire', '32nds'], ['rr', 'Right rear tire', '32nds'], ['fpads', 'Front brake pads', 'mm'], ['rpads', 'Rear brake pads', 'mm']].map(([key, label, measLabel]) => ({ key, label, measLabel, hint: '' })) }],
+  config: { sms: false, stripe: false, partstech: false },
 };
 
 export class ShopLogic extends DCLogic {
@@ -37,13 +57,13 @@ export class ShopLogic extends DCLogic {
     if (!supabase) { this.setState({ ...DEMO, loading: false }); return; }
     await this.reload();
     this.chan = supabase.channel('shop:' + SHOP_ID);
-    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians', 'messages', 'tire_quotes']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
+    for (const t of ['customers', 'customer_vehicles', 'appointments', 'findings', 'visit_photos', 'technicians', 'messages', 'tire_quotes', 'repair_orders', 'ro_lines', 'payments', 'parts', 'purchase_orders', 'sms_messages', 'blocked_time', 'canned_jobs']) this.chan.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => this.reload());
     this.chan.subscribe();
   }
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -55,11 +75,32 @@ export class ShopLogic extends DCLogic {
       supabase.from('messages').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at'),
       supabase.from('tire_quotes').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at', { ascending: false }),
       supabase.from('rentals').select('id,number,customer_id,customer_name,customer_phone,status,start_date,end_date,vehicle_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(300),
+      supabase.from('repair_orders').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -120)),
+      supabase.from('ro_lines').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -120)).order('sort').order('created_at'),
+      supabase.from('time_entries').select('*').eq('shop_id', SHOP_ID).gte('started_at', addDays(today(), -120)),
+      supabase.from('inspections').select('*').eq('shop_id', SHOP_ID).gte('updated_at', addDays(today(), -60)),
+      supabase.rpc('shop_reminders'),
+      supabase.from('team').select('*').eq('shop_id', SHOP_ID),
+      supabase.from('canned_jobs').select('*').eq('shop_id', SHOP_ID).order('sort'),
+      supabase.from('parts').select('*').eq('shop_id', SHOP_ID).order('name'),
+      supabase.from('purchase_orders').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -180)).order('created_at', { ascending: false }),
+      supabase.from('po_lines').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -180)),
+      supabase.from('part_returns').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -180)),
+      supabase.from('payments').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -120)).order('created_at'),
+      supabase.from('drawer_sessions').select('*').eq('shop_id', SHOP_ID).gte('opened_at', addDays(today(), -30)).order('opened_at'),
+      supabase.from('customer_credits').select('*').eq('shop_id', SHOP_ID).order('created_at'),
+      supabase.from('pay_links').select('*').eq('shop_id', SHOP_ID).eq('status', 'open'),
+      supabase.from('sms_messages').select('*').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -90)).order('created_at'),
+      supabase.from('sms_templates').select('*').eq('shop_id', SHOP_ID).order('sort'),
+      supabase.from('blocked_time').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -14)).order('starts_at'),
+      supabase.from('inspection_templates').select('*').eq('shop_id', SHOP_ID).order('sort'),
+      supabase.rpc('integrations', { p_shop: SHOP_ID }),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
-    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm), loading: false, err: '' });
+    this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm),
+      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -160,7 +201,7 @@ export class ShopLogic extends DCLogic {
   }
   async addLine(apptId, d) {
     const roId = await this.ensureRO(apptId); if (!roId) return;
-    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), cost_cents: d.kind === 'part' ? Math.round((parseFloat(String(d.cost || '').replace(/[^0-9.]/g, '')) || 0) * 100) : 0, part_number: d.kind === 'part' ? (d.part_number || '').trim() : '', vendor: d.kind === 'part' ? (d.vendor || '').trim() : '', taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300 };
+    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), cost_cents: d.kind === 'part' ? Math.round((parseFloat(String(d.cost || '').replace(/[^0-9.]/g, '')) || 0) * 100) : 0, part_number: d.kind === 'part' ? (d.part_number || '').trim() : '', vendor: d.kind === 'part' ? (d.vendor || '').trim() : '', taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300, part_id: d.kind === 'part' ? d.part_id || null : null, status: d.kind === 'part' ? (d.part_id ? '' : 'need') : '' };
     if (!row.description) return;
     if (!supabase) { this.setState({ roLines: (this.state.roLines || []).concat({ id: 'l' + Date.now(), approved: true, created_at: new Date().toISOString(), ...row }), newLine: null }); return; }
     const { error } = await supabase.from('ro_lines').insert({ ...row, shop_id: SHOP_ID });
@@ -186,14 +227,16 @@ export class ShopLogic extends DCLogic {
   inspectionFor(apptId) {
     const have = (this.state.inspections || []).find((i) => i.appointment_id === apptId);
     if (have) return have;
-    return { appointment_id: apptId, status: 'open', items: ShopLogic.CHECKLIST.map(([key, label, measLabel]) => ({ key, label, measLabel, status: '', meas: '', note: '', price: '', sent: false })) };
+    const tpl = this.templateFor(apptId);
+    const src = tpl ? tpl.items.map((it) => [it.key, it.label, it.measLabel, it.hint, it.now_job, it.monitor_job]) : ShopLogic.CHECKLIST;
+    return { appointment_id: apptId, status: 'open', template_id: tpl ? tpl.id : null, items: src.map(([key, label, measLabel, hint, now_job, monitor_job]) => ({ key, label, measLabel, hint, now_job, monitor_job, status: '', meas: '', note: '', price: '', sent: false })) };
   }
   async saveInspection(apptId, patch) {
     const cur = this.inspectionFor(apptId); const next = { ...cur, ...patch, updated_at: new Date().toISOString() };
     const list = (this.state.inspections || []).filter((i) => i.appointment_id !== apptId).concat(next);
     this.setState({ inspections: list });
     if (!supabase) return next;
-    const row = { shop_id: SHOP_ID, appointment_id: apptId, tech_id: next.tech_id || null, items: next.items, status: next.status || 'open', sent_at: next.sent_at || null, updated_at: next.updated_at };
+    const row = { shop_id: SHOP_ID, appointment_id: apptId, tech_id: next.tech_id || null, items: next.items, status: next.status || 'open', sent_at: next.sent_at || null, updated_at: next.updated_at, template_id: next.template_id || null };
     const { data, error } = await supabase.from('inspections').upsert(row, { onConflict: 'appointment_id' }).select().single();
     if (error) { this.setState({ err: error.message }); return next; }
     this.setState({ inspections: this.state.inspections.map((i) => (i.appointment_id === apptId ? data : i)) });
@@ -210,7 +253,9 @@ export class ShopLogic extends DCLogic {
     const cur = this.inspectionFor(apptId); const items = [];
     for (const it of cur.items) {
       if ((it.status === 'now' || it.status === 'monitor') && !it.sent) {
-        await this.addFinding(apptId, { tier: it.status === 'now' ? 'now' : 'monitor', name: it.name || it.label, plain: it.note || '', tech: it.note || '', meas: it.meas || '', meas_label: it.meas ? it.measLabel : '', urgency: it.status === 'now' ? 'Recommended before you drive far.' : 'No rush. Worth watching.', price: it.price || '' });
+        const cj = (this.state.cannedJobs || []).find((j) => j.id === (it.status === 'now' ? it.now_job : it.monitor_job));
+        if (cj && !it.price) await this.addJob(apptId, { name: it.name || cj.name, plain: it.note || cj.plain, tier: it.status === 'now' ? 'now' : 'monitor', tech: it.note || '', meas: it.meas || '', meas_label: it.meas ? it.measLabel : '', urgency: it.status === 'now' ? 'Recommended before you drive far.' : 'No rush. Worth watching.', lines: this.linesFrom(cj), canned_job_id: cj.id, source: 'tech' }, 'estimate');
+        else await this.addFinding(apptId, { tier: it.status === 'now' ? 'now' : 'monitor', name: it.name || it.label, plain: it.note || '', tech: it.note || '', meas: it.meas || '', meas_label: it.meas ? it.measLabel : '', urgency: it.status === 'now' ? 'Recommended before you drive far.' : 'No rush. Worth watching.', price: it.price || '' });
         items.push({ ...it, sent: true });
       } else items.push(it);
     }
@@ -438,8 +483,10 @@ export class ShopLogic extends DCLogic {
     const dotOf = (c) => 'width:7px;height:7px;border-radius:4px;flex:0 0 auto;background:' + c;
     const inbox = {
       sections: ['Needs response', 'Waiting for approval', 'General', 'Completed'].map((title) => ({ title, items: threads.filter((t) => t.section === title).map((t) => ({ who: t.who, time: t.time, preview: t.preview, open: () => { set({ threadId: t.id }); this.markThreadRead(t.id); }, dot: dotOf(t.color), style: 'display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .18s ease;' + (thread && thread.id === t.id ? 'background:#1c1c1e;' : 'background:transparent;') })) })).filter((sec) => sec.items.length),
-      thread: thread ? { ...thread, msgs: thread.msgs.map(bubble) } : null, none: !s.loading && !threads.length && !(s.threadId && this.custOf(s.threadId)), goInboxFlag: !!s.goInbox, clearGoInbox: () => set({ goInbox: false }),
+      thread: thread ? { ...thread, msgs: thread.msgs.map((m) => ({ ...bubble(m), at: m.created_at, app: true })).concat((s.sms || []).filter((m) => m.customer_id === thread.id).map((m) => { const out = m.direction === 'out'; const st = { queued: 'Sending', scheduled: 'Scheduled', sent: 'Sent by text', delivered: 'Delivered by text', failed: 'Failed', received: 'Text', manual: 'Send from phone', cancelled: 'Cancelled' }[m.status] || m.status; return { text: m.body, time: fmtTime(m.created_at), at: m.created_at, sms: true, status: st, manual: m.status === 'manual', send: m.status === 'manual' ? () => { this.openMessages(m.phone, m.body); this.markTextSent(m.id); } : null, wrap: 'display:flex;flex-direction:column;align-items:' + (out ? 'flex-end' : 'flex-start') + ';max-width:70%;align-self:' + (out ? 'flex-end' : 'flex-start'), bubble: 'padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;' + (out ? 'background:#30d158;color:#000;border-bottom-right-radius:5px' : 'background:rgba(48,209,88,.16);color:#fff;border-bottom-left-radius:5px'), timeStyle: 'font-size:10px;color:rgba(235,235,245,.3);margin:4px 10px 0' }; })).sort((x, y) => (x.at || '').localeCompare(y.at || '')), inApp: !!(this.custOf(thread.id) || {}).joined_at, phone: (this.custOf(thread.id) || {}).phone || '', optOut: !!(this.custOf(thread.id) || {}).sms_opt_out } : null, none: !s.loading && !threads.length && !(s.threadId && this.custOf(s.threadId)), goInboxFlag: !!s.goInbox, clearGoInbox: () => set({ goInbox: false }),
       reply: s.reply, onReply: (e) => set({ reply: e.target.value }), onReplyKey: (e) => { if (e.key === 'Enter' && thread) this.sendReply(thread.id, s.reply); }, send: () => thread && this.sendReply(thread.id, s.reply),
+      sendSms: () => thread && s.reply.trim() && this.sendText(thread.id, s.reply.trim(), 'manual', null), via: s.replyVia || 'auto', setVia: (v) => set({ replyVia: v }),
+      sendAuto: () => { if (!thread || !s.reply.trim()) return; const c = this.custOf(thread.id); const via = s.replyVia || 'auto'; if (via === 'text' || (via === 'auto' && c && !c.joined_at && c.phone)) this.sendText(thread.id, s.reply.trim(), 'manual', null); else this.sendReply(thread.id, s.reply); },
       unread: threads.filter((t) => t.section === 'Needs response').length,
       startWith: (cid) => set({ threadId: cid }),
     };
@@ -609,15 +656,36 @@ export class ShopLogic extends DCLogic {
           items: insp.items.map((it) => ({ ...it, photos: photosOf(it.key), setStatus: (st) => this.setInspectionItem(sel.id, it.key, { status: it.status === st ? '' : st }), setMeas: (m) => this.setInspectionItem(sel.id, it.key, { meas: m }), setNote: (n) => this.setInspectionItem(sel.id, it.key, { note: n }), setName: (n) => this.setInspectionItem(sel.id, it.key, { name: n }), setPrice: (pr) => this.setInspectionItem(sel.id, it.key, { price: pr }), addPhoto: (file) => this.addVisitPhoto(sel.id, file, it.key, null) })),
           flaggedCount: flagged.filter((it) => !it.sent).length, goodCount: insp.items.filter((it) => it.status === 'good').length, total: insp.items.length,
           send: flagged.some((it) => !it.sent) ? () => this.sendInspection(sel.id, me && me.id) : null,
-          findings: fs.map((f) => ({ id: f.id, name: f.name, status: { pending: 'Waiting on customer', approved: 'Approved — go ahead', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '', markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null })),
+          findings: fs.filter((f) => f.source !== 'booked').map((f) => { const openJ = (s.timeEntries || []).find((t) => t.finding_id === f.id && !t.ended_at); const jh = this.jobHours(f.id); return { id: f.id, name: f.name, status: { pending: 'Waiting on customer', approved: 'Approved — go ahead', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '', markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done', done_at: new Date().toISOString() }) : null,
+            onJob: !!openJ, jobHours: jh ? jh.toFixed(1) + ' h' : '', startJob: f.status === 'approved' && me && !openJ ? () => this.clockOnJob(sel.id, me.id, f.id) : null, stopJob: openJ ? () => this.clockOff(openJ.tech_id) : null, included: (f.lines || []).map((l) => l.description + (Number(l.qty) !== 1 ? ' × ' + Number(l.qty) + (l.kind === 'labor' ? ' h' : '') : '')).join(', ') }; }),
+          templates: (s.inspTemplates || []).filter((t) => !t.internal || true).map((t) => ({ id: t.id, name: t.name })), templateId: insp.template_id || '', useTemplate: insp.status !== 'sent' ? (id) => this.useTemplate(sel.id, id) : null,
           back: () => set({ techSel: null }),
         };
       }
       return { me, meName: me ? me.name : '', pick, techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, name: t.name })), jobs: live.map(jobRow), mine: live.filter((a) => me && a.tech_id === me.id).length, job, date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }), loading: s.loading, err: s.err, dismissErr: () => set({ err: '' }) };
     })();
 
+    // ---- jobs, parts, money, texting, calendar, inspections, reports (src/state/shop/*) ----
+    const H = { vehName, fmtTime, relDay, fmtDay, STATUS };
+    const { library, estimateFor, board } = jobVals(this, s, set, H);
+    const partsPage = partVals(this, s, set, H);
+    const register = moneyVals(this, s, set, H);
+    const comms = commsVals(this, s, set, H);
+    const calendar = calendarVals(this, s, set, H);
+    const dvi = dviVals(this, s, set, H);
+    const staffReports = reportVals(this, s, set, H);
+    // Estimates page: every visit in the shop (or booked today) with its jobs; the writer builds and sends from here.
+    const estVisits = s.appointments.filter((a) => ['arrived', 'in_progress'].includes(a.status) || (['booked', 'done'].includes(a.status) && iso(new Date(a.starts_at)) === today())).sort((x, y) => ({ arrived: 0, in_progress: 0, booked: 1, done: 2 }[x.status] - { arrived: 0, in_progress: 0, booked: 1, done: 2 }[y.status]) || x.starts_at.localeCompare(y.starts_at));
+    const estSelA = estVisits.find((a) => a.id === s.estId) || estVisits.find((a) => s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending')) || estVisits[0] || null;
+    const estimates = {
+      queue: estVisits.map((a) => { const c = this.custOf(a.customer_id), v = this.vehOf(a.vehicle_id), fs = s.findings.filter((f) => f.appointment_id === a.id && f.source !== 'booked'), pend = fs.filter((f) => f.status === 'pending'), appr = fs.filter((f) => f.status === 'approved' || f.status === 'done'); const sentAt = pend.length ? pend.reduce((t, f) => (t < f.created_at ? t : f.created_at), pend[0].created_at) : null; return { id: a.id, who: c ? c.name : 'Walk-in', car: (v ? v.model || vehName(v) : 'Vehicle') + ' · ' + (a.job || 'Service'), total: fs.length ? fmtC(fs.filter((f) => f.status !== 'declined').reduce((t, f) => t + f.price_cents, 0)) : '—', state: pend.length ? 'Waiting ' + ageOf(sentAt) : appr.length ? appr.length + ' approved' : a.status === 'booked' ? 'Booked · ' + fmtTime(a.starts_at) : 'No estimate yet', color: pend.length ? (Date.now() - new Date(sentAt) > 20 * 60000 ? ACC : YEL) : appr.length ? GRN : DIM, on: estSelA && estSelA.id === a.id, open: () => set({ estId: a.id, jobPick: null, jobDraft: null, jobEdit: null }) }; }),
+      sel: estimateFor(estSelA), none: !s.loading && !estVisits.length, waiting: estVisits.filter((a) => s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending')).length,
+    };
+
     return {
       loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires, tech,
+      library, estimates, board, partsPage, register, comms, calendar, dvi, staffReports, config: s.config || {}, shop: s.shop,
+      goEstimatesFlag: !!s.goEstimates, clearGoEstimates: () => set({ goEstimates: false }),
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + s.customers.filter((c) => c.joined_at).length + ' in the app · ' + activeToday.size + ' active today',
       importPreview: s.importPreview, previewImport: (f) => this.previewImport(f), runImport: () => this.runImport(), closeImport: () => set({ importPreview: null }),
@@ -652,6 +720,9 @@ export class ShopLogic extends DCLogic {
         noShow: sel.status === 'booked' ? () => this.setAppt(sel.id, { status: 'no_show' }) : null,
         setBay: (b) => this.setAppt(sel.id, { bay: parseInt(b, 10) || null }), setNotes: (v) => this.setAppt(sel.id, { notes: v }),
         openCustomer: selCust ? () => set({ custId: selCust.id }) : null, smsHref: selCust && selCust.phone ? 'sms:' + selCust.phone : '',
+        confirmed: !!sel.confirmed_at, confirm: sel.status === 'booked' && !sel.confirmed_at ? () => this.confirmAppt(sel.id) : null, source: sel.source || 'desk',
+        texts: selCust ? comms.quick(sel.id).map((t) => ({ ...t, send: () => this.sendText(selCust.id, t.body, t.key, sel.id) })) : [], textsSent: (s.sms || []).filter((m) => m.appointment_id === sel.id && m.direction === 'out').map((m) => ({ id: m.id, kind: m.kind, status: m.status, time: fmtTime(m.created_at) })),
+        inspTemplates: dvi.options, inspTemplateId: (this.inspectionFor(sel.id) || {}).template_id || '', useTemplate: (id) => this.useTemplate(sel.id, id),
         clock: (() => { const open = (s.timeEntries || []).find((t) => t.appointment_id === sel.id && !t.ended_at); const tech = open && s.techs.find((t) => t.id === open.tech_id); const hrs = this.hoursOn(sel.id); return { on: !!open, who: tech ? tech.name.split(' ')[0] : '', since: open ? new Date(open.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '', hours: hrs ? hrs.toFixed(1) + ' h on the clock' : '', start: (techId) => this.clockOn(sel.id, techId || sel.tech_id), stop: () => open && this.clockOff(open.tech_id), entries: (s.timeEntries || []).filter((t) => t.appointment_id === sel.id).slice(-5).reverse().map((t) => { const te = s.techs.find((x) => x.id === t.tech_id); return (te ? te.name.split(' ')[0] : 'Tech') + ' · ' + new Date(t.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + (t.ended_at ? '–' + new Date(t.ended_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ' · now'); }) }; })(),
         rating: sel.rating ? '★'.repeat(sel.rating) + ' ' + (sel.rating_note || '') : '', ratingTags: (sel.rating_tags || []).join(' · '), techId: sel.tech_id || '', setTech: (id) => this.setAppt(sel.id, { tech_id: id || null }), techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, label: t.name + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : '') })),
         findings: s.findings.filter((f) => f.appointment_id === sel.id).map((f) => ({ id: f.id, name: f.name, tier: { now: 'Recommended now', soon: 'Recommended soon', monitor: 'Monitor' }[f.tier] || f.tier, price: f.price_cents ? '$' + (f.price_cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'No charge', status: { pending: 'Waiting for approval', approved: 'Approved', declined: 'Declined', done: 'Done' }[f.status], color: { pending: YEL, approved: GRN, declined: DIM, done: GRN }[f.status], plain: f.plain, meas: [f.meas_label, f.meas].filter(Boolean).join(' · '), remove: () => this.removeFinding(f.id), markDone: f.status === 'approved' ? () => this.setFinding(f.id, { status: 'done' }) : null, photos: s.photos.filter((p) => p.finding_id === f.id).map((p) => this.photoUrl(p)) })),
@@ -668,7 +739,7 @@ export class ShopLogic extends DCLogic {
           return {
             ro, number: ro ? 'RO ' + ro.number : null, status: ro ? { open: 'Open', invoiced: 'Invoiced', paid: 'Paid', void: 'Void' }[ro.status] : 'No RO yet',
             color: ro ? { open: '#fff', invoiced: YEL, paid: GRN, void: DIM }[ro.status] : DIM,
-            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id) })) : [],
+            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id), pstatus: l.kind === 'part' && l.status ? l.status : '' })) : [],
             margin: t && t.parts ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
             hours: (() => { const actual = this.hoursOn(sel.id), billed = t ? t.laborHours : 0; return actual || billed ? 'Labor billed ' + billed.toFixed(1) + ' h · on the clock ' + actual.toFixed(1) + ' h' + (billed && actual ? ' · ' + Math.round((billed / Math.max(0.05, actual)) * 100) + '% efficiency' : '') : ''; })(),
             rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.supplies ? ['Shop supplies', $(t.supplies)] : null, t.fees - (t.supplies || 0) ? ['Fees', $(t.fees - (t.supplies || 0))] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
@@ -679,8 +750,11 @@ export class ShopLogic extends DCLogic {
             setNewLine: (p) => this.setState({ newLine: { ...(s.newLine || {}), ...p, ...(p.kind === 'labor' && s.shop && s.shop.labor_rate_cents && !(s.newLine && s.newLine.unit) ? { unit: (s.shop.labor_rate_cents / 100).toFixed(2) } : {}) } }),
             saveNewLine: () => this.addLine(sel.id, s.newLine || {}), cancelNewLine: () => this.setState({ newLine: null }),
             sendInvoice: ro && ro.status === 'open' ? () => this.setROStatus(ro.id, 'invoiced') : null,
-            markPaid: ro && ro.status !== 'paid' && ro.status !== 'void' ? (method) => this.setROStatus(ro.id, 'paid', method) : null,
             reopen: ro && ro.status !== 'open' ? () => this.setROStatus(ro.id, 'open') : null,
+            pay: invoicePayVals(this, s, set, ro), take: register.take,
+            partStatus: { need: ['Needs ordering', YEL], ordered: ['Ordered', YEL], received: ['Received', GRN], installed: ['Installed', GRN] },
+            stockOpts: partsPage.stockOpts, addFromStock: (partId, qty) => { const p = (s.parts || []).find((x) => x.id === partId); if (p) this.addPartLine(sel.id, p, qty); },
+            addJob: () => set({ estId: sel.id, jobPick: sel.id, goEstimates: true }), jobs: estimateFor(sel),
           };
         })(),
       } : null,
@@ -691,6 +765,8 @@ export class ShopLogic extends DCLogic {
     };
   }
 }
+
+Object.assign(ShopLogic.prototype, jobMethods, partMethods, moneyMethods, commsMethods, calendarMethods, dviMethods);
 
 /** Walk-in check-in from the Overview: creates (or finds by phone) the customer, the vehicle, and an
  *  appointment already in the "arrived" state with its bay. Returns an error message or ''. */
