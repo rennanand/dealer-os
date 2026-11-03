@@ -34,7 +34,7 @@ const DEMO = {
   appointments: [{ id: 'a1', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T10:30:00', job: 'Tire replacement', visit: 'wait', status: 'in_progress', bay: 2 }, { id: 'a2', customer_id: 'c2', vehicle_id: 'v2', starts_at: today() + 'T08:00:00', job: 'Plugs + coils', visit: 'dropoff', status: 'done' }, { id: 'a3', customer_id: 'c1', vehicle_id: 'v1', starts_at: today() + 'T15:00:00', job: 'Inspection', visit: 'dropoff', status: 'booked' }],
   findings: [{ id: 'f1', appointment_id: 'a1', tier: 'now', name: 'Front brake pads + rotors', plain: 'Pads are worn down.', price_cents: 48932, status: 'pending', created_at: new Date(Date.now() - 25 * 60000).toISOString() }, { id: 'f2', appointment_id: 'a2', tier: 'soon', name: 'Cabin air filter', plain: 'Getting dirty.', price_cents: 6500, status: 'declined', decided_at: new Date(Date.now() - 3 * 864e5).toISOString(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), fu_status: 'open' }],
   rentals: [{ id: 'r1', number: 'LN-3107', customer_id: 'c2', customer_name: 'Dale Christensen', status: 'out', start_date: today(), end_date: addDays(today(), 1), vehicle_id: 'lv1' }], loanerFleet: [{ id: 'lv1', year: 2027, make: 'Tesla', model: 'Model 3', status: 'out' }],
-  shop: { shop_id: 'ryguys', name: 'RyGuys Tire & Auto Sales', phone: '4355550100', tax_rate_bp: 725, labor_rate_cents: 12500, shop_supplies_bp: 0, labor_rates: [{ name: 'Standard', cents: 12500 }, { name: 'Diagnostic', cents: 14500 }], parts_matrix: [{ upto_cents: 500, markup_pct: 150 }, { upto_cents: 2500, markup_pct: 100 }, { upto_cents: 10000, markup_pct: 65 }, { upto_cents: 50000, markup_pct: 40 }, { upto_cents: 0, markup_pct: 25 }], estimate_note: 'Prices include labor and parts. Tax and shop supplies are added on the invoice.', open_days: [1, 2, 4, 5], open_from: '08:00', open_to: '17:30' },
+  shop: { shop_id: 'ryguys', name: 'RyGuys Tire & Auto Sales', phone: '4355550100', tax_rate_bp: 725, labor_rate_cents: 12500, shop_supplies_bp: 0, labor_rates: [{ name: 'Standard', cents: 12500 }, { name: 'Diagnostic', cents: 14500 }], parts_matrix: [{ upto_cents: 500, markup_pct: 150 }, { upto_cents: 2500, markup_pct: 100 }, { upto_cents: 10000, markup_pct: 65 }, { upto_cents: 50000, markup_pct: 40 }, { upto_cents: 0, markup_pct: 25 }], estimate_note: 'Prices include labor and parts. Tax and shop supplies are added on the invoice.', open_days: [1, 2, 4, 5], open_from: '08:00', open_to: '17:30', permissions: { advisor: { discount: true, void: false, refund: false, parts_cost: true, reports: true, settings: false, payments: true, delete_customer: false, edit_paid: false }, tech: { discount: false, void: false, refund: false, parts_cost: false, reports: false, settings: false, payments: false, delete_customer: false, edit_paid: false } } },
   cannedJobs: [
     { id: 'cj1', name: 'Oil change · full synthetic', category: 'Maintenance', plain: 'Full synthetic oil and filter replaced, fluids topped off, tire pressure set.', hours: 0.5, sort: 11, uses: 48, lines: [{ kind: 'labor', description: 'Oil change · full synthetic', qty: 0.5, unit_cents: 12500 }, { kind: 'part', description: 'Engine oil · 5 qt full synthetic', qty: 1, unit_cents: 5495, cost_cents: 3400 }, { kind: 'part', description: 'Oil filter', qty: 1, unit_cents: 1295, cost_cents: 600 }] },
     { id: 'cj2', name: 'Front brake pads & rotors', category: 'Brakes', plain: 'Front pads and rotors replaced, caliper slides serviced, brakes bedded in.', hours: 1.8, sort: 30, uses: 21, lines: [{ kind: 'labor', description: 'Front brake pads & rotors', qty: 1.8, unit_cents: 12500 }, { kind: 'part', description: 'Front brake pads · ceramic', qty: 1, unit_cents: 8995, cost_cents: 4500 }, { kind: 'part', description: 'Front rotors', qty: 2, unit_cents: 7995, cost_cents: 4200 }] },
@@ -47,7 +47,7 @@ const DEMO = {
   pos: [], poLines: [], returns: [], payments: [], drawers: [], credits: [], payLinks: [], sms: [], blocks: [],
   smsTemplates: [{ id: 'tp1', key: 'confirmation', name: 'Booking confirmation', body: 'Hi {first}, this is {shop}. You are booked for {service} on {when}. Reply C to confirm or call {phone} to change it.', sort: 10 }, { id: 'tp2', key: 'reminder', name: 'Day-before reminder', body: 'Hi {first}, a reminder from {shop}: {vehicle} is booked for {service} tomorrow at {time}. Reply C to confirm.', sort: 20 }, { id: 'tp3', key: 'estimate', name: 'Estimate ready', body: 'Hi {first}, your estimate from {shop} is ready. Review and approve here: {link}', sort: 30 }, { id: 'tp4', key: 'ready', name: 'Vehicle ready', body: 'Hi {first}, your {vehicle} is ready at {shop}. Your total is {total}. Pay here or at the counter: {link}', sort: 40 }, { id: 'tp5', key: 'thank_you', name: 'Thank you', body: 'Thanks for visiting {shop}, {first}. If anything is not right, reply here and we will take care of it.', sort: 50 }, { id: 'tp6', key: 'pay', name: 'Text to pay', body: 'Hi {first}, your invoice from {shop} is {total}. Pay here: {link}', sort: 80 }],
   inspTemplates: [{ id: 'it1', name: 'Multi-point inspection', is_default: true, sort: 10, items: [['tires', 'Tires', 'Tread 32nds', 'Inspect tread depth, wear pattern, sidewalls, pressure'], ['brakes', 'Brakes', 'Pad mm', 'Pads, rotors, lines, fluid'], ['battery', 'Battery', 'Volts / CCA', 'Terminals, hold-down, load test'], ['fluids', 'Fluids', 'Level', 'Oil, coolant, brake, power steering, washer'], ['filters', 'Filters', 'Condition', 'Engine air, cabin air'], ['belts', 'Belts & hoses', 'Condition', 'Cracks, glazing, leaks'], ['lights', 'Lights & wipers', 'Condition', 'All exterior lights, wiper blades'], ['suspension', 'Steering & suspension', 'Condition', 'Shocks, struts, tie rods, bushings'], ['exhaust', 'Exhaust & underbody', 'Condition', 'Leaks, hangers, rust']].map(([key, label, measLabel, hint]) => ({ key, label, measLabel, hint })) }, { id: 'it2', name: 'Tire & brake check', is_default: false, sort: 20, items: [['lf', 'Left front tire', '32nds'], ['rf', 'Right front tire', '32nds'], ['lr', 'Left rear tire', '32nds'], ['rr', 'Right rear tire', '32nds'], ['fpads', 'Front brake pads', 'mm'], ['rpads', 'Rear brake pads', 'mm']].map(([key, label, measLabel]) => ({ key, label, measLabel, hint: '' })) }],
-  config: { sms: false, stripe: false, partstech: false },
+  config: { sms: false, stripe: false, partstech: false }, role: 'owner', activity: [],
 };
 
 export class ShopLogic extends DCLogic {
@@ -63,7 +63,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au, rl2, al] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -96,12 +96,14 @@ export class ShopLogic extends DCLogic {
       supabase.from('inspection_templates').select('*').eq('shop_id', SHOP_ID).order('sort'),
       supabase.rpc('integrations', { p_shop: SHOP_ID }),
       supabase.from('authorizations').select('id,appointment_id,kind,name,amount_cents,created_at').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -120)),
+      supabase.rpc('my_role', { p_shop: SHOP_ID }),
+      supabase.from('audit_log').select('id,who,action,entity,entity_id,ref,summary,created_at').eq('shop_id', SHOP_ID).order('id', { ascending: false }).limit(400),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
     this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm),
-      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), loading: false, err: '' });
+      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), role: (rl2 && rl2.data) || this.state.role || '', activity: arr(al), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -109,6 +111,8 @@ export class ShopLogic extends DCLogic {
     const row = { name: d.name.trim(), phone: d.phone.replace(/\D/g, ''), email: (d.email || '').trim(), city: (d.city || '').trim() };
     if (!row.name) return;
     let cust;
+    const same = row.phone.length === 10 ? this.state.customers.find((c) => c.phone === row.phone) : null;
+    if (same && !d.force) { this.setState({ fuNote: same.name + ' already has this number — using that record.' }); if ((d.make || d.model || d.year) && !this.state.vehicles.some((v) => v.customer_id === same.id && (v.plate === (d.plate || '').toUpperCase() || (v.make || '').toLowerCase() === (d.make || '').toLowerCase() && (v.model || '').toLowerCase() === (d.model || '').toLowerCase()))) await this.addVehicle(same.id, d); return same; }
     if (!supabase) { cust = { id: 'c' + Date.now(), created_at: new Date().toISOString(), ...row }; this.setState({ customers: [...this.state.customers, cust].sort((a, b) => a.name.localeCompare(b.name)) }); }
     else {
       this.setState({ busy: true });
@@ -162,25 +166,66 @@ export class ShopLogic extends DCLogic {
   }
   // ---- import (migrating a shop) ----
   async previewImport(file) {
-    const { buildImport } = await import('./importCsv.js');
+    const { buildImport, buildHistoryImport, looksLikeHistory, parseCsv } = await import('./importCsv.js');
     const text = await file.text();
+    const headers = (parseCsv(text)[0] || []);
+    if (looksLikeHistory(headers)) {   // a repair-order export: visits, invoices and declined work
+      const { visits, map } = buildHistoryImport(text);
+      const total = visits.reduce((t, v) => t + (parseFloat(v.total) || 0), 0), declined = visits.reduce((t, v) => t + v.declined.length, 0);
+      this.setState({ importPreview: { kind: 'history', file: file.name, visits, count: visits.length, total, declined, withPhone: visits.filter((v) => v.phone).length, mapped: Object.keys(map), missing: ['name', 'total'].filter((k) => map[k] === undefined && !(k === 'name' && map.first !== undefined)), result: null, busy: false } });
+      return;
+    }
     const { customers, map } = buildImport(text);
     const vehicles = customers.reduce((n, c) => n + c.vehicles.length, 0);
     const missing = ['name', 'phone', 'make'].filter((k) => map[k] === undefined && !(k === 'name' && map.first !== undefined));
-    this.setState({ importPreview: { file: file.name, customers, count: customers.length, vehicles, withPhone: customers.filter((c) => c.phone).length, mapped: Object.keys(map), missing, result: null, busy: false } });
+    this.setState({ importPreview: { kind: 'customers', file: file.name, customers, count: customers.length, vehicles, withPhone: customers.filter((c) => c.phone).length, mapped: Object.keys(map), missing, result: null, busy: false } });
   }
   async runImport() {
     const p = this.state.importPreview; if (!p || p.busy) return;
     this.setState({ importPreview: { ...p, busy: true } });
+    const source = /tekmetric/i.test(p.file) ? 'tekmetric' : 'csv';
+    if (p.kind === 'history') {
+      if (!supabase) { this.setState({ importPreview: { ...p, busy: false, result: { visits: p.count, declined: p.declined, skipped: 0 } } }); return; }
+      let totals = { visits: 0, declined: 0, skipped: 0 };
+      for (let i = 0; i < p.visits.length; i += 100) {
+        const { data, error } = await supabase.rpc('import_history', { p_rows: p.visits.slice(i, i + 100), p_source: source });
+        if (error) { this.setState({ importPreview: { ...p, busy: false }, err: error.message }); return; }
+        for (const k of Object.keys(totals)) totals[k] += (data && data[k]) || 0;
+      }
+      await this.reload();
+      this.setState({ importPreview: { ...p, busy: false, result: totals } });
+      return;
+    }
     if (!supabase) { this.setState({ importPreview: { ...p, busy: false, result: { customers_new: p.count, customers_updated: 0, vehicles_new: p.vehicles, vehicles_updated: 0 } } }); return; }
     let totals = { customers_new: 0, customers_updated: 0, vehicles_new: 0, vehicles_updated: 0 };
     for (let i = 0; i < p.customers.length; i += 200) {  // batches keep each call small
-      const { data, error } = await supabase.rpc('import_customers', { p_rows: p.customers.slice(i, i + 200), p_source: /tekmetric/i.test(p.file) ? 'tekmetric' : 'csv' });
+      const { data, error } = await supabase.rpc('import_customers', { p_rows: p.customers.slice(i, i + 200), p_source: source });
       if (error) { this.setState({ importPreview: { ...p, busy: false }, err: error.message }); return; }
       for (const k of Object.keys(totals)) totals[k] += (data && data[k]) || 0;
     }
     await this.reload();
     this.setState({ importPreview: { ...p, busy: false, result: totals } });
+  }
+  // ---- duplicates ----
+  async loadDuplicates() {
+    if (!supabase) { const by = {}; for (const c of this.state.customers) if (c.phone) (by[c.phone] = by[c.phone] || []).push(c); this.setState({ dups: Object.keys(by).filter((k) => by[k].length > 1).map((k) => ({ key: k, kind: 'phone', rows: by[k].map((c) => ({ id: c.id, name: c.name, phone: c.phone, vehicles: this.state.vehicles.filter((v) => v.customer_id === c.id).length, visits: this.state.appointments.filter((a) => a.customer_id === c.id).length, created_at: c.created_at })) })) }); return; }
+    const { data, error } = await supabase.rpc('duplicate_customers', { p_shop: SHOP_ID });
+    if (error) return this.setState({ err: error.message });
+    this.setState({ dups: data || [] });
+  }
+  async mergeCustomers(keep, drop) {
+    if (!supabase) { this.setState({ customers: this.state.customers.filter((c) => c.id !== drop), vehicles: this.state.vehicles.map((v) => (v.customer_id === drop ? { ...v, customer_id: keep } : v)), appointments: this.state.appointments.map((a) => (a.customer_id === drop ? { ...a, customer_id: keep } : a)) }); await this.loadDuplicates(); return; }
+    const { error } = await supabase.rpc('merge_customers', { p_keep: keep, p_drop: drop });
+    if (error) return this.setState({ err: error.message });
+    await this.reload(); await this.loadDuplicates();
+  }
+  /** Who already has this number / plate / VIN? Used before creating a customer at the desk. */
+  async findExisting(q) {
+    const phone = (q.phone || '').replace(/\D/g, '');
+    if (!supabase) { const hit = this.state.customers.filter((c) => (phone.length >= 7 && c.phone.endsWith(phone.slice(-7))) || (q.plate && this.state.vehicles.some((v) => v.customer_id === c.id && v.plate === q.plate.toUpperCase()))); return hit.map((c) => ({ id: c.id, name: c.name, phone: c.phone, vehicle: vehName(this.state.vehicles.find((v) => v.customer_id === c.id)) })); }
+    if (phone.length < 7 && !q.plate && !(q.vin && q.vin.length >= 11)) return [];
+    const { data } = await supabase.rpc('find_customer', { p_shop: SHOP_ID, p_phone: phone, p_plate: q.plate || '', p_vin: q.vin || '' });
+    return data || [];
   }
   async markInvited(id) {
     this.setState({ customers: this.state.customers.map((c) => (c.id === id ? { ...c, invited_at: new Date().toISOString() } : c)) });
@@ -348,6 +393,18 @@ export class ShopLogic extends DCLogic {
   }
   photoUrl(p) { return p.local || (SUPABASE_URL + '/storage/v1/object/public/visit-photos/' + p.path); }
 
+  /** Permission check mirroring public.can(): owners may do everything; advisors and techs by the matrix. */
+  can(key) {
+    const role = this.state.role || (supabase ? '' : 'owner'); if (role === 'owner') return true;
+    const m = (this.state.shop && this.state.shop.permissions) || {};
+    return !!(m[role] && m[role][key]);
+  }
+  async savePermissions(matrix) {
+    this.setState({ shop: { ...(this.state.shop || {}), permissions: matrix } });
+    if (!supabase) return;
+    const { error } = await supabase.rpc('set_permissions', { p_shop: SHOP_ID, p_permissions: matrix });
+    if (error) this.setState({ err: error.message });
+  }
   custOf(id) { return this.state.customers.find((c) => c.id === id) || null; }
   vehOf(id) { return this.state.vehicles.find((v) => v.id === id) || null; }
 
@@ -687,6 +744,10 @@ export class ShopLogic extends DCLogic {
     return {
       loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires, tech,
       library, estimates, board, partsPage, register, comms, calendar, dvi, staffReports, config: s.config || {}, shop: s.shop,
+      role: s.role || (supabase ? '' : 'owner'), can: (k) => this.can(k), isOwner: (s.role || (supabase ? '' : 'owner')) === 'owner',
+      permissions: { matrix: (s.shop && s.shop.permissions) || { advisor: {}, tech: {} }, keys: [['payments', 'Take payments'], ['discount', 'Add discounts'], ['refund', 'Refund'], ['void', 'Void an invoice'], ['edit_paid', 'Change or reopen a paid invoice'], ['parts_cost', 'See parts cost and margin'], ['reports', 'See reports'], ['settings', 'Change settings, jobs and pricing'], ['delete_customer', 'Delete customers']], save: (m) => this.savePermissions(m) },
+      activity: (s.activity || []).map((x) => ({ id: x.id, who: x.who, action: x.action, ref: x.ref, summary: x.summary, when: relDay(x.created_at) + ' · ' + fmtTime(x.created_at), kind: x.action.split('.')[0], color: /refund|void|deleted|removed|cancelled/.test(x.action) ? '#ff6b64' : /paid|approved|done|merged/.test(x.action) ? GRN : /declined|moved|priced|changed/.test(x.action) ? YEL : 'rgba(235,235,245,.6)' })),
+      dups: s.dups || null, loadDuplicates: () => this.loadDuplicates(), mergeCustomers: (keep, drop) => this.mergeCustomers(keep, drop), findExisting: (q) => this.findExisting(q),
       goEstimatesFlag: !!s.goEstimates, clearGoEstimates: () => set({ goEstimates: false }),
       // Customers page
       customersSub: s.customers.length + (s.customers.length === 1 ? ' customer' : ' customers') + ' · ' + s.customers.filter((c) => c.joined_at).length + ' in the app · ' + activeToday.size + ' active today',
@@ -752,7 +813,7 @@ export class ShopLogic extends DCLogic {
             ro, number: ro ? 'RO ' + ro.number : null, status: ro ? { open: 'Open', invoiced: 'Invoiced', paid: 'Paid', void: 'Void' }[ro.status] : 'No RO yet',
             color: ro ? { open: '#fff', invoiced: YEL, paid: GRN, void: DIM }[ro.status] : DIM,
             lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id), pstatus: l.kind === 'part' && l.status ? l.status : '' })) : [],
-            margin: t && t.parts ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
+            margin: t && t.parts && this.can('parts_cost') ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
             hours: (() => { const actual = this.hoursOn(sel.id), billed = t ? t.laborHours : 0; return actual || billed ? 'Labor billed ' + billed.toFixed(1) + ' h · on the clock ' + actual.toFixed(1) + ' h' + (billed && actual ? ' · ' + Math.round((billed / Math.max(0.05, actual)) * 100) + '% efficiency' : '') : ''; })(),
             rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.supplies ? ['Shop supplies', $(t.supplies)] : null, t.fees - (t.supplies || 0) ? ['Fees', $(t.fees - (t.supplies || 0))] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
             total: t ? $(t.total) : '$0.00', pending: t && t.pending ? $(t.pending) + ' waiting on customer' : '',
@@ -762,8 +823,8 @@ export class ShopLogic extends DCLogic {
             setNewLine: (p) => this.setState({ newLine: { ...(s.newLine || {}), ...p, ...(p.kind === 'labor' && s.shop && s.shop.labor_rate_cents && !(s.newLine && s.newLine.unit) ? { unit: (s.shop.labor_rate_cents / 100).toFixed(2) } : {}) } }),
             saveNewLine: () => this.addLine(sel.id, s.newLine || {}), cancelNewLine: () => this.setState({ newLine: null }),
             sendInvoice: ro && ro.status === 'open' ? () => this.setROStatus(ro.id, 'invoiced') : null,
-            reopen: ro && ro.status !== 'open' ? () => this.setROStatus(ro.id, 'open') : null,
-            pay: invoicePayVals(this, s, set, ro), take: register.take,
+            reopen: ro && ro.status !== 'open' && (ro.status !== 'paid' || this.can('edit_paid')) ? () => this.setROStatus(ro.id, 'open') : null,
+            pay: this.can('payments') ? invoicePayVals(this, s, set, ro) : { ...invoicePayVals(this, s, set, ro), canTake: null, textToPay: null }, take: register.take,
             partStatus: { need: ['Needs ordering', YEL], ordered: ['Ordered', YEL], received: ['Received', GRN], installed: ['Installed', GRN] },
             stockOpts: partsPage.stockOpts, addFromStock: (partId, qty) => { const p = (s.parts || []).find((x) => x.id === partId); if (p) this.addPartLine(sel.id, p, qty); },
             addJob: () => set({ estId: sel.id, jobPick: sel.id, goEstimates: true }), jobs: estimateFor(sel),

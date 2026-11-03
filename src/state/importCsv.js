@@ -75,3 +75,55 @@ export function buildImport(csvText) {
   }
   return { customers: [...byKey.values()], map, headers };
 }
+
+// ---- repair-order history (Tekmetric "Repair Orders" export, or any invoice list) ----
+const HIST = {
+  external_id: ['ro #', 'ro number', 'ro', 'repair order', 'repair order #', 'invoice #', 'invoice number', 'invoice', 'ro id', 'order #', 'ticket', 'ticket #'],
+  date: ['date', 'closed', 'closed date', 'completed', 'completed date', 'invoice date', 'ro date', 'posted', 'posted date', 'created', 'created date', 'service date'],
+  total: ['total', 'invoice total', 'grand total', 'amount', 'ro total', 'total amount', 'total sales', 'sale'],
+  job: ['jobs', 'job', 'services', 'service', 'description', 'work performed', 'title', 'concern', 'ro title', 'work'],
+  declined: ['declined', 'declined jobs', 'declined work', 'declined services', 'recommendations', 'recommended'],
+  odometer: ['mileage', 'odometer', 'miles', 'mileage in', 'odometer in', 'mileage out'],
+  name: ['customer', 'customer name', 'name', 'full name'],
+  first: ['first name', 'customer first name', 'first'],
+  last: ['last name', 'customer last name', 'last'],
+  phone: ['phone', 'mobile', 'cell', 'customer phone', 'mobile phone', 'phone number'],
+  year: ['year', 'vehicle year', 'model year'],
+  make: ['make', 'vehicle make'],
+  model: ['model', 'vehicle model'],
+  vehicle: ['vehicle', 'vehicle name', 'year make model', 'car'],
+  plate: ['plate', 'license', 'license plate', 'tag'],
+  vin: ['vin', 'vin #'],
+  notes: ['notes', 'note', 'comments', 'internal notes'],
+};
+/** Does this CSV look like repair orders rather than a customer list? Needs a date and a total (or an RO number). */
+export function looksLikeHistory(headers) {
+  const hs = headers.map(norm);
+  const has = (key) => HIST[key].some((a) => hs.includes(a));
+  return has('date') && (has('total') || has('external_id'));
+}
+function mapHistory(headers) {
+  const hs = headers.map(norm), map = {};
+  for (const key of Object.keys(HIST)) {
+    let idx = -1;
+    for (const a of HIST[key]) { idx = hs.indexOf(a); if (idx >= 0) break; }
+    if (idx < 0) idx = hs.findIndex((h) => HIST[key].some((a) => h.includes(a)) && !Object.values(map).includes(hs.indexOf(h)));
+    if (idx >= 0 && !Object.values(map).includes(idx)) map[key] = idx;
+  }
+  return map;
+}
+/** Rows for `import_history`: one per repair order, with declined work split on ; or | or newline ("Cabin filter $65"). */
+export function buildHistoryImport(csvText) {
+  const rows = parseCsv(csvText); if (rows.length < 2) return { visits: [], map: {}, headers: [] };
+  const headers = rows[0], map = mapHistory(headers), get = (r, k) => (map[k] === undefined ? '' : String(r[map[k]] || '').trim());
+  const visits = [];
+  for (const r of rows.slice(1)) {
+    const date = toDate(get(r, 'date')); if (!date) continue;
+    const name = get(r, 'name') || [get(r, 'first'), get(r, 'last')].filter(Boolean).join(' ');
+    let year = get(r, 'year').replace(/\D/g, '').slice(0, 4), make = get(r, 'make'), model = get(r, 'model');
+    if (!make && get(r, 'vehicle')) { const parts = get(r, 'vehicle').split(/\s+/); if (/^\d{4}$/.test(parts[0])) { year = parts.shift(); } make = parts.shift() || ''; model = parts.join(' '); }
+    const declined = get(r, 'declined').split(/[;|\n]+/).map((s) => s.trim()).filter(Boolean).map((s) => { const m = s.match(/^(.*?)\s*\$?\s*([\d,]+(?:\.\d{1,2})?)\s*$/); return m && /\d/.test(m[2]) && m[1].trim() ? { name: m[1].trim().replace(/[-–:]\s*$/, ''), price: m[2].replace(/,/g, '') } : { name: s, price: '' }; });
+    visits.push({ external_id: get(r, 'external_id'), date, name, phone: digits(get(r, 'phone')), year, make, model, plate: get(r, 'plate').toUpperCase(), vin: get(r, 'vin').toUpperCase(), odometer: digits(get(r, 'odometer')), job: get(r, 'job').slice(0, 200), total: get(r, 'total').replace(/[^0-9.\-]/g, ''), notes: get(r, 'notes').slice(0, 500), declined });
+  }
+  return { visits, map, headers };
+}

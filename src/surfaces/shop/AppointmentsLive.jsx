@@ -56,10 +56,13 @@ export function AppointmentsLive({ vm }) {
               </select>
             </Field>
             {!na.customer_id ? (
-              <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
-                <input value={na.name} placeholder="Name" onChange={(e) => vm.setNewAppt({ name: e.target.value })} style={css(INPUT)} autoFocus />
-                <input value={na.phone} inputMode="tel" placeholder="Mobile" onChange={(e) => vm.setNewAppt({ phone: e.target.value })} style={css(INPUT)} />
-              </div>
+              <>
+                <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
+                  <input value={na.name} placeholder="Name" onChange={(e) => vm.setNewAppt({ name: e.target.value })} style={css(INPUT)} autoFocus />
+                  <input value={na.phone} inputMode="tel" placeholder="Mobile" onChange={(e) => vm.setNewAppt({ phone: e.target.value })} style={css(INPUT)} />
+                </div>
+                <Existing vm={vm} phone={na.phone} plate={na.plate} />
+              </>
             ) : null}
             <Field label="Vehicle">
               {na.customer_id && vm.naCars.length ? (
@@ -323,6 +326,19 @@ function Invoice({ inv }) {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** As a number is typed, say who already has it — one tap uses that record instead of making a second one. */
+function Existing({ vm, phone, plate }) {
+  const [hits, setHits] = React.useState([]);
+  React.useEffect(() => { const d = (phone || '').replace(/\D/g, ''); if (d.length < 7 && !plate) { setHits([]); return; } let on = true; const t = setTimeout(async () => { const r = await vm.findExisting({ phone: d, plate }); if (on) setHits(r || []); }, 350); return () => { on = false; clearTimeout(t); }; }, [phone, plate]);
+  if (!hits.length) return null;
+  return (
+    <div style={css('margin-top:-6px;padding:10px 12px;border-radius:10px;background:rgba(255,214,10,.1);font-size:12.5px')}>
+      <div style={css('color:#ffd60a')}>Already a customer</div>
+      {hits.slice(0, 3).map((h) => <div key={h.id} onClick={() => vm.setNewAppt({ customer_id: h.id, name: '', phone: '' })} style={css('display:flex;justify-content:space-between;gap:10px;padding:6px 0;cursor:pointer')}><span>{h.name}{h.vehicle ? <span style={css('color:rgba(235,235,245,.5);margin-left:8px')}>{h.vehicle}</span> : null}</span><span style={css('font-weight:600')}>Use</span></div>)}
     </div>
   );
 }

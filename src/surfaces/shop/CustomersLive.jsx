@@ -28,6 +28,7 @@ export function CustomersLive({ vm }) {
         </div>
         {vm.err ? <div onClick={vm.dismissErr} style={css('margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(224,49,43,.14);color:#ff6b64;font-size:12.5px;cursor:pointer')}>{vm.err}</div> : null}
         {vm.importPreview ? <ImportPanel p={vm.importPreview} vm={vm} /> : null}
+        <Duplicates vm={vm} />
         <div style={css('margin-top:22px;border-top:1px solid rgba(235,235,245,.09)')}>
           <div style={css('display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;padding:12px 0;' + LBL + ';border-bottom:1px solid rgba(235,235,245,.07)')}>
             <div>Customer</div><div>Vehicles</div><div>Visits</div><div>Last visit</div><div>App</div>
@@ -172,10 +173,14 @@ function ImportPanel({ p, vm }) {
         <div>
           <div style={css('font-size:15px;font-weight:600')}>{r ? 'Imported' : 'Ready to import'} · {p.file}</div>
           <div style={css('font-size:12.5px;color:rgba(235,235,245,.55);margin-top:4px;line-height:1.5')}>
-            {r ? <>{r.customers_new} new customers, {r.customers_updated} updated · {r.vehicles_new} new vehicles, {r.vehicles_updated} updated. They can sign in with their number and see their cars right away.</>
-              : <>{p.count} customers ({p.withPhone} with a phone number) · {p.vehicles} vehicles. Matched columns: {p.mapped.join(', ') || 'none'}.{p.missing.length ? <span style={css('color:#ffd60a')}> Not found: {p.missing.join(', ')} — check the column headers.</span> : null}</>}
+            {p.kind === 'history'
+              ? (r ? <>{r.visits} visits imported with their invoices · {r.declined} declined jobs now in Follow-ups · {r.skipped} skipped (already imported or no date). Last visit, last service and mileage are set on every vehicle.</>
+                  : <>Repair-order history: {p.count} visits · ${Math.round(p.total).toLocaleString('en-US')} in invoices · {p.declined} declined jobs · {p.withPhone} rows with a phone number. Matched columns: {p.mapped.join(', ') || 'none'}.{p.missing.length ? <span style={css('color:#ffd60a')}> Not found: {p.missing.join(', ')}.</span> : null} Customers and vehicles are matched by phone, VIN and plate and created when new.</>)
+              : (r ? <>{r.customers_new} new customers, {r.customers_updated} updated · {r.vehicles_new} new vehicles, {r.vehicles_updated} updated. They can sign in with their number and see their cars right away.</>
+                  : <>{p.count} customers ({p.withPhone} with a phone number) · {p.vehicles} vehicles. Matched columns: {p.mapped.join(', ') || 'none'}.{p.missing.length ? <span style={css('color:#ffd60a')}> Not found: {p.missing.join(', ')} — check the column headers.</span> : null}</>)}
           </div>
-          {!r && p.customers.length ? <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:8px')}>First row: {p.customers[0].name || '—'} · {p.customers[0].phone || 'no phone'} · {(p.customers[0].vehicles[0] ? [p.customers[0].vehicles[0].year, p.customers[0].vehicles[0].make, p.customers[0].vehicles[0].model].filter(Boolean).join(' ') : 'no vehicle')}</div> : null}
+          {!r && p.kind === 'history' && p.visits.length ? <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:8px')}>First row: {p.visits[0].name || '—'} · {p.visits[0].date} · {p.visits[0].job || 'Service'} · ${p.visits[0].total || '0'}{p.visits[0].declined.length ? ' · declined: ' + p.visits[0].declined.map((d) => d.name).join(', ') : ''}</div> : null}
+          {!r && p.kind !== 'history' && p.customers.length ? <div style={css('font-size:12px;color:rgba(235,235,245,.4);margin-top:8px')}>First row: {p.customers[0].name || '—'} · {p.customers[0].phone || 'no phone'} · {(p.customers[0].vehicles[0] ? [p.customers[0].vehicles[0].year, p.customers[0].vehicles[0].make, p.customers[0].vehicles[0].model].filter(Boolean).join(' ') : 'no vehicle')}</div> : null}
         </div>
         <div style={css('display:flex;gap:8px;flex:0 0 auto')}>
           {!r ? <div onClick={p.count && !p.busy ? vm.runImport : null} style={css(BTN + (p.count && !p.busy ? '' : ';opacity:.4;cursor:default'))}>{p.busy ? 'Importing…' : 'Import ' + p.count}</div> : null}
@@ -216,6 +221,29 @@ function Account({ c }) {
           <div onClick={ce.save} style={css(BTN + ';padding:9px 0;text-align:center')}>Issue</div><div onClick={ce.cancel} style={css(GHOST + ';padding:9px 0;text-align:center')}>Cancel</div>
         </div>
       ) : <div onClick={a.issueCredit} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer;padding:10px 0 0')}>Issue store credit</div>}
+    </div>
+  );
+}
+
+/** Same phone (or same name with different numbers): merge keeps the older record and moves everything over. */
+function Duplicates({ vm }) {
+  const d = vm.dups;
+  if (d === null) return <div onClick={vm.loadDuplicates} style={css('margin-top:10px;font-size:12px;color:rgba(235,235,245,.45);cursor:pointer')}>Check for duplicate customers</div>;
+  if (!d.length) return <div style={css('margin-top:10px;font-size:12px;color:#30d158')}>No duplicate customers.</div>;
+  return (
+    <div style={css('margin-top:16px;padding:16px 18px;border-radius:14px;background:#141416;border:1px solid rgba(255,255,255,.06)')}>
+      <div style={css('font-size:14px;font-weight:600')}>Possible duplicates · {d.length}</div>
+      {d.map((g) => (
+        <div key={g.kind + g.key} style={css('margin-top:10px;padding-top:10px;border-top:1px solid rgba(235,235,245,.07)')}>
+          <div style={css('font-size:11.5px;color:rgba(235,235,245,.45)')}>{g.kind === 'phone' ? 'Same number · ' + g.key : 'Same name, different numbers'}</div>
+          {g.rows.map((r, i) => (
+            <div key={r.id} style={css('display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;font-size:13px')}>
+              <div>{r.name}{r.phone ? <span style={css('color:rgba(235,235,245,.5);margin-left:8px')}>{r.phone}</span> : null}<span style={css('color:rgba(235,235,245,.4);margin-left:8px;font-size:12px')}>{r.vehicles} {r.vehicles === 1 ? 'vehicle' : 'vehicles'} · {r.visits} {r.visits === 1 ? 'visit' : 'visits'}</span></div>
+              {i > 0 ? <div onClick={() => vm.mergeCustomers(g.rows[0].id, r.id)} style={css('font-size:12px;font-weight:600;cursor:pointer')}>Merge into {g.rows[0].name.split(' ')[0]}</div> : <div style={css('font-size:11.5px;color:rgba(235,235,245,.4)')}>keeps</div>}
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
