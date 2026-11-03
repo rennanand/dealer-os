@@ -40,3 +40,11 @@ iPhone Duo is Apple's foldable: a 5.4" outer display, a 7.6" inner display, and 
 - Design: Tesla-flat (black, `#141416` cards, title + chevron rows). No hand-drawn glass; the system tab bar is the only glass.
 - iPhone Duo rules above apply: layouts are stacks and grids that adapt to width, never fixed to a device size.
 - `ios-native/RevynWidgets/` is the widget extension (Live Activity for the visit). `ServiceActivityAttributes.swift` exists in both targets and must stay identical.
+
+## Shop management (Tekmetric parity)
+
+- `src/state/shop/*.js` are mixins on `ShopLogic` (jobs/estimates/job board, parts & POs, money, texting, calendar, DVI templates & reports). Each exports `xMethods` (prototype) and `xVals(logic, state, set, helpers)` (view-model chunk); `shopLogic.js` composes them in `renderVals()`.
+- A job on an estimate is a `findings` row with `lines` (labor/parts/fees). Approved → lines on the RO (trigger `findings_to_ro`). `source = 'booked'` jobs are hidden from the customer. `/estimate/<token>` is the no-account approval page.
+- Payments are `payments` rows through `record_payment` / `refund_payment`; an RO is paid when payments cover `ro_totals`. `/pay/<token>` is text-to-pay (Stripe via the `pay` edge function when `app_config.stripe_pk` exists).
+- Texts are `sms_messages`; `send_sms` queues and pg_net calls the `sms` edge function when `app_config.sms_url` is set, otherwise the desk sends from the phone (status `manual`). Replies hit `sms-inbound` → `sms_inbound()`.
+- Migrations can be tested locally: a scratch Postgres 16 cluster with stubbed `auth`/`net` schemas runs the whole chain (`/home/pgtest/pg/run.sh` + `smoke.sql` in the cloud session). Keep forward references out of a migration — `my_appointments` is redefined in the latest migration that has every table it reads.
