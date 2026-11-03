@@ -15,7 +15,7 @@ enum Supa {
         return SupabaseClient(
             supabaseURL: URL(string: Secrets.supabaseURL)!,
             supabaseKey: Secrets.supabaseKey,
-            options: .init(db: .init(encoder: encoder, decoder: decoder))
+            options: .init(db: .init(encoder: encoder, decoder: decoder), auth: .init(emitLocalSessionAsInitialSession: true))
         )
     }()
 
