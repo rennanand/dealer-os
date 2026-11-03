@@ -50,9 +50,9 @@ export function Require({ roles, title, children, customerHome }) {
   if (!AUTH_ON) return customerHome && LAUNCH ? <CustomerLiveRoute auth={{ session: { user: { id: 'demo' } }, member: { name: 'Rennan' } }} /> : <><OfflineBar />{children}</>; // no accounts yet
   if (auth.loading) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} />;
   if (!auth.session) return <SignIn title={title} />;
+  if (customerHome && LAUNCH) return <><OfflineBar /><CustomerLiveRoute auth={auth} /></>; // customers need no staff membership: their phone number ties them to the shop
   if (!auth.member) return <Blocked message="This account is not part of RyGuys yet." onSignOut={signOut} />;
   if (roles && !roles.includes(auth.member.role)) return <Blocked message="This screen is for RyGuys staff." onSignOut={signOut} />;
-  if (customerHome && LAUNCH) return <><OfflineBar /><CustomerLiveRoute auth={auth} /></>; // loaner launch: customers see their rentals, not the demo
   return <><OfflineBar />{children}</>;
 }
 
