@@ -55,7 +55,7 @@ private struct ClockCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(a.job ?? "Service").font(.system(size: 18, weight: .semibold))
                     Text(concern).font(.system(size: 13.5)).foregroundStyle(Theme.dim)
-                    if open != nil || hrs > 0 { Text((open.map { "On the clock since " + $0.started_at.formatted(date: .omitted, time: .shortened) + " · " + tech.techName($0.tech_id) } ?? "Clock off") + (hrs > 0 ? " · " + String(format: "%.1f h total", hrs) : "")).font(.system(size: 12.5)).foregroundStyle(Theme.dimmer).padding(.top, 2) }
+                    if open != nil || hrs > 0 { Text(clockLine(open, hrs)).font(.system(size: 12.5)).foregroundStyle(Theme.dimmer).padding(.top, 2) }
                 }
                 Spacer()
                 if a.status == "booked" { SecondaryButton(title: "Check in") { Task { await tech.setStatus(a, "arrived") } }.frame(width: 120) }
@@ -67,6 +67,12 @@ private struct ClockCard: View {
     var concern: String {
         let c = (a.concern ?? "").isEmpty ? (a.notes ?? "") : a.concern!
         return c.isEmpty ? "No note from the customer." : "Customer: “" + c + "”"
+    }
+    func clockLine(_ open: TimeEntry?, _ hrs: Double) -> String {
+        var s = "Clock off"
+        if let e = open { s = "On the clock since " + e.started_at.formatted(date: .omitted, time: .shortened) + " · " + tech.techName(e.tech_id) }
+        if hrs > 0 { s += " · " + String(format: "%.1f h total", hrs) }
+        return s
     }
 }
 
@@ -84,12 +90,19 @@ private struct InspectionSection: View {
                 if tech.templates.count > 1, insp.status != "sent" {
                     Menu { ForEach(tech.templates) { t in Button(t.name) { Task { await tech.useTemplate(a, t) } } } } label: { Text(tech.template(for: a)?.name ?? "Template").font(.system(size: 13)).foregroundStyle(Theme.dim) }
                 }
-                Text("\(good) good · " + (flagged > 0 ? "\(flagged) to send" : insp.status == "sent" ? "sent " + (insp.sent_at?.formatted(date: .omitted, time: .shortened) ?? "") : "nothing flagged")).font(.system(size: 13)).foregroundStyle(Theme.dim)
+                Text(summary(good: good, flagged: flagged, insp: insp)).font(.system(size: 13)).foregroundStyle(Theme.dim)
             }
             ForEach(insp.items, id: \.key) { it in InspectionItemView(a: a, item: it) }
             if flagged > 0 { PrimaryButton(title: "Send \(flagged) item\(flagged == 1 ? "" : "s") to the customer", busy: tech.busy) { Task { await tech.send(a) } } }
             else { Text("Flag anything as Monitor or Now and it goes to the customer’s phone with the price for approval.").font(.system(size: 13)).foregroundStyle(Theme.dimmer) }
         }
+    }
+    func summary(good: Int, flagged: Int, insp: InspectionRow) -> String {
+        var s = "\(good) good · "
+        if flagged > 0 { s += "\(flagged) to send" }
+        else if insp.status == "sent" { s += "sent " + (insp.sent_at?.formatted(date: .omitted, time: .shortened) ?? "") }
+        else { s += "nothing flagged" }
+        return s
     }
 }
 
@@ -176,7 +189,7 @@ private struct JobLine: View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(f.name ?? "").font(.system(size: 15, weight: .medium))
-                Text(statusText + (jh > 0 ? String(format: " · %.1f h", jh) : "") + (open != nil ? " · on the clock" : "")).font(.system(size: 12.5)).foregroundStyle(color)
+                Text(line(jh: jh, on: open != nil)).font(.system(size: 12.5)).foregroundStyle(color)
                 if let ls = f.lines, !ls.isEmpty { Text(ls.compactMap { $0.description }.joined(separator: ", ")).font(.system(size: 12)).foregroundStyle(Theme.dimmer).lineLimit(1) }
             }
             Spacer()
@@ -189,6 +202,7 @@ private struct JobLine: View {
         .overlay(alignment: .bottom) { Divider().overlay(Theme.line) }
     }
     var statusText: String { switch f.status { case "approved": "Approved — go ahead"; case "declined": "Declined"; case "done": "Done"; default: "Waiting on customer" } }
+    func line(jh: Double, on: Bool) -> String { var s = statusText; if jh > 0 { s += String(format: " · %.1f h", jh) }; if on { s += " · on the clock" }; return s }
     var color: Color { switch f.status { case "approved", "done": Theme.green; case "declined": Theme.dimmer; default: Theme.yellow } }
 }
 

@@ -291,4 +291,7 @@ begin
 end $$;
 grant execute on function public.checkin_my_appointment(uuid, int, text, text, text) to authenticated;
 
+-- 0031 added clock_on(uuid, uuid, uuid default null); the two-argument original makes the call ambiguous.
+drop function if exists public.clock_on(uuid, uuid);
+
 alter publication supabase_realtime add table public.authorizations;
