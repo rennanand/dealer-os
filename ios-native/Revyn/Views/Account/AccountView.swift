@@ -13,7 +13,7 @@ struct AccountView: View {
                 VStack(spacing: 0) {
                     Row(icon: "car", title: "Vehicles", subtitle: "\(model.vehicles.count) on file").onTapGesture { model.tab = .vehicles }
                     Divider().overlay(Theme.line)
-                    Row(icon: "bell", title: "Notifications", subtitle: "Check-in, estimates, ready for pickup, replies")
+                    Row(icon: "bell", title: "Notifications", subtitle: "Check-in, estimates, ready for pickup, replies").onTapGesture { if let u = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(u) } }
                     Divider().overlay(Theme.line)
                     Row(icon: "mappin.and.ellipse", title: model.shop?.name ?? "Your shop", subtitle: model.shop?.address).onTapGesture { model.tab = .shop }
                 }.padding(.horizontal, 6).background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)).padding(.horizontal, 0)

@@ -150,7 +150,7 @@ final class AppModel: ObservableObject {
         busy = true; defer { busy = false }
         do {
             try await client.rpc("book_appointment", params: BookParams(p_starts_at: startsAt, p_job: job, p_visit: visit, p_vehicle: vehicle?.fullName ?? "", p_plate: vehicle?.plate ?? "", p_notes: notes, p_vehicle_id: vehicle?.id)).execute()
-            await refresh(); toast = "Booked. See you " + startsAt.dayAndTime.lowercased() + "."; return true
+            await refresh(); Haptic.success(); toast = "Booked. See you " + startsAt.dayAndTime.lowercased() + "."; return true
         } catch { self.error = friendly(error); return false }
     }
     struct CancelParams: Encodable { let p_id: UUID }
@@ -180,33 +180,34 @@ final class AppModel: ObservableObject {
     struct DecideParams: Encodable { let p_approve: [UUID]; let p_decline: [UUID] }
     func decide(approve: [UUID], decline: [UUID]) async -> Bool {
         busy = true; defer { busy = false }
-        do { try await client.rpc("decide_findings", params: DecideParams(p_approve: approve, p_decline: decline)).execute(); await refresh(); return true } catch { self.error = friendly(error); return false }
+        do { try await client.rpc("decide_findings", params: DecideParams(p_approve: approve, p_decline: decline)).execute(); await refresh(); Haptic.success(); return true } catch { self.error = friendly(error); return false }
     }
 
     struct TextParams: Encodable { let p_text: String }
     func send(_ text: String) async {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines); guard !t.isEmpty else { return }
-        messages.append(Message(id: UUID(), sender: "customer", text: t, created_at: Date(), read: true))
+        messages.append(Message(id: UUID(), sender: "customer", text: t, created_at: Date(), read: true)); Haptic.tap()
         do { try await client.rpc("send_my_message", params: TextParams(p_text: t)).execute(); await refresh() } catch { self.error = friendly(error) }
     }
     func markMessagesRead() async { guard unread > 0 else { return }; _ = try? await client.rpc("mark_my_messages_read").execute(); messages = messages.map { var m = $0; if m.sender == "shop" { m.read = true }; return m } }
 
     struct PickupParams: Encodable { let p_id: UUID; let p_state: String }
-    func setPickup(_ a: Appointment, state: String) async { do { try await client.rpc("set_my_pickup", params: PickupParams(p_id: a.id, p_state: state)).execute(); await refresh() } catch { self.error = friendly(error) } }
+    func setPickup(_ a: Appointment, state: String) async { do { try await client.rpc("set_my_pickup", params: PickupParams(p_id: a.id, p_state: state)).execute(); await refresh(); Haptic.success() } catch { self.error = friendly(error) } }
 
     struct RateParams: Encodable { let p_id: UUID; let p_stars: Int; let p_tags: [String]; let p_note: String }
     func rate(_ a: Appointment, stars: Int, tags: [String], note: String) async -> Bool {
         busy = true; defer { busy = false }
-        do { try await client.rpc("rate_my_visit", params: RateParams(p_id: a.id, p_stars: stars, p_tags: tags, p_note: note)).execute(); await refresh(); toast = "Thanks. Your rating went to the team."; return true } catch { self.error = friendly(error); return false }
+        do { try await client.rpc("rate_my_visit", params: RateParams(p_id: a.id, p_stars: stars, p_tags: tags, p_note: note)).execute(); await refresh(); Haptic.success(); toast = "Thanks. Your rating went to the team."; return true } catch { self.error = friendly(error); return false }
     }
 
     struct QuoteParams: Encodable { let p_id: UUID; let p_tier: String; let p_hazard: Bool }
     func acceptQuote(_ q: TireQuote, tier: String, hazard: Bool) async -> Bool {
         busy = true; defer { busy = false }
-        do { try await client.rpc("accept_tire_quote", params: QuoteParams(p_id: q.id, p_tier: tier, p_hazard: hazard)).execute(); await refresh(); toast = "Tires accepted. They go on during this visit."; return true } catch { self.error = friendly(error); return false }
+        do { try await client.rpc("accept_tire_quote", params: QuoteParams(p_id: q.id, p_tier: tier, p_hazard: hazard)).execute(); await refresh(); Haptic.success(); toast = "Tires accepted. They go on during this visit."; return true } catch { self.error = friendly(error); return false }
     }
 
     private func friendly(_ e: Error) -> String {
+        Haptic.warning()
         let s = e.localizedDescription
         if s.localizedCaseInsensitiveContains("invalid login") { return "That email or password is not right." }
         if s.localizedCaseInsensitiveContains("network") || s.localizedCaseInsensitiveContains("offline") { return "You are offline. Showing what was last loaded." }

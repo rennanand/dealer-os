@@ -146,3 +146,9 @@ struct SectionLabel: View {
     var text: String
     var body: some View { Text(text).font(.system(size: 13)).foregroundStyle(Theme.dimmer).frame(maxWidth: .infinity, alignment: .leading) }
 }
+
+enum Haptic {
+    static func tap() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+    static func warning() { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
+}
