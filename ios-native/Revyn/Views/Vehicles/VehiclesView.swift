@@ -15,7 +15,7 @@ struct VehiclesView: View {
                         }.padding(.top, 120).padding(.horizontal, 30)
                     }
                     ForEach(Array(model.vehicles.enumerated()), id: \.element.id) { i, v in
-                        Button { model.selectedVehicleIndex = i; model.tab = .home } label: {
+                        NavigationLink { VehicleDetailView(vehicle: v, index: i) } label: {
                             Card {
                                 HStack(spacing: 14) {
                                     Circle().fill(Theme.paint(for: v)).frame(width: 14, height: 14).overlay(Circle().stroke(.white.opacity(0.15)))
@@ -53,6 +53,7 @@ struct AddVehicleView: View {
     @State private var vmodel = ""
     @State private var plate = ""
     @State private var odometer = ""
+    @State private var color = ""
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -62,11 +63,17 @@ struct AddVehicleView: View {
                         TextField("Make · Toyota", text: $make).textInputAutocapitalization(.words).field()
                     }
                     TextField("Model · 4Runner", text: $vmodel).textInputAutocapitalization(.words).field()
+                    TextField("Color · Red, Silver, Black…", text: $color).textInputAutocapitalization(.words).field()
                     TextField("Plate (optional)", text: $plate).textInputAutocapitalization(.characters).autocorrectionDisabled().field()
                     TextField("Mileage (optional)", text: $odometer).keyboardType(.numberPad).field()
                     Text("Mileage is entered by you and recorded again by the shop at check-in. The app has no connection to the car.").font(.system(size: 12.5)).foregroundStyle(Theme.dimmer).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
                     PrimaryButton(title: "Add vehicle", enabled: !make.trimmingCharacters(in: .whitespaces).isEmpty && !vmodel.trimmingCharacters(in: .whitespaces).isEmpty, busy: model.busy) {
-                        Task { if await model.addVehicle(year: Int(year), make: make.trimmingCharacters(in: .whitespaces), model: vmodel.trimmingCharacters(in: .whitespaces), plate: plate.trimmingCharacters(in: .whitespaces), odometer: Int(odometer.digits)) { dismiss() } }
+                        Task {
+                            if await model.addVehicle(year: Int(year), make: make.trimmingCharacters(in: .whitespaces), model: vmodel.trimmingCharacters(in: .whitespaces), plate: plate.trimmingCharacters(in: .whitespaces), odometer: Int(odometer.digits)) {
+                                if let v = model.vehicles.last, !color.trimmingCharacters(in: .whitespaces).isEmpty { _ = await model.updateVehicle(v, year: v.year, make: v.make ?? "", model: v.model ?? "", plate: v.plate ?? "", color: color.trimmingCharacters(in: .whitespaces), nickname: "") }
+                                dismiss()
+                            }
+                        }
                     }.padding(.top, 12)
                 }.padding(20)
             }
@@ -76,5 +83,49 @@ struct AddVehicleView: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
         .presentationDetents([.large])
+    }
+}
+
+/// One vehicle: pick it for Home, edit its details, or remove it.
+struct VehicleDetailView: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    var vehicle: Vehicle
+    var index: Int
+    @State private var year = ""
+    @State private var make = ""
+    @State private var vmodel = ""
+    @State private var plate = ""
+    @State private var color = ""
+    @State private var nickname = ""
+    @State private var confirmRemove = false
+    private var live: Vehicle { model.vehicles.first(where: { $0.id == vehicle.id }) ?? vehicle }
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                CarView(paint: Theme.paint(for: Vehicle(id: live.id, year: live.year, make: live.make, model: live.model, plate: live.plate, odometer: live.odometer, visits: live.visits, color: color.isEmpty ? live.color : color, nickname: live.nickname)), angle: .orbit, autoRotate: true).frame(height: 220)
+                TextField("Nickname (optional) · The Falcon", text: $nickname).textInputAutocapitalization(.words).field()
+                HStack(spacing: 10) {
+                    TextField("Year", text: $year).keyboardType(.numberPad).field().frame(width: 110)
+                    TextField("Make", text: $make).textInputAutocapitalization(.words).field()
+                }
+                TextField("Model", text: $vmodel).textInputAutocapitalization(.words).field()
+                TextField("Color · Red, Silver, Black…", text: $color).textInputAutocapitalization(.words).field()
+                TextField("Plate (optional)", text: $plate).textInputAutocapitalization(.characters).autocorrectionDisabled().field()
+                PrimaryButton(title: "Save", enabled: !make.trimmingCharacters(in: .whitespaces).isEmpty && !vmodel.trimmingCharacters(in: .whitespaces).isEmpty, busy: model.busy) {
+                    Task { if await model.updateVehicle(live, year: Int(year), make: make.trimmingCharacters(in: .whitespaces), model: vmodel.trimmingCharacters(in: .whitespaces), plate: plate.trimmingCharacters(in: .whitespaces), color: color.trimmingCharacters(in: .whitespaces), nickname: nickname.trimmingCharacters(in: .whitespaces)) { dismiss() } }
+                }.padding(.top, 8)
+                SecondaryButton(title: index == model.selectedVehicleIndex ? "Shown on Home" : "Show on Home") { model.selectedVehicleIndex = index; model.tab = .home }
+                Button(role: .destructive) { confirmRemove = true } label: { Text("Remove vehicle").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.red).frame(maxWidth: .infinity).padding(.vertical, 14) }
+                Text("Mileage is entered by you and recorded again by the shop at check-in. Color sets the paint on your car here.").font(.system(size: 12.5)).foregroundStyle(Theme.dimmer).multilineTextAlignment(.center)
+            }.padding(20)
+        }
+        .background(Theme.bg)
+        .navigationTitle(live.title)
+        .toolbarTitleDisplayMode(.inline)
+        .onAppear { year = live.year.map(String.init) ?? ""; make = live.make ?? ""; vmodel = live.model ?? ""; plate = live.plate ?? ""; color = live.color ?? ""; nickname = live.nickname ?? "" }
+        .confirmationDialog("Remove this vehicle?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) { Task { if await model.removeVehicle(live) { dismiss() } } }
+        } message: { Text("Its past visits stay in History. A vehicle with a visit in progress cannot be removed.") }
     }
 }

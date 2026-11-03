@@ -4,6 +4,7 @@ struct ServiceView: View {
     @EnvironmentObject var model: AppModel
     @State private var showBook = false
     @State private var showRate = false
+    @State private var agreement: URL?
 
     var body: some View {
         NavigationStack {
@@ -17,6 +18,7 @@ struct ServiceView: View {
             .refreshable { await model.refresh() }
             .sheet(isPresented: $showBook) { BookView() }
             .sheet(isPresented: $showRate) { if let a = model.active ?? model.history.first { RateView(appointment: a) } }
+            .sheet(item: $agreement) { u in SafariView(url: u).ignoresSafeArea() }
         }
     }
 
@@ -103,7 +105,11 @@ struct ServiceView: View {
                         ServiceCard(icon: "camera", color: .white, kicker: "Photos", title: "\(photos.count) photo\(photos.count == 1 ? "" : "s") from your technician.", sub: photos.last?.caption ?? "Taken at your visit.", action: "See photos")
                     }
                 }
-                if a.visit == "loaner" {
+                if let r = model.openRental {
+                    Button { if let u = r.agreementURL { agreement = u } } label: {
+                        ServiceCard(icon: "arrow.left.arrow.right", color: r.status == "out" ? Theme.green : .white, kicker: r.statusLabel, title: (r.vehicle ?? "Loaner") + (r.number.map { " · " + $0 } ?? ""), sub: r.status == "out" ? "Mileage and fuel were recorded by staff at handoff. Bring it back with the same fuel." : "The desk hands over the keys at check-in.", action: r.agreementURL == nil ? nil : "Agreement & photos")
+                    }
+                } else if a.visit == "loaner" {
                     ServiceCard(icon: "arrow.left.arrow.right", color: .white, kicker: "Loaner", title: "A loaner is part of this visit.", sub: "The desk hands over the keys at check-in. Mileage and fuel are recorded by staff at handoff and return.", action: nil)
                 }
                 NavigationLink { MessagesView() } label: {
@@ -183,4 +189,16 @@ struct PhotosView: View {
             }.padding(16)
         }.background(Theme.bg).navigationTitle("Photos").toolbarTitleDisplayMode(.inline)
     }
+}
+
+import SafariServices
+extension URL: @retroactive Identifiable { public var id: String { absoluteString } }
+/// The signed loaner agreement and handoff photos live on the web; shown in-app, no browser chrome.
+struct SafariView: UIViewControllerRepresentable {
+    var url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let c = SFSafariViewController.Configuration(); c.barCollapsingEnabled = true
+        let v = SFSafariViewController(url: url, configuration: c); v.preferredBarTintColor = .black; v.preferredControlTintColor = .white; return v
+    }
+    func updateUIViewController(_ v: SFSafariViewController, context: Context) {}
 }

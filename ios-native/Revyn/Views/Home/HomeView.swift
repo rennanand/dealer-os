@@ -7,6 +7,9 @@ struct HomeStatus {
 
     @MainActor static func make(_ m: AppModel) -> HomeStatus {
         guard let a = m.active else {
+            if let r = m.openRental, r.status == "out" {
+                return HomeStatus(kicker: "Loaner · keys in hand", color: Theme.green, title: (r.vehicle ?? "Your loaner") + " is with you.", sub: "Bring it back with the same fuel. Mileage was recorded by staff at handoff.", cta: "Agreement & photos", destination: .service)
+            }
             return m.vehicles.isEmpty
                 ? HomeStatus(kicker: "Your car", color: Theme.green, title: "Add your vehicle.", sub: "Then book a visit and follow it here, from check-in to pickup.", cta: "Add a vehicle", destination: .vehicles)
                 : HomeStatus(kicker: "Nothing scheduled", color: Theme.green, title: "Nothing scheduled.", sub: "Book a visit and follow it here, from check-in to pickup.", cta: "Book a visit", destination: .service)

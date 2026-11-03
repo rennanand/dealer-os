@@ -16,6 +16,7 @@ final class AppModel: ObservableObject {
     @Published var appointments: [Appointment] = []
     @Published var messages: [Message] = []
     @Published var shops: [Shop] = []
+    @Published var rentals: [Rental] = []
     @Published var selectedVehicleIndex = 0
     @Published var busy = false
     @Published var error: String?
@@ -49,6 +50,7 @@ final class AppModel: ObservableObject {
     }
     var activeVehicle: Vehicle? { guard let a = active else { return vehicle }; return vehicles.first(where: { $0.id == a.vehicle_id }) ?? vehicle }
     var history: [Appointment] { appointments.filter { $0.status == "done" || $0.status == "cancelled" } }
+    var openRental: Rental? { rentals.first(where: { !["returned", "closed", "cancelled"].contains($0.status ?? "") }) }
     var unread: Int { messages.filter { $0.sender == "shop" && $0.read != true }.count }
 
     // MARK: lifecycle
@@ -95,9 +97,10 @@ final class AppModel: ObservableObject {
         async let a: [Appointment] = try client.rpc("my_appointments").execute().value
         async let m: [Message] = try client.rpc("my_messages").execute().value
         async let s: [Shop] = try client.rpc("shops_public").execute().value
+        async let r: [Rental] = try client.rpc("my_rentals").execute().value
         do {
-            let (vv, aa, mm, ss) = try await (v, a, m, s)
-            vehicles = vv; appointments = aa; messages = mm; shops = ss
+            let (vv, aa, mm, ss, rr) = try await (v, a, m, s, r)
+            vehicles = vv; appointments = aa; messages = mm; shops = ss; rentals = rr
             if selectedVehicleIndex >= vehicles.count { selectedVehicleIndex = 0 }
             saveCache()
             await PushDelegate.store()
@@ -159,6 +162,18 @@ final class AppModel: ObservableObject {
         do { try await client.rpc("add_my_vehicle", params: VehicleParams(p_year: year, p_make: make, p_model: model, p_plate: plate, p_odometer: odometer)).execute(); await refresh(); selectedVehicleIndex = max(0, vehicles.count - 1); return true }
         catch { self.error = friendly(error); return false }
     }
+    struct EditVehicleParams: Encodable { let p_vehicle: UUID; let p_year: Int?; let p_make: String; let p_model: String; let p_plate: String; let p_color: String; let p_nickname: String }
+    func updateVehicle(_ v: Vehicle, year: Int?, make: String, model: String, plate: String, color: String, nickname: String) async -> Bool {
+        busy = true; defer { busy = false }
+        do { try await client.rpc("update_my_vehicle", params: EditVehicleParams(p_vehicle: v.id, p_year: year, p_make: make, p_model: model, p_plate: plate, p_color: color, p_nickname: nickname)).execute(); await refresh(); return true }
+        catch { self.error = friendly(error); return false }
+    }
+    struct RemoveVehicleParams: Encodable { let p_vehicle: UUID }
+    func removeVehicle(_ v: Vehicle) async -> Bool {
+        busy = true; defer { busy = false }
+        do { try await client.rpc("remove_my_vehicle", params: RemoveVehicleParams(p_vehicle: v.id)).execute(); await refresh(); return true } catch { self.error = friendly(error); return false }
+    }
+
     struct OdoParams: Encodable { let p_vehicle: UUID; let p_odometer: Int }
     func updateOdometer(_ v: Vehicle, miles: Int) async { do { try await client.rpc("update_my_odometer", params: OdoParams(p_vehicle: v.id, p_odometer: miles)).execute(); await refresh() } catch { self.error = friendly(error) } }
 

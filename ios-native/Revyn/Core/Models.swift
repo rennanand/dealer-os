@@ -162,3 +162,17 @@ extension Date {
         return formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()) + " · " + clock
     }
 }
+
+struct Rental: Codable, Identifiable, Hashable {
+    var id: String { number ?? token ?? UUID().uuidString }
+    var number: String?
+    var status: String?      // reserved | out | returned | closed
+    var token: String?
+    var start_date: String?
+    var end_date: String?
+    var vehicle: String?
+    var color: String?
+    var paint: String?
+    var agreementURL: URL? { token.flatMap { URL(string: "https://dealer-os-rosy.vercel.app/rental/" + $0 + "?app=1") } }
+    var statusLabel: String { switch status { case "out": "Keys in hand"; case "reserved": "Reserved for you"; case "returned": "Returned"; default: (status ?? "").capitalized } }
+}
