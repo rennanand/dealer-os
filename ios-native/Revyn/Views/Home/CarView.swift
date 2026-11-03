@@ -51,6 +51,7 @@ struct CarView: UIViewRepresentable {
         private var link: CADisplayLink?
         private var lastPaint: UIColor?
         private var lastAngle: CarView.Angle?
+        private var radius: Float = 3.0
 
         override init() {
             super.init()
@@ -72,11 +73,13 @@ struct CarView: UIViewRepresentable {
             let (minB, maxB) = car.boundingBox
             car.position = SCNVector3(-(minB.x + maxB.x) / 2, -minB.y, -(minB.z + maxB.z) / 2)
             applyMaterials(to: car)
+            let dx = maxB.x - minB.x, dy = maxB.y - minB.y, dz = maxB.z - minB.z
+            radius = 0.5 * (dx * dx + dy * dy + dz * dz).squareRoot()
             pivot.addChildNode(car)
             scene.rootNode.addChildNode(pivot)
 
             // Ground shadow catcher.
-            let floor = SCNFloor(); floor.reflectivity = 0.06; floor.reflectionFalloffEnd = 3
+            let floor = SCNFloor(); floor.reflectivity = 0.03; floor.reflectionFalloffEnd = 3
             let fm = SCNMaterial(); fm.lightingModel = .shadowOnly; fm.writesToDepthBuffer = false
             floor.firstMaterial = fm
             let floorNode = SCNNode(geometry: floor); floorNode.position.y = 0.005
@@ -99,33 +102,37 @@ struct CarView: UIViewRepresentable {
         private func applyMaterials(to node: SCNNode) {
             node.enumerateChildNodes { n, _ in
                 guard let g = n.geometry else { return }
-                let name = ((n.name ?? "") + " " + (g.name ?? "") + " " + (g.firstMaterial?.name ?? "")).lowercased()
-                let m = SCNMaterial(); m.lightingModel = .physicallyBased
-                switch name {
-                case let s where s.contains("glass"):
-                    m.diffuse.contents = UIColor(red: 0.09, green: 0.13, blue: 0.17, alpha: 1); m.metalness.contents = 0.9; m.roughness.contents = 0.08; m.transparency = 0.9
-                case let s where s.contains("chrome"):
-                    m.diffuse.contents = UIColor(white: 0.95, alpha: 1); m.metalness.contents = 1.0; m.roughness.contents = 0.1
-                case let s where s.contains("rubber"):
-                    m.diffuse.contents = UIColor(white: 0.08, alpha: 1); m.metalness.contents = 0; m.roughness.contents = 0.95
-                case let s where s.contains("satin"):
-                    m.diffuse.contents = UIColor(white: 0.07, alpha: 1); m.metalness.contents = 0.3; m.roughness.contents = 0.6
-                case let s where s.contains("underbody"):
-                    m.diffuse.contents = UIColor(white: 0.04, alpha: 1); m.metalness.contents = 0.1; m.roughness.contents = 0.9
-                case let s where s.contains("interior"):
-                    m.diffuse.contents = UIColor(red: 0.1, green: 0.09, blue: 0.07, alpha: 1); m.roughness.contents = 0.9
-                case let s where s.contains("headlamp"):
-                    m.diffuse.contents = UIColor(red: 1, green: 0.95, blue: 0.8, alpha: 1); m.emission.contents = UIColor(red: 1, green: 0.76, blue: 0.29, alpha: 1); m.emission.intensity = 2.0; m.roughness.contents = 0.15
-                case let s where s.contains("taillamp"):
-                    m.diffuse.contents = UIColor(red: 1, green: 0.23, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 1, green: 0.09, blue: 0.03, alpha: 1); m.emission.intensity = 2.6; m.roughness.contents = 0.25
-                case let s where s.contains("amber"):
-                    m.diffuse.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.intensity = 0.5
-                default:
-                    m.diffuse.contents = UIColor(red: 0.73, green: 0.74, blue: 0.76, alpha: 1); m.metalness.contents = 0.85; m.roughness.contents = 0.12; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.05
-                    paintMats.append(m)
-                }
-                g.materials = [m]
+                // ModelIO keeps one geometry with a material slot per `usemtl` group; replace each slot by its name.
+                let slots = g.materials.isEmpty ? [SCNMaterial()] : g.materials
+                g.materials = slots.map { old in self.material(named: ((old.name ?? "") + " " + (n.name ?? "") + " " + (g.name ?? "")).lowercased()) }
             }
+        }
+
+        private func material(named name: String) -> SCNMaterial {
+            let m = SCNMaterial(); m.lightingModel = .physicallyBased
+            if name.contains("glass") {
+                m.diffuse.contents = UIColor(red: 0.09, green: 0.13, blue: 0.17, alpha: 1); m.metalness.contents = 0.9; m.roughness.contents = 0.08; m.transparency = 0.9
+            } else if name.contains("chrome") {
+                m.diffuse.contents = UIColor(white: 0.95, alpha: 1); m.metalness.contents = 1.0; m.roughness.contents = 0.1
+            } else if name.contains("rubber") {
+                m.diffuse.contents = UIColor(white: 0.08, alpha: 1); m.metalness.contents = 0; m.roughness.contents = 0.95
+            } else if name.contains("satin") {
+                m.diffuse.contents = UIColor(white: 0.07, alpha: 1); m.metalness.contents = 0.3; m.roughness.contents = 0.6
+            } else if name.contains("underbody") {
+                m.diffuse.contents = UIColor(white: 0.04, alpha: 1); m.metalness.contents = 0.1; m.roughness.contents = 0.9
+            } else if name.contains("interior") {
+                m.diffuse.contents = UIColor(red: 0.1, green: 0.09, blue: 0.07, alpha: 1); m.roughness.contents = 0.9
+            } else if name.contains("headlamp") {
+                m.diffuse.contents = UIColor(red: 1, green: 0.95, blue: 0.8, alpha: 1); m.emission.contents = UIColor(red: 1, green: 0.76, blue: 0.29, alpha: 1); m.emission.intensity = 2.0; m.roughness.contents = 0.15
+            } else if name.contains("taillamp") {
+                m.diffuse.contents = UIColor(red: 1, green: 0.23, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 1, green: 0.09, blue: 0.03, alpha: 1); m.emission.intensity = 2.6; m.roughness.contents = 0.25
+            } else if name.contains("amber") {
+                m.diffuse.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.contents = UIColor(red: 0.85, green: 0.52, blue: 0.16, alpha: 1); m.emission.intensity = 0.5
+            } else {
+                m.diffuse.contents = lastPaint ?? UIColor(red: 0.73, green: 0.74, blue: 0.76, alpha: 1); m.metalness.contents = 0.85; m.roughness.contents = 0.12; m.clearCoat.contents = 1.0; m.clearCoatRoughness.contents = 0.05
+                paintMats.append(m)
+            }
+            return m
         }
 
         /// A dark studio with bright light panels, so chrome and clear coat have something to reflect.
@@ -151,11 +158,14 @@ struct CarView: UIViewRepresentable {
             }
             if lastAngle != angle {
                 lastAngle = angle
+                // Distance from the bounding sphere and the camera's field of view, so any model fits.
+                let fov = Float((cameraNode.camera?.fieldOfView ?? 26) * .pi / 180)
+                let fit = radius / sin(fov / 2) * 0.62
                 let (y, h, d): (Float, Float, Float) = switch angle {
-                case .orbit: (0.75, 2.2, 7.6)
-                case .rear: (2.55, 2.0, 7.4)
-                case .side: (1.57, 1.5, 7.2)
-                case .front: (0.25, 1.6, 7.0)
+                case .orbit: (0.75, fit * 0.3, fit)
+                case .rear: (2.55, fit * 0.27, fit * 0.97)
+                case .side: (1.57, fit * 0.2, fit * 0.95)
+                case .front: (0.25, fit * 0.22, fit * 0.92)
                 }
                 targetYaw = y
                 SCNTransaction.begin(); SCNTransaction.animationDuration = animated ? 0.9 : 0
