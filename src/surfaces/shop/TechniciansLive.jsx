@@ -33,6 +33,10 @@ export function TechniciansLive({ vm }) {
               </select>
             ) : null}
           </div>
+          <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:10px')}>
+            <div><div style={css(LBL + ';margin-bottom:6px')}>Pay</div><select value={f.pay_type || 'hourly'} onChange={(e) => t.setForm({ pay_type: e.target.value })} style={css(INPUT)}><option value="hourly">Hourly · clock hours</option><option value="flat_rate">Flat rate · billed hours</option><option value="commission">Commission · % of labor</option><option value="salary">Salary</option></select></div>
+            <div><div style={css(LBL + ';margin-bottom:6px')}>{f.pay_type === 'commission' ? '% of labor' : f.pay_type === 'salary' ? '—' : '$ per hour'}</div>{f.pay_type === 'commission' ? <input value={f.commission_pct || ''} inputMode="decimal" onChange={(e) => t.setForm({ commission_pct: e.target.value })} style={css(INPUT + ';font-family:var(--data-font,inherit)')} /> : f.pay_type === 'salary' ? <div style={css(INPUT + ';color:rgba(235,235,245,.4)')}>Not in payroll report</div> : <input value={f.pay_rate || ''} inputMode="decimal" onChange={(e) => t.setForm({ pay_rate: e.target.value })} style={css(INPUT + ';font-family:var(--data-font,inherit)')} />}</div>
+          </div>
           <div>
             <div style={css(LBL + ';margin-bottom:6px')}>Bays</div>
             <div style={css('display:flex;gap:6px')}>{[1, 2, 3, 4, 5].map((b) => <div key={b} onClick={() => t.toggleBay(b)} style={css('flex:1;text-align:center;padding:9px 0;border-radius:10px;font-size:12.5px;font-weight:500;cursor:pointer;' + ((f.bays || []).includes(b) ? 'background:#fff;color:#000' : 'background:rgba(235,235,245,.08);color:rgba(235,235,245,.7)'))}>Bay 0{b}</div>)}</div>

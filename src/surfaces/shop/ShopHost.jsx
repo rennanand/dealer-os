@@ -12,8 +12,10 @@ import { JobBoardLive } from './JobBoardLive.jsx';
 import { PartsLive } from './PartsLive.jsx';
 import { RegisterLive } from './RegisterLive.jsx';
 import { SettingsLive } from './SettingsLive.jsx';
+import { FleetLive } from './FleetLive.jsx';
+import { MarketingLive } from './MarketingLive.jsx';
+import { ReportsLive } from './ReportsLive.jsx';
 import { Followups } from './Followups.jsx';
-import { Analytics } from './Analytics.jsx';
 import { TiresLive } from './TiresLive.jsx';
 import { css } from '../../runtime/tpl.js';
 
@@ -30,7 +32,7 @@ function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox, goEstim
   React.useEffect(() => { if (wantInbox) { vm.inbox.clearGoInbox(); if (goInbox) goInbox(); } }, [wantInbox]);
   const wantEst = vm.goEstimatesFlag;
   React.useEffect(() => { if (wantEst) { vm.clearGoEstimates(); if (goEstimates) goEstimates(); } }, [wantEst]);
-  const booking = (page === 'customers' || page === 'followups') && !!vm.newAppt;
+  const booking = (page === 'customers' || page === 'followups' || page === 'schedule') && !!vm.newAppt;
   React.useEffect(() => { if (booking && goAppointments) goAppointments(); }, [booking]);
   if (page === 'schedule') return <ScheduleLive vm={vm} />;
   if (page === 'technicians') return <TechniciansLive vm={vm} />;
@@ -41,7 +43,9 @@ function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox, goEstim
   if (page === 'analytics' && !vm.can('reports')) return <NotAllowed what="Reports" />;
   if (page === 'settings') return <SettingsLive vm={vm} />;
   if (page === 'followups') return <Followups vm={vm.followups} />;
-  if (page === 'analytics') return <Analytics vm={vm.reports} />;
+  if (page === 'analytics') return <ReportsLive vm={vm} />;
+  if (page === 'fleet') return <FleetLive vm={vm} />;
+  if (page === 'marketing') return <MarketingLive vm={vm} />;
   if (page === 'tires') return <TiresLive vm={vm} />;
   if (page === 'inbox') return <InboxLive vm={vm} />;
   if (page === 'overview') return <OverviewLive vm={vm} goCheckin={goCheckin} goAppointments={goAppointments} goLoaners={goLoaners} />;

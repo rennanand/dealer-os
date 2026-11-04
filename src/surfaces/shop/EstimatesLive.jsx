@@ -72,7 +72,7 @@ function Builder({ est }) {
             <div key={j.id} style={css('padding:14px 0;border-bottom:1px solid rgba(235,235,245,.07)')}>
               <div style={css('display:flex;justify-content:space-between;gap:12px;align-items:baseline')}>
                 <div style={css('display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500')}><Dot c={j.tierColor} />{j.name}</div>
-                <div style={css(DATA + ';font-size:14px;font-weight:600')}>{j.total}</div>
+                <div style={css(DATA + ';font-size:14px;font-weight:600;' + (j.warranty ? 'color:#30d158' : ''))}>{j.total}</div>
               </div>
               {j.plain ? <div style={css('font-size:12.5px;color:rgba(235,235,245,.6);margin-top:4px;line-height:1.45;padding-left:15px')}>{j.plain}</div> : null}
               <div style={css('padding-left:15px;margin-top:6px')}>
@@ -125,6 +125,7 @@ function JobForm({ f, title, primary }) {
       </div>
       <textarea value={f.plain} placeholder="In plain words, for the customer" rows={2} onChange={(e) => f.set({ plain: e.target.value })} style={css(INPUT + ';resize:vertical;line-height:1.45')} />
       <LinesEditor ed={f} />
+      <div onClick={() => f.set({ warranty: !f.warranty })} style={css('font-size:12px;cursor:pointer;color:' + (f.warranty ? '#30d158' : 'rgba(235,235,245,.5)'))}>{f.warranty ? '✓ Warranty — no charge to the customer, lines kept for the record' : 'Warranty work (no charge)'}</div>
       <div style={css('display:flex;gap:8px;margin-top:4px')}>
         {primary.map((p) => <Btn key={p.l} ghost={p.ghost} on={p.on} ok={f.ok !== false} style="flex:1">{p.l}</Btn>)}
         <Btn ghost on={f.cancel} style="flex:0 0 auto">Cancel</Btn>

@@ -21,6 +21,7 @@ export function ScheduleLive({ vm }) {
       </div>
       {vm.err ? <div onClick={vm.dismissErr} style={css('margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(224,49,43,.14);color:#ff6b64;font-size:12.5px;cursor:pointer')}>{vm.err}</div> : null}
       {cal.blockEdit ? <BlockForm f={cal.blockEdit} /> : null}
+      <Waitlist w={cal.waitlist} />
       {cal.unconfirmed.length ? (
         <div style={css(CARD + ';margin-top:18px;padding:14px 18px')}>
           <div style={css('font-size:12.5px;color:rgba(235,235,245,.5)')}>{cal.unconfirmed.length} upcoming {cal.unconfirmed.length === 1 ? 'visit' : 'visits'} not confirmed yet</div>
@@ -112,6 +113,29 @@ function BlockForm({ f }) {
       </div>
       <div style={css('font-size:11.5px;color:rgba(235,235,245,.4);margin-top:8px')}>Whole-shop blocks hide those slots from online booking. Bay and technician blocks show on the timeline only.</div>
       <div style={css('display:flex;gap:8px;margin-top:12px')}><Btn on={f.save}>Block</Btn><Btn ghost on={f.cancel}>Cancel</Btn></div>
+    </div>
+  );
+}
+
+/** Customers waiting for a slot. A cancellation frees one; text them and it marks "offered". */
+function Waitlist({ w }) {
+  const e = w.edit;
+  if (!w.count && !e) return null;
+  return (
+    <div style={css(CARD + ';margin-top:18px;padding:14px 18px')}>
+      <div style={css('display:flex;justify-content:space-between;align-items:center')}><div style={css('font-size:12.5px;color:rgba(235,235,245,.5)')}>Waitlist · {w.count}</div><Link on={() => w.openNew('')}>Add</Link></div>
+      {e ? (
+        <div style={css('display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto auto;gap:8px;margin-top:10px;align-items:center')}>
+          <select value={e.customer_id} onChange={(ev) => e.set({ customer_id: ev.target.value, vehicle_id: '' })} style={css(SELECT + ';padding:9px 10px')}><option value="">Customer…</option>{e.custOpts.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select>
+          <select value={e.vehicle_id} onChange={(ev) => e.set({ vehicle_id: ev.target.value })} style={css(SELECT + ';padding:9px 10px')}><option value="">Vehicle…</option>{e.cars.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select>
+          <input value={e.service} placeholder="Service" onChange={(ev) => e.set({ service: ev.target.value })} style={css(INPUT + ';padding:9px 10px')} />
+          <input type="date" value={e.earliest} onChange={(ev) => e.set({ earliest: ev.target.value })} style={css(INPUT + ';padding:9px 10px;color-scheme:dark')} />
+          <Btn on={e.save} ok={!!e.customer_id} style="padding:9px 14px">Add</Btn><Link on={e.cancel}>Cancel</Link>
+        </div>
+      ) : null}
+      <div style={css('display:flex;gap:8px;flex-wrap:wrap;margin-top:8px')}>
+        {w.rows.map((r) => <div key={r.id} style={css('display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12.5px')}><span style={css('font-weight:500')}>{r.who}</span><span style={css('color:rgba(235,235,245,.5)')}>{[r.car, r.service, r.earliest, 'since ' + r.since].filter(Boolean).join(' · ')}{r.offered ? ' · offered' : ''}</span>{r.text ? <Link on={r.text}>Text a slot</Link> : null}<Link on={r.book} color="#fff">Book</Link><Link on={r.close}>×</Link></div>)}
+      </div>
     </div>
   );
 }

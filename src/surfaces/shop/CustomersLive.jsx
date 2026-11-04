@@ -203,6 +203,10 @@ function Account({ c }) {
       <div style={css(LBL)}>Account{a.source ? ' · ' + a.source : ''}</div>
       {a.owed ? <div style={css('font-size:12.5px;color:#ffd60a;padding:8px 0 0')}>{a.owed}</div> : null}
       {a.creditLabel ? <div style={css('font-size:12.5px;color:#30d158;padding:6px 0 0')}>{a.creditLabel}</div> : null}
+      <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 2px')}>
+        <input defaultValue={a.email} key={c.id + 'em'} placeholder="Email · receipts, statements" inputMode="email" onBlur={(e) => e.target.value.trim() !== a.email && a.setEmail(e.target.value)} style={css(INPUT + ';padding:9px 10px')} />
+        <select value={a.fleetId} onChange={(e) => a.setFleet(e.target.value)} style={css(SELECT + ';padding:9px 10px')}><option value="">Not on a fleet</option>{a.fleets.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select>
+      </div>
       <Toggle on={a.charge} set={(v) => a.setCharge(v, limit, terms)} label="Charge account · may leave with a balance" />
       {a.charge ? (
         <div style={css('display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0')}>

@@ -98,6 +98,7 @@ export function AppointmentsLive({ vm }) {
               <div onClick={vm.newApptOk && !vm.busy ? vm.saveNewAppt : null} style={css(BTN + ';flex:1;text-align:center;' + (vm.newApptOk ? '' : 'opacity:.4;cursor:default'))}>{vm.busy ? 'Booking…' : 'Book'}</div>
               <div onClick={vm.cancelNewAppt} style={css(GHOST + ';flex:1;text-align:center')}>Cancel</div>
             </div>
+            {na.customer_id ? <div onClick={() => { vm.cancelNewAppt(); vm.calendar.waitlist.openNew(na.customer_id); }} style={css('text-align:center;font-size:12px;color:rgba(235,235,245,.5);cursor:pointer')}>No good time? Add to the waitlist</div> : null}
           </>
         ) : a ? (
           <>
@@ -260,6 +261,13 @@ function Invoice({ inv }) {
           {inv.ro && !nl ? <div onClick={inv.openNewLine} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>Add line</div> : null}
         </div>
       </div>
+      {inv.ro ? (
+        <div style={css('display:flex;gap:8px;align-items:center;margin-top:8px')}>
+          <input defaultValue={inv.po} key={inv.ro.id + 'po'} placeholder={inv.poRequired ? 'PO number · required for this fleet' : 'PO number'} onBlur={(e) => e.target.value !== inv.po && inv.setPO(e.target.value)} style={css(INPUT + ';padding:8px 10px;font-size:12px;font-family:var(--data-font,inherit);' + (inv.poRequired && !inv.po ? 'box-shadow:inset 0 0 0 1px #ffd60a;' : ''))} />
+          <a href={inv.printUrl} target="_blank" rel="noreferrer" style={css('font-size:12px;color:rgba(235,235,245,.6);text-decoration:none;white-space:nowrap')}>Print</a>
+          <div onClick={() => inv.emailReceipt(inv.email || window.prompt('Email the receipt to') || '')} style={css('font-size:12px;color:rgba(235,235,245,.6);cursor:pointer;white-space:nowrap')}>Email{inv.email ? '' : ' …'}</div>
+        </div>
+      ) : null}
       {inv.ro && inv.stockOpts.length && !nl ? (
         <select defaultValue="" onChange={(e) => { if (e.target.value) inv.addFromStock(e.target.value, 1); e.target.value = ''; }} style={css(SELECT + ';margin-top:8px;padding:8px 10px;font-size:12px;color:rgba(235,235,245,.6)')}>
           <option value="">Add a part from the shelf…</option>
@@ -281,6 +289,7 @@ function Invoice({ inv }) {
             {l.meta ? <div style={css('font-size:11.5px;color:rgba(235,235,245,.4);margin-top:2px')}>{l.meta}</div> : null}
             {l.pending ? <span style={css('color:#ffd60a;margin-left:8px;font-size:11px')}>waiting</span> : null}
             {l.pstatus && inv.partStatus[l.pstatus] ? <span style={css('margin-left:8px;font-size:11px;color:' + inv.partStatus[l.pstatus][1])}>{inv.partStatus[l.pstatus][0]}</span> : null}
+            {l.warranty ? <span style={css('margin-left:8px;font-size:11px;color:#30d158')}>warranty</span> : null}
           </div>
           <div style={css('font-family:var(--data-font,inherit);white-space:nowrap')}>{l.total}</div>
           {l.remove ? <div onClick={l.remove} style={css('font-size:11px;color:rgba(235,235,245,.4);cursor:pointer')}>Remove</div> : <div style={css('width:38px')} />}
@@ -301,6 +310,7 @@ function Invoice({ inv }) {
             {nl.kind === 'part' ? <input value={nl.cost || ''} inputMode="decimal" placeholder="$ cost each" onChange={(e) => inv.setNewLine({ cost: e.target.value })} style={css(INPUT)} /> : null}
             <input value={nl.unit} inputMode="decimal" placeholder={nl.kind === 'labor' ? '$ per hour' : '$ retail each'} onChange={(e) => inv.setNewLine({ unit: e.target.value })} style={css(INPUT)} />
           </div>
+          {nl.kind !== 'discount' ? <div onClick={() => inv.setNewLine({ warranty: !nl.warranty })} style={css('font-size:12px;cursor:pointer;color:' + (nl.warranty ? '#30d158' : 'rgba(235,235,245,.5)'))}>{nl.warranty ? '✓ Warranty · no charge to the customer' : 'Warranty work (no charge)'}</div> : null}
           <div style={css('display:flex;gap:8px')}>
             <div onClick={nl.description.trim() ? inv.saveNewLine : null} style={css(BTN + ';flex:1;text-align:center;padding:9px 0;' + (nl.description.trim() ? '' : 'opacity:.4;cursor:default'))}>Add to invoice</div>
             <div onClick={inv.cancelNewLine} style={css(GHOST + ';flex:1;text-align:center;padding:9px 0')}>Cancel</div>

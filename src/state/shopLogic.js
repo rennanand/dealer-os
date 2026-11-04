@@ -7,8 +7,10 @@ import { jobMethods, jobVals } from './shop/jobs.js';
 import { partMethods, partVals } from './shop/parts.js';
 import { moneyMethods, moneyVals, invoicePayVals } from './shop/money.js';
 import { commsMethods, commsVals } from './shop/comms.js';
-import { calendarMethods, calendarVals } from './shop/calendar.js';
+import { calendarMethods, calendarVals, waitlistMethods } from './shop/calendar.js';
 import { dviMethods, dviVals, reportVals } from './shop/dvi.js';
+import { fleetMethods, fleetVals } from './shop/fleet.js';
+import { marketingMethods, marketingVals } from './shop/marketing.js';
 
 const ACC = '#e0312b', GRN = '#30d158', YEL = '#ffd60a', DIM = 'rgba(235,235,245,.5)';
 const pill = (c) => 'display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border:1px solid ' + c + ';border-radius:4px;font-family:var(--data-font,inherit);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;line-height:1.3;color:' + c;
@@ -47,7 +49,7 @@ const DEMO = {
   pos: [], poLines: [], returns: [], payments: [], drawers: [], credits: [], payLinks: [], sms: [], blocks: [],
   smsTemplates: [{ id: 'tp1', key: 'confirmation', name: 'Booking confirmation', body: 'Hi {first}, this is {shop}. You are booked for {service} on {when}. Reply C to confirm or call {phone} to change it.', sort: 10 }, { id: 'tp2', key: 'reminder', name: 'Day-before reminder', body: 'Hi {first}, a reminder from {shop}: {vehicle} is booked for {service} tomorrow at {time}. Reply C to confirm.', sort: 20 }, { id: 'tp3', key: 'estimate', name: 'Estimate ready', body: 'Hi {first}, your estimate from {shop} is ready. Review and approve here: {link}', sort: 30 }, { id: 'tp4', key: 'ready', name: 'Vehicle ready', body: 'Hi {first}, your {vehicle} is ready at {shop}. Your total is {total}. Pay here or at the counter: {link}', sort: 40 }, { id: 'tp5', key: 'thank_you', name: 'Thank you', body: 'Thanks for visiting {shop}, {first}. If anything is not right, reply here and we will take care of it.', sort: 50 }, { id: 'tp6', key: 'pay', name: 'Text to pay', body: 'Hi {first}, your invoice from {shop} is {total}. Pay here: {link}', sort: 80 }],
   inspTemplates: [{ id: 'it1', name: 'Multi-point inspection', is_default: true, sort: 10, items: [['tires', 'Tires', 'Tread 32nds', 'Inspect tread depth, wear pattern, sidewalls, pressure'], ['brakes', 'Brakes', 'Pad mm', 'Pads, rotors, lines, fluid'], ['battery', 'Battery', 'Volts / CCA', 'Terminals, hold-down, load test'], ['fluids', 'Fluids', 'Level', 'Oil, coolant, brake, power steering, washer'], ['filters', 'Filters', 'Condition', 'Engine air, cabin air'], ['belts', 'Belts & hoses', 'Condition', 'Cracks, glazing, leaks'], ['lights', 'Lights & wipers', 'Condition', 'All exterior lights, wiper blades'], ['suspension', 'Steering & suspension', 'Condition', 'Shocks, struts, tie rods, bushings'], ['exhaust', 'Exhaust & underbody', 'Condition', 'Leaks, hangers, rust']].map(([key, label, measLabel, hint]) => ({ key, label, measLabel, hint })) }, { id: 'it2', name: 'Tire & brake check', is_default: false, sort: 20, items: [['lf', 'Left front tire', '32nds'], ['rf', 'Right front tire', '32nds'], ['lr', 'Left rear tire', '32nds'], ['rr', 'Right rear tire', '32nds'], ['fpads', 'Front brake pads', 'mm'], ['rpads', 'Rear brake pads', 'mm']].map(([key, label, measLabel]) => ({ key, label, measLabel, hint: '' })) }],
-  config: { sms: false, stripe: false, partstech: false }, role: 'owner', activity: [],
+  config: { sms: false, stripe: false, partstech: false, email: false }, role: 'owner', activity: [], fleets: [{ id: 'fl1', name: 'Skyline Plumbing', contact: 'Jordan', phone: '4355550123', email: 'office@skylineplumbing.com', po_required: true, terms_days: 30, parts_discount_pct: 10, notes: '' }], campaigns: [], waitlist: [], emails: [],
 };
 
 export class ShopLogic extends DCLogic {
@@ -63,7 +65,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au, rl2, al] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au, rl2, al, fl, cp, wl, em] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -98,12 +100,16 @@ export class ShopLogic extends DCLogic {
       supabase.from('authorizations').select('id,appointment_id,kind,name,amount_cents,created_at').eq('shop_id', SHOP_ID).gte('created_at', addDays(today(), -120)),
       supabase.rpc('my_role', { p_shop: SHOP_ID }),
       supabase.from('audit_log').select('id,who,action,entity,entity_id,ref,summary,created_at').eq('shop_id', SHOP_ID).order('id', { ascending: false }).limit(400),
+      supabase.from('fleets').select('*').eq('shop_id', SHOP_ID).order('name'),
+      supabase.from('campaigns').select('*').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(100),
+      supabase.from('waitlist').select('*').eq('shop_id', SHOP_ID).in('status', ['waiting', 'offered']).order('created_at'),
+      supabase.from('emails').select('id,customer_id,to_email,subject,kind,status,ref_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(100),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
     this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm),
-      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), role: (rl2 && rl2.data) || this.state.role || '', activity: arr(al), loading: false, err: '' });
+      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), role: (rl2 && rl2.data) || this.state.role || '', activity: arr(al), fleets: arr(fl), campaigns: arr(cp), waitlist: arr(wl), emails: arr(em), loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -150,6 +156,7 @@ export class ShopLogic extends DCLogic {
     this.setState({ busy: false });
     if (error) return this.setState({ err: error.message });
     this.setState({ appointments: [...this.state.appointments, data].sort((x, y) => x.starts_at.localeCompare(y.starts_at)), newAppt: null, selId: data.id });
+    if (d.waitlist_id) await this.setWaitlist(d.waitlist_id, 'booked');
   }
   async setAppt(id, p) {
     this.setState({ appointments: this.state.appointments.map((a) => (a.id === id ? { ...a, ...p } : a)) });
@@ -247,12 +254,23 @@ export class ShopLogic extends DCLogic {
   }
   async addLine(apptId, d) {
     const roId = await this.ensureRO(apptId); if (!roId) return;
-    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), cost_cents: d.kind === 'part' ? Math.round((parseFloat(String(d.cost || '').replace(/[^0-9.]/g, '')) || 0) * 100) : 0, part_number: d.kind === 'part' ? (d.part_number || '').trim() : '', vendor: d.kind === 'part' ? (d.vendor || '').trim() : '', taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300, part_id: d.kind === 'part' ? d.part_id || null : null, status: d.kind === 'part' ? (d.part_id ? '' : 'need') : '' };
+    const row = { ro_id: roId, kind: d.kind || 'labor', description: (d.description || '').trim(), qty: Number(d.qty) || 1, unit_cents: Math.round((parseFloat(String(d.unit || '').replace(/[^0-9.]/g, '')) || 0) * 100), cost_cents: d.kind === 'part' ? Math.round((parseFloat(String(d.cost || '').replace(/[^0-9.]/g, '')) || 0) * 100) : 0, part_number: d.kind === 'part' ? (d.part_number || '').trim() : '', vendor: d.kind === 'part' ? (d.vendor || '').trim() : '', taxable: d.kind !== 'discount', sort: d.kind === 'labor' ? 100 : d.kind === 'part' ? 200 : 300, part_id: d.kind === 'part' ? d.part_id || null : null, status: d.kind === 'part' ? (d.part_id ? '' : 'need') : '', warranty: !!d.warranty };
+    if (row.warranty) row.unit_cents = 0;
     if (!row.description) return;
     if (!supabase) { this.setState({ roLines: (this.state.roLines || []).concat({ id: 'l' + Date.now(), approved: true, created_at: new Date().toISOString(), ...row }), newLine: null }); return; }
     const { error } = await supabase.from('ro_lines').insert({ ...row, shop_id: SHOP_ID });
     if (error) return this.setState({ err: error.message });
     this.setState({ newLine: null }); await this.reloadRO();
+  }
+  async setPO(roId, po) {
+    this.setState({ ros: (this.state.ros || []).map((r) => (r.id === roId ? { ...r, po_number: po } : r)) });
+    if (supabase) await supabase.from('repair_orders').update({ po_number: (po || '').trim() }).eq('id', roId);
+  }
+  async emailReceipt(roId, to) {
+    if (!supabase) return this.setState({ payNote: 'Receipt would be emailed' + (to ? ' to ' + to : '') + '.' });
+    const { error } = await supabase.rpc('email_receipt', { p_ro: roId, p_to: to || '' });
+    this.setState({ payNote: error ? error.message : 'Receipt emailed' + (this.state.config && this.state.config.email ? '.' : ' — it waits in Settings · Integrations until email is connected.') });
+    if (error) this.setState({ err: error.message });
   }
   async removeLine(id) {
     this.setState({ roLines: (this.state.roLines || []).filter((l) => l.id !== id) });
@@ -358,7 +376,7 @@ export class ShopLogic extends DCLogic {
     this.setState({ photos: this.state.photos.concat(data) });
   }
   async saveTech(d) {
-    const row = { name: (d.name || '').trim(), role: (d.role || 'Technician').trim() || 'Technician', bays: (d.bays || []).map(Number).filter(Boolean), active: d.active !== false, user_id: d.user_id || null };
+    const row = { name: (d.name || '').trim(), role: (d.role || 'Technician').trim() || 'Technician', bays: (d.bays || []).map(Number).filter(Boolean), active: d.active !== false, user_id: d.user_id || null, pay_type: d.pay_type || 'hourly', pay_rate_cents: Math.round((parseFloat(String(d.pay_rate || '').replace(/[^0-9.]/g, '')) || 0) * 100), commission_pct: parseFloat(d.commission_pct) || 0 };
     if (!row.name) return;
     if (!supabase) { this.setState({ techs: d.id ? this.state.techs.map((t) => (t.id === d.id ? { ...t, ...row } : t)) : this.state.techs.concat({ id: 't' + Date.now(), created_at: new Date().toISOString(), ...row }), newTech: null, editTech: null }); return; }
     const q = d.id ? supabase.from('technicians').update(row).eq('id', d.id).select().single() : supabase.from('technicians').insert({ ...row, shop_id: SHOP_ID }).select().single();
@@ -503,11 +521,11 @@ export class ShopLogic extends DCLogic {
     }) }));
     // Technicians page
     const techJobs = (t) => todays.filter((a) => a.tech_id === t.id);
-    const techs = s.techs.filter((t) => t.active !== false).map((t) => { const jobs = techJobs(t), mins = jobs.reduce((m, a) => m + (a.minutes || 60), 0), pct = Math.min(100, Math.round((mins / 480) * 100)); const rated = s.appointments.filter((a) => a.tech_id === t.id && a.rating), avg = rated.length ? (rated.reduce((x, a) => x + a.rating, 0) / rated.length).toFixed(1) : null; return { id: t.id, name: t.name, role: t.role + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : '') + (avg ? ' · ' + avg + ' ★ (' + rated.length + ')' : ''), initials: t.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), hours: (mins / 60).toFixed(1).replace(/\.0$/, '') + ' h / 8 h', bar: 'height:100%;width:' + pct + '%;background:' + (pct > 85 ? YEL : ACC) + ';border-radius:2px', jobs: jobs.map((a) => { const st = STATUS[a.status] || STATUS.booked, v = this.vehOf(a.vehicle_id); return { t: (v ? (v.model || vehName(v)) : 'Vehicle') + ' · ' + (a.job || 'Service'), s: a.status === 'booked' ? fmtTime(a.starts_at) : st[0], c: st[1] }; }), edit: () => set({ editTech: { ...t, bays: t.bays || [] } }) }; });
+    const techs = s.techs.filter((t) => t.active !== false).map((t) => { const jobs = techJobs(t), mins = jobs.reduce((m, a) => m + (a.minutes || 60), 0), pct = Math.min(100, Math.round((mins / 480) * 100)); const rated = s.appointments.filter((a) => a.tech_id === t.id && a.rating), avg = rated.length ? (rated.reduce((x, a) => x + a.rating, 0) / rated.length).toFixed(1) : null; return { id: t.id, name: t.name, role: t.role + ((t.bays || []).length ? ' · Bay ' + t.bays.map((b) => '0' + b).join(', ') : '') + (avg ? ' · ' + avg + ' ★ (' + rated.length + ')' : ''), initials: t.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), hours: (mins / 60).toFixed(1).replace(/\.0$/, '') + ' h / 8 h', bar: 'height:100%;width:' + pct + '%;background:' + (pct > 85 ? YEL : ACC) + ';border-radius:2px', jobs: jobs.map((a) => { const st = STATUS[a.status] || STATUS.booked, v = this.vehOf(a.vehicle_id); return { t: (v ? (v.model || vehName(v)) : 'Vehicle') + ' · ' + (a.job || 'Service'), s: a.status === 'booked' ? fmtTime(a.starts_at) : st[0], c: st[1] }; }), edit: () => set({ editTech: { ...t, bays: t.bays || [], pay_rate: t.pay_rate_cents ? (t.pay_rate_cents / 100).toFixed(2) : '', commission_pct: String(t.commission_pct || 0) } }) }; });
     const techsSub = techs.length + (techs.length === 1 ? ' technician' : ' technicians') + ' · ' + todays.filter((a) => a.tech_id).length + ' of ' + todays.length + ' jobs today assigned';
     const techForm = s.editTech || s.newTech;
     const technicians = { techs, sub: techsSub, none: !s.loading && !techs.length, form: techForm, isNew: !!s.newTech && !s.editTech,
-      openNew: () => set({ newTech: { name: '', role: 'Technician', bays: [] }, editTech: null }), setForm: (p) => set(s.editTech ? { editTech: { ...s.editTech, ...p } } : { newTech: { ...s.newTech, ...p } }), cancel: () => set({ newTech: null, editTech: null }),
+      openNew: () => set({ newTech: { name: '', role: 'Technician', bays: [], pay_type: 'hourly', pay_rate: '', commission_pct: '0' }, editTech: null }), setForm: (p) => set(s.editTech ? { editTech: { ...s.editTech, ...p } } : { newTech: { ...s.newTech, ...p } }), cancel: () => set({ newTech: null, editTech: null }),
       toggleBay: (b) => { const f = techForm; const bays = (f.bays || []).includes(b) ? f.bays.filter((x) => x !== b) : (f.bays || []).concat(b).sort(); set(s.editTech ? { editTech: { ...f, bays } } : { newTech: { ...f, bays } }); },
       logins: (s.team || []).filter((m) => m.role !== 'customer').map((m) => ({ id: m.user_id, label: (m.name || m.email || '') + (m.email && m.name ? ' · ' + m.email : '') })),
       save: () => techForm && this.saveTech(techForm), retire: s.editTech ? () => this.saveTech({ ...s.editTech, active: false }) : null };
@@ -733,6 +751,8 @@ export class ShopLogic extends DCLogic {
     const calendar = calendarVals(this, s, set, H);
     const dvi = dviVals(this, s, set, H);
     const staffReports = reportVals(this, s, set, H);
+    const fleet = fleetVals(this, s, set, H);
+    const marketing = marketingVals(this, s, set, H);
     // Estimates page: every visit in the shop (or booked today) with its jobs; the writer builds and sends from here.
     const estVisits = s.appointments.filter((a) => ['arrived', 'in_progress'].includes(a.status) || (['booked', 'done'].includes(a.status) && iso(new Date(a.starts_at)) === today())).sort((x, y) => ({ arrived: 0, in_progress: 0, booked: 1, done: 2 }[x.status] - { arrived: 0, in_progress: 0, booked: 1, done: 2 }[y.status]) || x.starts_at.localeCompare(y.starts_at));
     const estSelA = estVisits.find((a) => a.id === s.estId) || estVisits.find((a) => s.findings.some((f) => f.appointment_id === a.id && f.status === 'pending')) || estVisits[0] || null;
@@ -743,7 +763,7 @@ export class ShopLogic extends DCLogic {
 
     return {
       loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires, tech,
-      library, estimates, board, partsPage, register, comms, calendar, dvi, staffReports, config: s.config || {}, shop: s.shop,
+      library, estimates, board, partsPage, register, comms, calendar, dvi, staffReports, fleet, marketing, config: s.config || {}, shop: s.shop,
       role: s.role || (supabase ? '' : 'owner'), can: (k) => this.can(k), isOwner: (s.role || (supabase ? '' : 'owner')) === 'owner',
       permissions: { matrix: (s.shop && s.shop.permissions) || { advisor: {}, tech: {} }, keys: [['payments', 'Take payments'], ['discount', 'Add discounts'], ['refund', 'Refund'], ['void', 'Void an invoice'], ['edit_paid', 'Change or reopen a paid invoice'], ['parts_cost', 'See parts cost and margin'], ['reports', 'See reports'], ['settings', 'Change settings, jobs and pricing'], ['delete_customer', 'Delete customers']], save: (m) => this.savePermissions(m) },
       activity: (s.activity || []).map((x) => ({ id: x.id, who: x.who, action: x.action, ref: x.ref, summary: x.summary, when: relDay(x.created_at) + ' · ' + fmtTime(x.created_at), kind: x.action.split('.')[0], color: /refund|void|deleted|removed|cancelled/.test(x.action) ? '#ff6b64' : /paid|approved|done|merged/.test(x.action) ? GRN : /declined|moved|priced|changed/.test(x.action) ? YEL : 'rgba(235,235,245,.6)' })),
@@ -770,6 +790,7 @@ export class ShopLogic extends DCLogic {
           owed: (() => { const open = (s.ros || []).filter((r) => r.status === 'invoiced' && (s.appointments.find((a) => a.id === r.appointment_id) || {}).customer_id === cust.id); const bal = open.reduce((t, r) => t + this.roBalance(r.id), 0); return bal ? fmtC(bal) + ' owed · ' + open.length + (open.length === 1 ? ' invoice' : ' invoices') : ''; })(),
           setCharge: (on, limit, terms) => this.setChargeAccount(cust.id, on, limit, terms), issueCredit: () => set({ creditEdit: { customer_id: cust.id, amount: '', kind: 'store_credit', note: '' } }),
           optOut: !!cust.sms_opt_out, setOptOut: (v) => this.setOptOut(cust.id, v), noMarket: !!cust.do_not_market, setNoMarket: (v) => this.setDoNotMarket(cust.id, v),
+          fleetId: cust.fleet_id || '', fleets: (s.fleets || []).filter((f) => f.active !== false).map((f) => ({ id: f.id, name: f.name })), setFleet: (id) => this.setCustomerFleet(cust.id, id), email: cust.email || '', setEmail: (v) => this.updateCustomer(cust.id, { email: (v || '').trim().toLowerCase() }),
           tags: cust.tags || [], setTags: (tags) => this.updateCustomer(cust.id, { tags }), source: { tekmetric: 'From Tekmetric', csv: 'Imported', online: 'Booked online', app: 'Joined in the app' }[cust.source] || '' },
         creditEdit: s.creditEdit && s.creditEdit.customer_id === cust.id ? { ...s.creditEdit, set: (p) => set({ creditEdit: { ...s.creditEdit, ...p } }), save: () => this.issueCredit(cust.id, s.creditEdit.amount, s.creditEdit.kind, s.creditEdit.note), cancel: () => set({ creditEdit: null }) } : null,
       } : null,
@@ -812,7 +833,7 @@ export class ShopLogic extends DCLogic {
           return {
             ro, number: ro ? 'RO ' + ro.number : null, status: ro ? { open: 'Open', invoiced: 'Invoiced', paid: 'Paid', void: 'Void' }[ro.status] : 'No RO yet',
             color: ro ? { open: '#fff', invoiced: YEL, paid: GRN, void: DIM }[ro.status] : DIM,
-            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id), pstatus: l.kind === 'part' && l.status ? l.status : '' })) : [],
+            lines: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id).map((l) => ({ id: l.id, kind: KIND[l.kind] || l.kind, description: l.description, qty: Number(l.qty) === 1 ? '' : Number(l.qty) + (l.kind === 'labor' ? ' h × ' : ' × ') + $(l.unit_cents), meta: l.kind === 'part' ? [l.part_number, l.vendor, l.cost_cents ? 'cost ' + $(l.cost_cents) : ''].filter(Boolean).join(' · ') : '', total: $((l.kind === 'discount' ? -1 : 1) * Math.round(Number(l.qty) * l.unit_cents)), pending: l.approved === false, fromFinding: !!l.finding_id, remove: l.finding_id ? null : () => this.removeLine(l.id), pstatus: l.kind === 'part' && l.status ? l.status : '', warranty: !!l.warranty })) : [],
             margin: t && t.parts && this.can('parts_cost') ? 'Parts cost ' + $(t.partsCost) + ' · margin ' + $(t.partsMargin) + ' (' + Math.round((t.partsMargin / Math.max(1, t.parts)) * 100) + '%)' : '',
             hours: (() => { const actual = this.hoursOn(sel.id), billed = t ? t.laborHours : 0; return actual || billed ? 'Labor billed ' + billed.toFixed(1) + ' h · on the clock ' + actual.toFixed(1) + ' h' + (billed && actual ? ' · ' + Math.round((billed / Math.max(0.05, actual)) * 100) + '% efficiency' : '') : ''; })(),
             rows: t ? [['Labor', $(t.labor)], ['Parts', $(t.parts)], t.supplies ? ['Shop supplies', $(t.supplies)] : null, t.fees - (t.supplies || 0) ? ['Fees', $(t.fees - (t.supplies || 0))] : null, t.discount ? ['Discount', '-' + $(t.discount)] : null, ['Subtotal', $(t.subtotal)], ['Tax · ' + ((ro.tax_rate_bp || 725) / 100).toFixed(2) + '%', $(t.tax)]].filter(Boolean) : [],
@@ -828,6 +849,9 @@ export class ShopLogic extends DCLogic {
             partStatus: { need: ['Needs ordering', YEL], ordered: ['Ordered', YEL], received: ['Received', GRN], installed: ['Installed', GRN] },
             stockOpts: partsPage.stockOpts, addFromStock: (partId, qty) => { const p = (s.parts || []).find((x) => x.id === partId); if (p) this.addPartLine(sel.id, p, qty); },
             addJob: () => set({ estId: sel.id, jobPick: sel.id, goEstimates: true }), jobs: estimateFor(sel),
+            po: ro ? ro.po_number || '' : '', setPO: ro ? (v) => this.setPO(ro.id, v) : null, poRequired: !!(selCust && selCust.fleet_id && (s.fleets || []).some((f) => f.id === selCust.fleet_id && f.po_required)),
+            emailReceipt: ro ? (to) => this.emailReceipt(ro.id, to) : null, email: selCust ? selCust.email || '' : '', printUrl: ro ? '/print/' + ro.id : '',
+            warrantyTotal: ro ? (s.roLines || []).filter((l) => l.ro_id === ro.id && l.warranty).length : 0,
           };
         })(),
       } : null,
@@ -839,7 +863,7 @@ export class ShopLogic extends DCLogic {
   }
 }
 
-Object.assign(ShopLogic.prototype, jobMethods, partMethods, moneyMethods, commsMethods, calendarMethods, dviMethods);
+Object.assign(ShopLogic.prototype, jobMethods, partMethods, moneyMethods, commsMethods, calendarMethods, dviMethods, fleetMethods, marketingMethods, waitlistMethods);
 
 /** Walk-in check-in from the Overview: creates (or finds by phone) the customer, the vehicle, and an
  *  appointment already in the "arrived" state with its bay. Returns an error message or ''. */

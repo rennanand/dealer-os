@@ -40,6 +40,21 @@ export const calendarMethods = {
   },
 };
 
+export const waitlistMethods = {
+  async addToWaitlist(d) {
+    const row = { customer_id: d.customer_id || null, vehicle_id: d.vehicle_id || null, service: (d.service || '').trim(), earliest: d.earliest || null, notes: (d.notes || '').trim(), status: 'waiting' };
+    if (!row.customer_id) return;
+    if (!supabase) { this.setState({ waitlist: (this.state.waitlist || []).concat({ id: 'w' + Date.now(), created_at: new Date().toISOString(), ...row }), waitEdit: null }); return; }
+    const { error } = await supabase.from('waitlist').insert({ ...row, shop_id: SHOP_ID });
+    if (error) return this.setState({ err: error.message });
+    this.setState({ waitEdit: null }); await this.reload();
+  },
+  async setWaitlist(id, status) {
+    this.setState({ waitlist: (this.state.waitlist || []).map((w) => (w.id === id ? { ...w, status, offered_at: status === 'offered' ? new Date().toISOString() : w.offered_at } : w)).filter((w) => w.status === 'waiting' || w.status === 'offered') });
+    if (supabase) await supabase.from('waitlist').update({ status, ...(status === 'offered' ? { offered_at: new Date().toISOString() } : {}) }).eq('id', id);
+  },
+};
+
 export function calendarVals(L, s, set, helpers) {
   const { vehName, fmtTime, STATUS } = helpers;
   const sh = s.shop || {};
@@ -66,8 +81,18 @@ export function calendarVals(L, s, set, helpers) {
   const week = days.map(dayVm);
   const be = s.blockEdit;
   const unconfirmed = live.filter((a) => a.status === 'booked' && !a.confirmed_at && a.starts_at > new Date().toISOString() && a.starts_at < addDays(today(), 3) + 'T23:59:59').map((a) => { const c = L.custOf(a.customer_id); return { id: a.id, who: c ? c.name : 'Walk-in', when: (iso(new Date(a.starts_at)) === today() ? 'Today' : iso(new Date(a.starts_at)) === addDays(today(), 1) ? 'Tomorrow' : new Date(a.starts_at).toLocaleDateString('en-US', { weekday: 'short' })) + ' · ' + fmtTime(a.starts_at), job: a.job || 'Service', sent: a.confirmation_sent_at ? 'Confirmation sent' : a.reminder_sent_at ? 'Reminder sent' : '', confirm: () => L.confirmAppt(a.id), remind: c && c.phone ? () => L.sendReminder(a.id) : null, open: () => set({ selId: a.id, day: iso(new Date(a.starts_at)) }) }; });
+  const we = s.waitEdit;
+  const waitlist = {
+    rows: (s.waitlist || []).map((w) => { const c = L.custOf(w.customer_id), v = L.vehOf(w.vehicle_id); return { id: w.id, who: c ? c.name : 'Customer', car: v ? vehName(v) : '', service: w.service || 'Any', since: new Date(w.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), earliest: w.earliest ? 'from ' + new Date(w.earliest + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '', offered: w.status === 'offered', notes: w.notes,
+      book: () => { set({ newAppt: { customer_id: w.customer_id, vehicle_id: w.vehicle_id || '', name: '', phone: '', year: '', make: '', model: '', plate: '', job: w.service || '', day: s.day || today(), time: '09:00', visit: 'dropoff', waitlist_id: w.id } }); },
+      text: c && c.phone ? () => { L.sendText(c.id, 'Hi ' + c.name.split(' ')[0] + ', ' + ((s.shop && s.shop.name) || 'the shop') + ' here — a spot opened up' + (w.service ? ' for ' + w.service.toLowerCase() : '') + '. Book it here: ' + ((s.shop && s.shop.public_url) || 'https://dealer-os-rosy.vercel.app') + '/book', 'manual', null); L.setWaitlist(w.id, 'offered'); } : null,
+      close: () => L.setWaitlist(w.id, 'closed') }; }),
+    count: (s.waitlist || []).length,
+    openNew: (custId) => set({ waitEdit: { customer_id: custId || '', vehicle_id: '', service: '', earliest: '', notes: '' } }),
+    edit: we ? { ...we, set: (p) => set({ waitEdit: { ...we, ...p } }), save: () => L.addToWaitlist(we), cancel: () => set({ waitEdit: null }), custOpts: s.customers.map((c) => ({ id: c.id, label: c.name + (c.phone ? ' · ' + c.phone : '') })), cars: we.customer_id ? s.vehicles.filter((v) => v.customer_id === we.customer_id).map((v) => ({ id: v.id, label: vehName(v) })) : [] } : null,
+  };
   return {
-    weekLabel: new Date(days[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + new Date(days[6] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    waitlist, weekLabel: new Date(days[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' + new Date(days[6] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     prev: () => set({ weekStart: addDays(start, -7) }), next: () => set({ weekStart: addDays(start, 7) }), thisWeek: () => set({ weekStart: null }),
     week, unconfirmed, view: s.schedView || 'day', setView: (v) => set({ schedView: v }),
     blockEdit: be ? { ...be, set: (p) => set({ blockEdit: { ...be, ...p } }), save: () => L.addBlock(be), cancel: () => set({ blockEdit: null }), techOpts: s.techs.filter((t) => t.active !== false).map((t) => ({ id: t.id, name: t.name })) } : null,
