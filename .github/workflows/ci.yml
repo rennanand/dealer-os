@@ -1,0 +1,42 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: pgtest, POSTGRES_PASSWORD: pgtest, POSTGRES_DB: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U pgtest" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y postgresql-client >/dev/null
+      - name: Apply every migration and run the smoke tests
+        env: { PGHOST: localhost, PGPORT: '5432', PGUSER: pgtest, PGPASSWORD: pgtest }
+        run: supabase/test/run.sh
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Production build
+        run: npx vite build
+      - name: Demo build (no backend, launch nav)
+        run: VITE_SUPABASE_URL= VITE_SUPABASE_PUBLISHABLE_KEY= VITE_AUTH=off VITE_LAUNCH=loaners npx vite build --outDir demo-dist
+      - run: npx playwright-core install --with-deps chromium
+      - name: Browser smoke on every page
+        run: |
+          (cd demo-dist && python3 -c "
+          import http.server
+          class H(http.server.SimpleHTTPRequestHandler):
+              def do_GET(self):
+                  if '.' not in self.path.split('/')[-1]: self.path = '/index.html'
+                  return super().do_GET()
+              def log_message(self, *a): pass
+          http.server.ThreadingHTTPServer(('127.0.0.1', 8803), H).serve_forever()" &)
+          sleep 1
+          node verify/ci.mjs

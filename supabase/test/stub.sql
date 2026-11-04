@@ -1,0 +1,11 @@
+create role anon nologin; create role authenticated nologin; create role service_role nologin;
+create extension if not exists pgcrypto;
+create schema auth; create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}'::jsonb, created_at timestamptz default now());
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+create function auth.role() returns text language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'anon') $$;
+create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
+create schema net; create function net.http_post(url text, headers jsonb default '{}', body jsonb default '{}', timeout_milliseconds int default 5000) returns bigint language sql as $$ select 1::bigint $$;
+create schema storage; create table storage.buckets (id text primary key, name text, public boolean default false); create table storage.objects (id uuid default gen_random_uuid(), bucket_id text, name text, owner uuid, metadata jsonb);
+create publication supabase_realtime;
+create schema cron; create function cron.schedule(name text, sched text, cmd text) returns bigint language sql as $$ select 1::bigint $$;
+create extension if not exists pg_cron;
