@@ -1,4 +1,5 @@
 import React from 'react';
+import { Markup } from './Markup.jsx';
 import { css } from '../../runtime/tpl.js';
 import { LogicHost } from '../../runtime/LogicHost.jsx';
 import { ShopLogic } from '../../state/shopLogic.js';
@@ -131,6 +132,7 @@ function Job({ j }) {
 
 function Item({ it }) {
   const fileRef = React.useRef(null);
+  const [mark, setMark] = React.useState(null);
   const flagged = it.status === 'now' || it.status === 'monitor';
   const seg = (k, label, color) => (
     <div onClick={() => it.setStatus(k)} style={css('flex:1;text-align:center;padding:11px 0;border-radius:11px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;' + (it.status === k ? 'background:' + color + ';color:' + (k === 'good' ? '#000' : k === 'monitor' ? '#000' : '#fff') : 'background:rgba(255,255,255,.06);color:rgba(235,235,245,.7)'))}>{label}</div>
@@ -155,7 +157,8 @@ function Item({ it }) {
       <div style={css('display:flex;align-items:center;gap:8px;margin-top:' + (flagged || it.photos.length ? '10px' : '0'))}>
         {it.photos.map((u, i) => <a key={i} href={u} target="_blank" rel="noreferrer" style={css('width:64px;height:48px;border-radius:9px;background:#222 url(' + u + ') center/cover')} />)}
         {flagged ? (<>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={css('display:none')} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) it.addPhoto(f); e.target.value = ''; }} />
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={css('display:none')} onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) setMark(f); e.target.value = ''; }} />
+          {mark ? <Markup file={mark} onDone={(f) => { it.addPhoto(f); setMark(null); }} onCancel={() => setMark(null)} /> : null}
           <div onClick={() => fileRef.current && fileRef.current.click()} style={css('width:64px;height:48px;border-radius:9px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(235,235,245,.6);cursor:pointer')}>+ Photo</div>
         </>) : null}
       </div>

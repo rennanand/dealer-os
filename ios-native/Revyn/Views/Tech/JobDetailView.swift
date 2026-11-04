@@ -111,6 +111,7 @@ struct InspectionItemView: View {
     var a: TechAppointment
     var item: InspItem
     @State private var camera = false
+    @State private var shot: UIImage?
     var body: some View {
         let sent = item.sent == true
         Card(padding: 16) {
@@ -146,7 +147,8 @@ struct InspectionItemView: View {
             }
         }
         .opacity(sent ? 0.6 : 1)
-        .sheet(isPresented: $camera) { CameraView { img in Task { await tech.addPhoto(a, key: item.key, image: img) } }.ignoresSafeArea() }
+        .sheet(isPresented: $camera) { CameraView { img in shot = img }.ignoresSafeArea() }
+        .fullScreenCover(item: $shot) { img in MarkupView(image: img, onDone: { marked in shot = nil; Task { await tech.addPhoto(a, key: item.key, image: marked) } }, onCancel: { shot = nil }) }
     }
     private var job: CannedJob? { tech.cannedJobs.first { $0.id == (item.status == "now" ? item.now_job : item.monitor_job) } }
     private func set(_ st: String) { tech.setItem(a, key: item.key) { $0.status = $0.status == st ? "" : st }; Haptic.tap() }
@@ -228,3 +230,5 @@ struct CameraView: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
     }
 }
+
+extension UIImage: @retroactive Identifiable { public var id: ObjectIdentifier { ObjectIdentifier(self) } }
