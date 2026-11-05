@@ -17,6 +17,7 @@ import { MarketingLive } from './MarketingLive.jsx';
 import { ReportsLive } from './ReportsLive.jsx';
 import { Followups } from './Followups.jsx';
 import { TiresLive } from './TiresLive.jsx';
+import { TeamLive } from './TeamLive.jsx';
 import { css } from '../../runtime/tpl.js';
 
 /** Customers and Appointments run on real records, separate from the demo view-model.
@@ -25,7 +26,7 @@ export function ShopHost({ page, goAppointments, goCheckin, goLoaners, goInbox, 
   return <LogicHost Logic={ShopLogic}>{(vm) => <Page vm={vm} page={page} goAppointments={goAppointments} goCheckin={goCheckin} goLoaners={goLoaners} goInbox={goInbox} goEstimates={goEstimates} />}</LogicHost>;
 }
 function NotAllowed({ what }) {
-  return <div style={css('animation:sIn .28s ease')}><div style={css('font-size:32px;font-weight:600;letter-spacing:-1px')}>{what}</div><div style={css('padding:48px 20px;text-align:center;font-size:13px;color:rgba(235,235,245,.45);line-height:1.6')}>This page is for the owner and advisors. Ask the owner if you need it — it is a switch under Settings · Permissions.</div></div>;
+  return <div style={css('animation:sIn .28s ease')}><div style={css('font-size:32px;font-weight:600;letter-spacing:-1px')}>{what}</div><div style={css('padding:48px 20px;text-align:center;font-size:13px;color:rgba(235,235,245,.45);line-height:1.6')}>This page is for the owner and advisors. Ask the owner if you need it — it is a switch under Settings · Team.</div></div>;
 }
 function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox, goEstimates }) {
   const wantInbox = vm.inbox.goInboxFlag;
@@ -42,6 +43,7 @@ function Page({ vm, page, goAppointments, goCheckin, goLoaners, goInbox, goEstim
   if (page === 'register') return vm.can('payments') || vm.can('reports') ? <RegisterLive vm={vm} /> : <NotAllowed what="Payments" />;
   if (page === 'analytics' && !vm.can('reports')) return <NotAllowed what="Reports" />;
   if (page === 'settings') return <SettingsLive vm={vm} />;
+  if (page === 'team') return vm.isOwner || !vm.role ? <TeamLive vm={vm} /> : <NotAllowed what="Team" />;
   if (page === 'followups') return <Followups vm={vm.followups} />;
   if (page === 'analytics') return <ReportsLive vm={vm} />;
   if (page === 'fleet') return <FleetLive vm={vm} />;

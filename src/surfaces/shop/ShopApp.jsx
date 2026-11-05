@@ -13,7 +13,6 @@ import { Followups } from './Followups.jsx';
 import { Inbox } from './Inbox.jsx';
 import { LoanersHost } from './LoanersHost.jsx';
 import { ShopHost } from './ShopHost.jsx';
-import { TeamLive } from './TeamLive.jsx';
 import { LAUNCH } from '../../state/options.js';
 import { Oil } from './Oil.jsx';
 import { Overview } from './Overview.jsx';
@@ -93,7 +92,7 @@ export function ShopApp({ vm }) {
           {vm.dLoaners ? <LoanersHost /> : null}
           {vm.dAnalytics && !LAUNCH ? <Analytics vm={vm} /> : null}
           {vm.dSchedule && !LAUNCH ? <Schedule vm={vm} /> : null}
-          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs || vm.dInbox || vm.dApprovals || vm.dFollowups || vm.dAnalytics || vm.dTires || vm.dBoard || vm.dRegister || vm.dParts || vm.dSettings || vm.dMarketing || vm.dFleet) ? <ShopHost page={vm.dOverview ? 'overview' : vm.dAnalytics ? 'analytics' : vm.dTires ? 'tires' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dInbox ? 'inbox' : vm.dApprovals ? 'approvals' : vm.dFollowups ? 'followups' : vm.dCustomers ? 'customers' : vm.dBoard ? 'board' : vm.dRegister ? 'register' : vm.dParts ? 'parts' : vm.dSettings ? 'settings' : vm.dMarketing ? 'marketing' : vm.dFleet ? 'fleet' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} goInbox={(vm.sideNav.find((n) => n.label === 'Inbox') || {}).go} goEstimates={(vm.sideNav.find((n) => n.label === 'Estimates') || {}).go} /> : null}
+          {LAUNCH && (vm.dAppointments || vm.dCustomers || vm.dOverview || vm.dSchedule || vm.dTechs || vm.dInbox || vm.dApprovals || vm.dFollowups || vm.dAnalytics || vm.dTires || vm.dBoard || vm.dRegister || vm.dParts || vm.dSettings || vm.dMarketing || vm.dFleet || vm.dTeam) ? <ShopHost page={vm.dTeam ? 'team' : vm.dOverview ? 'overview' : vm.dAnalytics ? 'analytics' : vm.dTires ? 'tires' : vm.dSchedule ? 'schedule' : vm.dTechs ? 'technicians' : vm.dInbox ? 'inbox' : vm.dApprovals ? 'approvals' : vm.dFollowups ? 'followups' : vm.dCustomers ? 'customers' : vm.dBoard ? 'board' : vm.dRegister ? 'register' : vm.dParts ? 'parts' : vm.dSettings ? 'settings' : vm.dMarketing ? 'marketing' : vm.dFleet ? 'fleet' : 'appointments'} goAppointments={(vm.sideNav.find((n) => n.label === 'Appointments') || {}).go} goCheckin={vm.goCheckin} goLoaners={(vm.sideNav.find((n) => n.label === 'Loaners') || {}).go} goInbox={(vm.sideNav.find((n) => n.label === 'Inbox') || {}).go} goEstimates={(vm.sideNav.find((n) => n.label === 'Estimates') || {}).go} /> : null}
           {vm.dAppointments && !LAUNCH ? <Appointments vm={vm} /> : null}
           {vm.dCheckin ? <Checkin vm={vm} /> : null}
           {vm.dCustomers && !LAUNCH ? <Customers vm={vm} /> : null}
@@ -101,7 +100,6 @@ export function ShopApp({ vm }) {
           {vm.dParts && !LAUNCH ? <Parts vm={vm} /> : null}
           {vm.dTechs && !LAUNCH ? <Techs vm={vm} /> : null}
           {vm.dSettings && !LAUNCH ? <Settings vm={vm} /> : null}
-          {vm.dTeam ? <TeamLive /> : null}
           {vm.dFollowups && !LAUNCH ? <Followups vm={vm} /> : null}
           {vm.dFleet && !LAUNCH ? <Fleet vm={vm} /> : null}
           {vm.dOil ? <Oil vm={vm} /> : null}

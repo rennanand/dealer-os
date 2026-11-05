@@ -65,7 +65,7 @@ export class ShopLogic extends DCLogic {
   componentWillUnmount() { if (this.chan) supabase.removeChannel(this.chan); }
 
   async reload() {
-    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au, rl2, al, fl, cp, wl, em] = await Promise.all([
+    const [c, v, a, lf, fi, ph, te, sh, ms, tq, r, ro, rl, tm, ins, rem, tmm, cj, pt, po, pl, prt, pay, dr, cr, pk, sm, st, bt, it, cfg, au, rl2, al, fl, cp, wl, em, pi, ses] = await Promise.all([
       supabase.from('customers').select('*').eq('shop_id', SHOP_ID).order('name'),
       supabase.from('customer_vehicles').select('*').eq('shop_id', SHOP_ID).order('created_at'),
       supabase.from('appointments').select('*').eq('shop_id', SHOP_ID).gte('starts_at', addDays(today(), -60)).order('starts_at'),
@@ -104,12 +104,14 @@ export class ShopLogic extends DCLogic {
       supabase.from('campaigns').select('*').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(100),
       supabase.from('waitlist').select('*').eq('shop_id', SHOP_ID).in('status', ['waiting', 'offered']).order('created_at'),
       supabase.from('emails').select('id,customer_id,to_email,subject,kind,status,ref_id,created_at').eq('shop_id', SHOP_ID).order('created_at', { ascending: false }).limit(100),
+      supabase.rpc('staff_pending', { p_shop: SHOP_ID }),
+      supabase.auth.getSession(),
     ]);
     const bad = c.error || v.error || a.error;
     if (bad) return this.setState({ loading: false, err: /does not exist|schema cache/.test(bad.message) ? 'Customers and appointments need the 0009 migration run in Supabase.' : bad.message });
     const arr = (x) => (x && Array.isArray(x.data) ? x.data : []);
     this.setState({ customers: arr(c), vehicles: arr(v), appointments: arr(a), rentals: arr(r), loanerFleet: arr(lf), findings: arr(fi), photos: arr(ph), techs: arr(te), shop: (sh && sh.data) || null, messages: arr(ms), quotes: arr(tq), ros: arr(ro), roLines: arr(rl), timeEntries: arr(tm), inspections: arr(ins), reminders: arr(rem), team: arr(tmm),
-      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), role: (rl2 && rl2.data) || this.state.role || '', activity: arr(al), fleets: arr(fl), campaigns: arr(cp), waitlist: arr(wl), emails: arr(em), loading: false, err: '' });
+      cannedJobs: arr(cj), parts: arr(pt), pos: arr(po), poLines: arr(pl), returns: arr(prt), payments: arr(pay), drawers: arr(dr), credits: arr(cr), payLinks: arr(pk), sms: arr(sm), smsTemplates: arr(st), blocks: arr(bt), inspTemplates: arr(it), config: (cfg && cfg.data) || this.state.config || {}, authorizations: arr(au), role: (rl2 && rl2.data) || this.state.role || '', activity: arr(al), fleets: arr(fl), campaigns: arr(cp), waitlist: arr(wl), emails: arr(em), pendingInvites: arr(pi), userId: (ses && ses.data && ses.data.session && ses.data.session.user.id) || '', loading: false, err: '' });
   }
 
   // ---- customers ----
@@ -422,6 +424,38 @@ export class ShopLogic extends DCLogic {
     if (!supabase) return;
     const { error } = await supabase.rpc('set_permissions', { p_shop: SHOP_ID, p_permissions: matrix });
     if (error) this.setState({ err: error.message });
+  }
+  // ---- team (who has a staff login) ----
+  async reloadTeam() {
+    if (!supabase) return;
+    const [t, p] = await Promise.all([supabase.from('team').select('*').eq('shop_id', SHOP_ID), supabase.rpc('staff_pending', { p_shop: SHOP_ID })]);
+    this.setState({ team: Array.isArray(t.data) ? t.data : [], pendingInvites: Array.isArray(p.data) ? p.data : [], teamNote: t.error ? t.error.message : this.state.teamNote });
+  }
+  async inviteStaff(email, role) {
+    const em = (email || '').trim().toLowerCase();
+    if (!em) return;
+    if (!supabase) { this.setState({ pendingInvites: [...(this.state.pendingInvites || []), { email: em, role, created_at: new Date().toISOString() }], teamNote: em + ' invited.' }); return; }
+    const { data, error } = await supabase.rpc('invite_staff', { p_shop: SHOP_ID, p_email: em, p_role: role });
+    if (error) return this.setState({ teamNote: error.message });
+    this.setState({ teamNote: data === 'member' ? em + ' is on the team as ' + (role === 'tech' ? 'a technician' : 'an ' + role) + '.' : em + ' is invited — the role applies the moment they create their account.' });
+    this.reloadTeam();
+  }
+  async removeStaff(userId) {
+    if (!supabase) { this.setState({ team: (this.state.team || []).map((m) => (m.user_id === userId ? { ...m, role: 'customer' } : m)) }); return; }
+    const { error } = await supabase.rpc('remove_staff', { p_shop: SHOP_ID, p_user: userId });
+    this.setState({ teamNote: error ? error.message : 'Removed from the team.' });
+    this.reloadTeam();
+  }
+  async setStaffRole(userId, role) {
+    if (!supabase) { this.setState({ team: (this.state.team || []).map((m) => (m.user_id === userId ? { ...m, role } : m)) }); return; }
+    const { error } = await supabase.rpc('set_staff_role', { p_shop: SHOP_ID, p_user: userId, p_role: role });
+    if (error) this.setState({ teamNote: error.message });
+    this.reloadTeam();
+  }
+  async cancelInvite(email) {
+    if (!supabase) { this.setState({ pendingInvites: (this.state.pendingInvites || []).filter((i) => i.email !== email) }); return; }
+    await supabase.rpc('cancel_invite', { p_shop: SHOP_ID, p_email: email });
+    this.reloadTeam();
   }
   custOf(id) { return this.state.customers.find((c) => c.id === id) || null; }
   vehOf(id) { return this.state.vehicles.find((v) => v.id === id) || null; }
@@ -765,6 +799,9 @@ export class ShopLogic extends DCLogic {
       loading: s.loading, err: s.err, busy: s.busy, dismissErr: () => set({ err: '' }), overview, schedule, technicians, lobby, inbox, approvals, followups, reports, tires, tech,
       library, estimates, board, partsPage, register, comms, calendar, dvi, staffReports, fleet, marketing, config: s.config || {}, shop: s.shop,
       role: s.role || (supabase ? '' : 'owner'), can: (k) => this.can(k), isOwner: (s.role || (supabase ? '' : 'owner')) === 'owner',
+      team: { rows: (s.team || []).filter((m) => m.role !== 'customer').map((m) => ({ id: m.user_id, name: m.name || (m.email || '').split('@')[0], email: m.email || '', role: m.role === 'tech' ? 'Technician' : m.role === 'advisor' ? 'Advisor' : 'Owner', me: !!s.userId && s.userId === m.user_id, raw: m.role, setRole: (r) => this.setStaffRole(m.user_id, r), remove: !(s.userId && s.userId === m.user_id) ? () => this.removeStaff(m.user_id) : null })),
+        pending: (s.pendingInvites || []).map((i) => ({ email: i.email, role: i.role === 'tech' ? 'Technician' : i.role === 'owner' ? 'Owner' : 'Service advisor', cancel: () => this.cancelInvite(i.email) })),
+        invite: (email, role) => this.inviteStaff(email, role), note: s.teamNote || '', clearNote: () => set({ teamNote: '' }) },
       permissions: { matrix: (s.shop && s.shop.permissions) || { advisor: {}, tech: {} }, keys: [['payments', 'Take payments'], ['discount', 'Add discounts'], ['refund', 'Refund'], ['void', 'Void an invoice'], ['edit_paid', 'Change or reopen a paid invoice'], ['parts_cost', 'See parts cost and margin'], ['reports', 'See reports'], ['settings', 'Change settings, jobs and pricing'], ['delete_customer', 'Delete customers']], save: (m) => this.savePermissions(m) },
       activity: (s.activity || []).map((x) => ({ id: x.id, who: x.who, action: x.action, ref: x.ref, summary: x.summary, when: relDay(x.created_at) + ' · ' + fmtTime(x.created_at), kind: x.action.split('.')[0], color: /refund|void|deleted|removed|cancelled/.test(x.action) ? '#ff6b64' : /paid|approved|done|merged/.test(x.action) ? GRN : /declined|moved|priced|changed/.test(x.action) ? YEL : 'rgba(235,235,245,.6)' })),
       dups: s.dups || null, loadDuplicates: () => this.loadDuplicates(), mergeCustomers: (keep, drop) => this.mergeCustomers(keep, drop), findExisting: (q) => this.findExisting(q),
